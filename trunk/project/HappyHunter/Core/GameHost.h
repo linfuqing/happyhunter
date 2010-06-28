@@ -6,20 +6,16 @@
 
 namespace zerO
 {
-	///
-	//GameHost本身.
-	///
-#define GAMEHOST CGameHost::GetInstance()
 
-	///
-	//D3D设备
-	///
+#define GAMEHOST CGameHost::GetInstance()
 #define DEVICE   GAMEHOST.GetDevice()
+#define CAMERA   GAMEHOST.GetCamera()
 
 	typedef UINT16 RESOURCEHANDLE;
 
 	class CResource;
 	class CRenderQueue;
+	class CCamera;
 
 	///
 	// 主渲染框架类，单件模式，包含资源池，帧渲染调用，
@@ -29,6 +25,15 @@ namespace zerO
 	class CGameHost
 	{
 	public:
+		typedef struct
+		{
+			UINT AdapterOrdinal;
+			D3DDEVTYPE DeviceType;
+			D3DFORMAT AdapterFormat;
+			DWORD BehaviorFlags;
+			D3DPRESENT_PARAMETERS pp;
+		}DEVICESETTINGS, * LPDEVICESETTINGS;
+
 		CGameHost(void);
 		~CGameHost(void);
 
@@ -36,19 +41,33 @@ namespace zerO
 		CRenderQueue& GetRenderQueue();
 		static CGameHost& GetInstance();
 
+		CCamera& GetCamera();
+
+		const DEVICESETTINGS& GetDeviceSettings()const;
+
 		RESOURCEHANDLE AddResource(CResource* const pResource);
 		CResource* GetResource(RESOURCEHANDLE Handle);
 		void RemoveResource(const CResource* pResource);
 
-		virtual bool Create();
+		void Destroy(); 
+		void Disable(); 
+		void Restore(); 
+
+		virtual bool Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
+		virtual bool BeginRender();
+		virtual bool EndRender();
 	private:
+		//LPDIRECT3D9 m_pDirect;
 		LPDIRECT3DDEVICE9 m_pDevice;
+		DEVICESETTINGS m_DeviceSettings;
 
 		static CGameHost* sm_pInstance;
 
 		std::vector<CResource*> m_ResourceList;
 
 		CRenderQueue* m_pRenderQueue;
+
+		CCamera* m_pCamera;
 	};
 
 	inline IDirect3DDevice9& CGameHost::GetDevice()
@@ -68,5 +87,15 @@ namespace zerO
 		DEBUG_ASSERT(sm_pInstance, "The game host has not yet been defined.");
 
 		return *sm_pInstance;
+	}
+
+	inline CCamera& CGameHost::GetCamera()
+	{
+		return *m_pCamera;
+	}
+
+	inline const CGameHost::DEVICESETTINGS& CGameHost::GetDeviceSettings()const
+	{
+		return m_DeviceSettings;
 	}
 }

@@ -2,6 +2,7 @@
 #include "RenderQueue.h"
 #include "basicutils.h"
 #include "SceneNode.h"
+#include "Effect.h"
 #include "BitFlag.h"
 
 using namespace zerO;
@@ -17,8 +18,8 @@ m_bIsLockEntry(false)
 
 CRenderQueue::~CRenderQueue(void)
 {
-	DEBUG_DELETE_ARRARY(m_pEntryPool);
-	DEBUG_DELETE_ARRARY(m_ppEntryList);
+	DEBUG_DELETE_ARRAY(m_pEntryPool);
+	DEBUG_DELETE_ARRAY(m_ppEntryList);
 }
 
 CRenderQueue::LPRENDERENTRY CRenderQueue::LockRenderEntry()
@@ -49,11 +50,13 @@ bool IsWrap(
 
 void CRenderQueue::Render()
 {
-	if (m_uActiveEntries)
+	if(m_uActiveEntries)
 	{	
-		Sort<LPRENDERENTRY>(m_ppEntryList, m_uActiveEntries, IsWrap);
+		Sort<LPRENDERENTRY>(m_ppEntryList, m_ppEntryList, m_uActiveEntries, IsWrap);
 
 		UINT32 uFlags = 0xffffffff;
+
+		LPRENDERENTRY pCurrentEntry = NULL, pPreviousEntry = NULL;
 
 		m_ppEntryList[0]->pParent->Render(
 			m_ppEntryList[0], 
@@ -61,15 +64,16 @@ void CRenderQueue::Render()
 
 		for (UINT i = 1; i < m_uActiveEntries; i ++)
 		{
-			LPRENDERENTRY pCurrentEntry  = m_ppEntryList[i];
-			LPRENDERENTRY pPreviousEntry = m_ppEntryList[i - 1];
+			pCurrentEntry  = m_ppEntryList[i];
+			pPreviousEntry = m_ppEntryList[i - 1];
 
 			uFlags = 0;
 
 			if (pPreviousEntry->hEffect != pCurrentEntry->hEffect)
 			{
-				// Release
-				// Effect
+				CEffect* pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect) );
+
+				pEffect->GetEffect()->End();
 
 				SET_BIT(uFlags, RENDER_METHOD);
 				SET_BIT(uFlags, RENDER_METHOD_PASS);
@@ -108,8 +112,12 @@ void CRenderQueue::Render()
 			pCurrentEntry->pParent->Render(pCurrentEntry, uFlags);
 		}
 
-		// Release
-		// Effect
+		if(pCurrentEntry && pCurrentEntry->hEffect)
+		{
+			CEffect* pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect) );
+
+			pEffect->GetEffect()->End();
+		}
 	}
 	
 	m_uActiveEntries = 0;
