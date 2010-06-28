@@ -35,6 +35,9 @@ namespace zerO
 			SPECULAR_MATERIAL_COLOR,
 			SPECULAR_MATERIAL_POWER,
 
+			POSITION,
+			UV,
+
 			MAXINUM_PARAMETER_HANDLES
 		};
 		
@@ -62,11 +65,14 @@ namespace zerO
 
 		bool SetSurface(CSurface* const pSurface);
 
-		/*bool Begin();
-		bool End();*/
+		bool Begin();
+		bool End();
 
 		LPD3DXEFFECT GetEffect()const;
 		CSurface* GetSurface()const;
+
+		const D3DXEFFECT_DESC& GetEffectDesc()const;
+		const D3DXTECHNIQUE_DESC& GetTechniqueDesc()const;
 
 
 	private:
@@ -172,5 +178,15 @@ namespace zerO
 	inline CSurface* CEffect::GetSurface()const
 	{
 		return m_pSurface;
+	}
+
+	inline const D3DXEFFECT_DESC& CEffect::GetEffectDesc()const
+	{
+		return m_EffectDesc;
+	}
+
+	inline const D3DXTECHNIQUE_DESC& CEffect::GetTechniqueDesc()const
+	{
+		return m_TechniqueDesc;
 	}
 }

@@ -4,6 +4,9 @@
 
 namespace zerO
 {
+	///
+	//表面,带有一个材质,16个纹理对象
+	///
 	class CSurface :
 		public CResource
 	{
@@ -12,7 +15,7 @@ namespace zerO
 
 		enum CONSTANTS
 		{
-			MAXINUM_TEXTURE_PER_SURFACE = TOTAL_BITS(TEXITUREFLAGTYPE)
+			MAXINUM_TEXTURE_PER_SURFACE = 16//TOTAL_BITS(TEXITUREFLAGTYPE)
 		};
 
 		CSurface(void);

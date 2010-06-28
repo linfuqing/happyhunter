@@ -49,8 +49,8 @@ namespace zerO
 		delete (Param);
 #endif
 
-#ifndef DEBUG_DELETE_ARRARY
-#define DEBUG_DELETE_ARRARY(Param) \
+#ifndef DEBUG_DELETE_ARRAY
+#define DEBUG_DELETE_ARRAY(Param) \
 	if(Param)\
 		delete [] (Param);
 #endif

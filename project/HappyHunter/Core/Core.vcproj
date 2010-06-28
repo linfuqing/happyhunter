@@ -173,6 +173,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\QuadTree.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Rectangle2D.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Rectangle3D.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\RenderMethod.cpp"
 				>
 			</File>
@@ -206,6 +218,10 @@
 			</File>
 			<File
 				RelativePath=".\Surface.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Terrain.cpp"
 				>
 			</File>
 			<File
@@ -243,6 +259,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\d3dutils.h"
+				>
+			</File>
+			<File
 				RelativePath=".\datatype.h"
 				>
 			</File>
@@ -264,6 +284,18 @@
 			</File>
 			<File
 				RelativePath=".\Model.h"
+				>
+			</File>
+			<File
+				RelativePath=".\QuadTree.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Rectangle2D.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Rectangle3D.h"
 				>
 			</File>
 			<File
@@ -296,6 +328,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Terrain.h"
 				>
 			</File>
 			<File

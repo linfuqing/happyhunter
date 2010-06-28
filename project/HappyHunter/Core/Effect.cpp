@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "Effect.h"
 #include "BasicString.h"
+#include "Camera.h"
 
 using namespace zerO;
 
@@ -114,10 +115,14 @@ void CEffect::__ParseParameters()
 					m_ParameterHandles[AMBIENT_MATERIAL_COLOR] = hParameter;
 				else if( STRCMP(ParameterDesc.Semantic, "MATERIALDIFFUSE") == 0 )
 					m_ParameterHandles[DIFFUSE_MATERIAL_COLOR] = hParameter;
-				else if(STRCMP(ParameterDesc.Semantic, "MATERIALEMISSIVE") == 0 )
+				else if(STRCMP(ParameterDesc.Semantic, "MATERIALEMISSIVE") == 0)
 					m_ParameterHandles[EMISSIVE_MATERIAL_COLOR] = hParameter;
-				else if(STRCMP(ParameterDesc.Semantic, "MATERIALSPECULAR") == 0 )
+				else if(STRCMP(ParameterDesc.Semantic, "MATERIALSPECULAR") == 0)
 					m_ParameterHandles[SPECULAR_MATERIAL_COLOR] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "POSITION") == 0)
+					m_ParameterHandles[POSITION] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "UV") == 0 || STRCMP(ParameterDesc.Semantic, "TextureUV") == 0)
+					m_ParameterHandles[UV] = hParameter;
 			}
 			else if(ParameterDesc.Class == D3DXPC_SCALAR)
 			{
@@ -144,6 +149,42 @@ void CEffect::__ParseParameters()
 			}
 		}
 	}
+}
+
+
+bool CEffect::Begin()
+{
+	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	HRESULT hr = m_pEffect->Begin(0, D3DXFX_DONOTSAVESTATE|D3DXFX_DONOTSAVESHADERSTATE);
+
+    if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+        return false;
+	}
+
+	SetMatrix( VIEW, CAMERA.GetViewMatrix() );
+	SetMatrix(PROJECTION, CAMERA.GetProjectionMatrix() );
+	SetMatrix(VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
+
+	return true;
+}
+
+bool CEffect::End()
+{
+	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	HRESULT hr = m_pEffect->End();
+
+    if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+
+		return false;
+	}
+
+	return true;
 }
 
 bool CEffect::SetSurface(CSurface* const pSurface)
