@@ -436,7 +436,7 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 	
 	if (pEffect)
 	{	
-		if( TEST_BIT(uFlag, CRenderQueue::RENDER_METHOD) )
+		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
 			pEffect->Begin();
 
 		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);

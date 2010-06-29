@@ -75,21 +75,21 @@ void CRenderQueue::Render()
 
 				pEffect->GetEffect()->End();
 
-				SET_BIT(uFlags, RENDER_METHOD);
-				SET_BIT(uFlags, RENDER_METHOD_PASS);
-				SET_BIT(uFlags, RENDER_METHOD_PARAM);
+				SET_BIT(uFlags, EFFECT);
+				SET_BIT(uFlags, EFFECT_PASS);
+				SET_BIT(uFlags, EFFECT_PARAM);
 			}
 			else if (pPreviousEntry->uRenderPass != pCurrentEntry->uRenderPass)
 			{
-				SET_BIT(uFlags, RENDER_METHOD_PASS);
-				SET_BIT(uFlags, RENDER_METHOD_PARAM);
+				SET_BIT(uFlags, EFFECT_PASS);
+				SET_BIT(uFlags, EFFECT_PARAM);
 			}		
 			else 
 			{
 				if (pPreviousEntry->uBoneCount != pCurrentEntry->uBoneCount)
-					SET_BIT(uFlags, RENDER_METHOD_PARAM);	
+					SET_BIT(uFlags, EFFECT_PARAM);	
 				if (pPreviousEntry->uDetailLevel != pCurrentEntry->uDetailLevel)
-					SET_BIT(uFlags, RENDER_METHOD_LOD);
+					SET_BIT(uFlags, EFFECT_LOD);
 			}
 
 			if (pPreviousEntry->hModel != pCurrentEntry->hModel || pPreviousEntry->uModelType != pCurrentEntry->uModelType)
