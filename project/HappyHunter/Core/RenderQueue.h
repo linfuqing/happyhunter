@@ -16,10 +16,14 @@ namespace zerO
 
 		typedef enum
 		{
-			RENDER_METHOD = 0,
-			RENDER_METHOD_PASS,
-			RENDER_METHOD_PARAM,
-			RENDER_METHOD_LOD,
+			//效果文件
+			EFFECT = 0,
+			//效果Pass
+			EFFECT_PASS,
+			//效果变量
+			EFFECT_PARAM,
+			//细节层次
+			EFFECT_LOD,
 			MODEL,
 			MODEL_PARAMA,
 			MODEL_PARAMB,
