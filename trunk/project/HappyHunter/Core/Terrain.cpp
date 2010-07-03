@@ -150,6 +150,26 @@ CTerrain::~CTerrain(void)
 {
 }
 
+void CTerrain::Render()
+{
+	if(m_pSector)
+	{
+		UINT uCount = m_uSectorCountX * m_uSectorCountY, i;
+
+		for(i = 0; i < uCount; i ++)
+			m_pSector[i].ApplyForRender();
+	}
+}
+
+void CTerrain::SetQuadTree(CQuadTree* pQuadTree)
+{
+	if(m_pSector)
+	{
+		for(UINT i = 0; i < m_uSectorCountX * m_uSectorCountY; i ++)
+			m_pSector[i].AttachToQuadTree(pQuadTree);
+	}
+}
+
 bool CTerrain:: Create(
 					   CSceneNode* pRootNode, 
 					   CTexture* pHeightMap, 
@@ -218,7 +238,7 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 	for(y = 0; y < m_uTableHeight; y ++)
 	{
 		for(x = 0; x< m_uTableWidth; x ++)
-			m_pfHeightTable[uTableIndex ++] = pMap[uMapIndex += 4] * m_MapScale.z + m_WorldExtents.GetMinZ();
+			m_pfHeightTable[uTableIndex ++] = pMap[(uMapIndex ++) >> 2] * m_MapScale.z + m_WorldExtents.GetMinZ();
 
 		uMapIndex += uPitch;
 	}
@@ -261,9 +281,11 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 	{
 		for(x = 0; x < m_uTableWidth; x ++)
 		{
-			Normal.z = pMap[uMapIndex ++] - 127.5f;
-			Normal.y = pMap[uMapIndex ++] - 127.5f;
-			Normal.x = pMap[uMapIndex ++] - 127.5f;
+			int index = (y*LockedRect.Pitch)+(x*4);
+
+			Normal.z = pMap[index ++] - 127.5f;
+			Normal.y = pMap[index ++] - 127.5f;
+			Normal.x = pMap[index ++] - 127.5f;
 
 			D3DXVec3Normalize(&m_pNormalTable[uTableIndex ++], &Normal);
 
@@ -315,7 +337,7 @@ bool CTerrain::_BuildVertexBuffer()
 
 	HRESULT hr = m_VertexBuffer.Create(
 		m_uSectorVertices * m_uSectorVertices, 
-		sizeof(LPVERTEX), 
+		sizeof(VERTEX), 
 		HARDWARE_VERTEX_SHADERS_ALLOWED ? 0 : D3DUSAGE_SOFTWAREPROCESSING, 
 		D3DPOOL_MANAGED, 
 		pVertices);
@@ -339,7 +361,7 @@ bool CTerrain::_BuildIndexBuffer()
 		1,
 		1,
 		m_uSectorVertices,
-		HARDWARE_VERTEX_SHADERS_ALLOWED ? 0 : D3DUSAGE_SOFTWAREPROCESSING,
+		HARDWARE_VERTEX_SHADERS_ALLOWED ? D3DUSAGE_WRITEONLY : (D3DUSAGE_WRITEONLY | D3DUSAGE_SOFTWAREPROCESSING),
 		D3DPOOL_MANAGED);
 
 	if( FAILED(hr) )
@@ -412,7 +434,7 @@ bool CTerrain::SubmitSection(CTerrainSection* pSection)const
 			CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
 			
 			pRenderEntry->hEffect      = pEffect->GetHandle();
-			pRenderEntry->hSurface     = pEffect->GetSurface()->GetHandle();
+			pRenderEntry->hSurface     = m_RenderMethod.GetSurface()->GetHandle();
 			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER;
 			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
 			pRenderEntry->uModelParamA = pSection->GetVertexBuffer().GetHandle();
@@ -445,7 +467,7 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 			m_VertexBuffer.Activate(0, 0, true);
 
 		if ( TEST_BIT(uFlag, CRenderQueue::MODEL_PARAMA) )
-			pSection->GetVertexBuffer().Activate(1,0, false);
+			pSection->GetVertexBuffer().Activate(1, 0, false);
 
 		if ( TEST_BIT(uFlag, CRenderQueue::MODEL_PARAMB) )
 			m_IndexBuffer.Activate();

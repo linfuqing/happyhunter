@@ -21,44 +21,71 @@ CGameHost::~CGameHost(void)
 	sm_pInstance = NULL;
 }
 
-RESOURCEHANDLE CGameHost::AddResource(CResource* const pResource)
-{
-	DEBUG_ASSERT(pResource, "pResource can not be NULL.");
-	m_ResourceList.push_back(pResource);
-
-	return m_ResourceList.size();
-}
-
-CResource* CGameHost::GetResource(RESOURCEHANDLE Handle)
-{
-	return m_ResourceList[Handle - 1];
-}
-
-void CGameHost::RemoveResource(const CResource* pResource)
+RESOURCEHANDLE CGameHost::AddResource(CResource* const pResource, RESOURCETYPE Type)
 {
 	DEBUG_ASSERT(pResource, "pResource can not be NULL.");
 
-	for(std::vector<CResource*>::iterator i = m_ResourceList.begin(); i != m_ResourceList.end(); i ++)
+	m_ResourceList[Type].push_back(pResource);
+
+	return m_ResourceList[Type].size();
+}
+
+CResource* CGameHost::GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type)
+{
+	return m_ResourceList[Type][Handle - 1];
+}
+
+void CGameHost::RemoveResource(const CResource* pResource, RESOURCETYPE Type)
+{
+	DEBUG_ASSERT(pResource, "pResource can not be NULL.");
+
+	for(std::vector<CResource*>::iterator i = m_ResourceList[Type].begin(); i != m_ResourceList[Type].end(); i ++)
 		if(*i == pResource)
-			i = m_ResourceList.erase(i);
+			i = m_ResourceList[Type].erase(i);
 }
 
-void CGameHost::Destroy()
+bool CGameHost::Destroy()
 {
-	for(std::vector<CResource*>::iterator i = m_ResourceList.begin(); i != m_ResourceList.end(); i ++)
-		(*i)->Destroy();
+	UINT uTotalResourceTypes = TOTAL_RESOURCE_TYPES;
+
+	UINT uIndex;
+	std::vector<CResource*>::iterator Iteractor;
+	for(uIndex = 0; uIndex < uTotalResourceTypes; uIndex ++)
+		for(Iteractor = m_ResourceList[uIndex].begin(); Iteractor != m_ResourceList[uIndex].end(); Iteractor ++)
+			if( !(*Iteractor)->Destroy() )
+				return false;
+
+	return true;
 }
 
-void CGameHost::Disable()
+bool CGameHost::Disable()
 {
-	for(std::vector<CResource*>::iterator i = m_ResourceList.begin(); i != m_ResourceList.end(); i ++)
-		(*i)->Disable();
+	UINT uTotalResourceTypes = TOTAL_RESOURCE_TYPES;
+
+	UINT uIndex;
+	std::vector<CResource*>::iterator Iteractor;
+	for(uIndex = 0; uIndex < uTotalResourceTypes; uIndex ++)
+		for(Iteractor = m_ResourceList[uIndex].begin(); Iteractor != m_ResourceList[uIndex].end(); Iteractor ++)
+			if( !(*Iteractor)->Disable() )
+				return false;
+
+	return true;
 }
 
-void CGameHost::Restore()
+bool CGameHost::Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc)
 {
-	for(std::vector<CResource*>::iterator i = m_ResourceList.begin(); i != m_ResourceList.end(); i ++)
-		(*i)->Restore();
+	memcpy( &m_DeviceSurfaceDest, &BackBufferSurfaceDesc, sizeof(D3DSURFACE_DESC) );
+
+	UINT uTotalResourceTypes = TOTAL_RESOURCE_TYPES;
+
+	UINT uIndex;
+	std::vector<CResource*>::iterator Iteractor;
+	for(uIndex = 0; uIndex < uTotalResourceTypes; uIndex ++)
+		for(Iteractor = m_ResourceList[uIndex].begin(); Iteractor != m_ResourceList[uIndex].end(); Iteractor ++)
+			if( !(*Iteractor)->Restore() )
+				return false;
+
+	return true;
 }
 
 bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, zerO::UINT uMaxQueue)

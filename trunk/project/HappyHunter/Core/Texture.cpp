@@ -4,6 +4,7 @@
 using namespace zerO;
 
 CTexture::CTexture(void) :
+CResource(RESOURCE_TEXTURE),
 m_pTexture(NULL),
 m_pMatrix(NULL)
 {
@@ -23,8 +24,7 @@ bool CTexture::Create(
 {
 	DEBUG_RELEASE(m_pTexture);
 
-	HRESULT hr = 
-	D3DXCheckTextureRequirements(          
+	HRESULT hr = D3DXCheckTextureRequirements(          					
 		&DEVICE,
 		(UINT*)&uWidth,
 		(UINT*)&uHeight,
@@ -58,5 +58,38 @@ bool CTexture::Create(
 
 bool CTexture::Load(const PBASICCHAR pcFileName)
 {
-	return SUCCEEDED( D3DXCreateTextureFromFile(&DEVICE, pcFileName, &m_pTexture) );
+	HRESULT hr = D3DXCreateTextureFromFileEx(
+		&DEVICE, 
+		pcFileName, 
+		D3DX_DEFAULT, 
+		D3DX_DEFAULT,
+		1, 
+		0, 
+		D3DFMT_UNKNOWN, 
+		D3DPOOL_MANAGED, 
+		D3DX_DEFAULT, 
+		D3DX_DEFAULT, 
+		0, 
+		NULL, 
+		NULL, 
+		&m_pTexture);
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	D3DSURFACE_DESC Desc;
+	hr = m_pTexture->GetLevelDesc(0, &Desc);
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	__Initialization(Desc.Width, Desc.Height, 1, 0, Desc.Format, Desc.Pool);
+
+	return true;
 }

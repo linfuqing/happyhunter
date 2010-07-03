@@ -5,6 +5,7 @@
 using namespace zerO;
 
 CIndexBuffer::CIndexBuffer(void) :
+CResource(RESOURCE_INDEX_BUFFER),
 m_pBuffer(NULL),
 m_Type(D3DPT_FORCE_DWORD),
 
@@ -29,12 +30,12 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 
 	if(uCount < 0xFFFF)
 	{
-		m_uStride  = TOTAL_BITS(UINT16);
+		m_uStride  = /*TOTAL_BITS(UINT16)*/2;
 		m_Format   = D3DFMT_INDEX16;
 	}
 	else
 	{
-		m_uStride  = TOTAL_BITS(UINT32);
+		m_uStride  = /*TOTAL_BITS(UINT32)*/4;
 		m_Format   = D3DFMT_INDEX32;
 	}
 
@@ -48,7 +49,7 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 
 	HRESULT hr;
 
-	hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer,NULL);
+	hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer, NULL);
 
 	if( FAILED(hr) )
 	{
@@ -105,9 +106,9 @@ bool CIndexBuffer::CreateSingleStripGrid(
 		uLineStep             = uStepY * uStride,
 		uVertex, i, j;
 
-	PUINT puIndexValues, puIndex;
+	PUINT16 puIndexValues, puIndex;
 
-	DEBUG_NEW(puIndexValues, UINT[uTotalIndexes]);
+	DEBUG_NEW(puIndexValues, UINT16[uTotalIndexes]);
 
 	puIndex = puIndexValues;
 

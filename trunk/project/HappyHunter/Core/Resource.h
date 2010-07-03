@@ -26,14 +26,14 @@ namespace zerO
 		public IResource
 	{
 	public:
-
-		CResource(void)
+		CResource(RESOURCETYPE Type)
 		{
-			m_Handle = GAMEHOST.AddResource(this);
+			m_Type   = Type;
+			m_Handle = GAMEHOST.AddResource(this, Type);
 		}
 		~CResource(void)
 		{
-			GAMEHOST.RemoveResource(this);
+			GAMEHOST.RemoveResource(this, m_Type);
 		}
 
 		inline RESOURCEHANDLE GetHandle()const
@@ -68,5 +68,6 @@ namespace zerO
 
 	private:
 		RESOURCEHANDLE m_Handle;
+		RESOURCETYPE m_Type;
 	};
 }

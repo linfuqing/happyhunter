@@ -243,7 +243,7 @@ namespace zerO
 			  uPatternY   = WorldByteRect.GetMinY() ^ WorldByteRect.GetMaxY(),
 			  uBitPattern = MAX(uPatternX, uPatternY);
 
-		INT nHighBit      = uBitPattern ? HighestBitSet(uBitPattern) + 1: 0;
+		INT nHighBit      = uBitPattern ? HighestBitSet(uBitPattern) + 1 : 0;
 
 		UINT uShift;
 

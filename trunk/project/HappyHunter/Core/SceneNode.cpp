@@ -11,6 +11,9 @@ m_Right(1.0f, 0.0f, 0.0f),
 m_Up(0.0f, 1.0f, 0.0f),
 m_Forward(0.0f, 0.0f, 1.0f)
 {
+	D3DXMatrixIdentity(&m_LocalMatrix);
+	D3DXMatrixIdentity(&m_WorldMatrix);
+	D3DXMatrixIdentity(&m_InverseWorldMatrix);
 }
 
 CSceneNode::~CSceneNode(void)

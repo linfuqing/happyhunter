@@ -259,6 +259,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\core.h"
+				>
+			</File>
+			<File
 				RelativePath=".\d3dutils.h"
 				>
 			</File>

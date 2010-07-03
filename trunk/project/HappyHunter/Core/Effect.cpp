@@ -6,6 +6,7 @@
 using namespace zerO;
 
 CEffect::CEffect(void) :
+CResource(RESOURCE_EFFECT),
 m_pEffect(NULL), 
 m_pSurface(NULL)
 {
@@ -18,7 +19,7 @@ CEffect::~CEffect(void)
 bool CEffect::Load(const PBASICCHAR pcFileName)
 {
 	LPD3DXBUFFER pBufferErrors = NULL;
-	HRESULT hr = D3DXCreateEffectFromFile(&DEVICE, pcFileName, NULL, NULL, 0, NULL, &m_pEffect, &pBufferErrors);
+	HRESULT hr = D3DXCreateEffectFromFile(&DEVICE, pcFileName, NULL, NULL, D3DXSHADER_DEBUG, NULL, &m_pEffect, &pBufferErrors);
 
 	if( FAILED(hr) )
 	{
@@ -32,9 +33,9 @@ bool CEffect::Load(const PBASICCHAR pcFileName)
 	DEBUG_RELEASE(pBufferErrors);
 
 	hr = m_pEffect->GetDesc( &m_EffectDesc );
+
 	if( FAILED(hr) )
 	{
-EFFECT_ERROR:
 		DEBUG_ERROR(hr);
 		DEBUG_RELEASE(m_pEffect);
         return false;
@@ -43,15 +44,29 @@ EFFECT_ERROR:
 	hr = m_pEffect->FindNextValidTechnique(NULL, &m_hTechnique);
 
     if( FAILED(hr) )
-		goto EFFECT_ERROR;
+	{
+		DEBUG_ERROR(hr);
+		DEBUG_RELEASE(m_pEffect);
+        return false;
+	}
 
 	hr = m_pEffect->GetTechniqueDesc(m_hTechnique, &m_TechniqueDesc);
+
     if( FAILED(hr) )
-		goto EFFECT_ERROR;
+	{
+		DEBUG_ERROR(hr);
+		DEBUG_RELEASE(m_pEffect);
+        return false;
+	}
 
 	hr = m_pEffect->SetTechnique(m_hTechnique);
+
     if( FAILED(hr) )
-		goto EFFECT_ERROR;
+	{
+		DEBUG_ERROR(hr);
+		DEBUG_RELEASE(m_pEffect);
+        return false;
+	}
 
 	__ParseParameters();
 
@@ -156,7 +171,7 @@ bool CEffect::Begin()
 {
 	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
 
-	HRESULT hr = m_pEffect->Begin(0, D3DXFX_DONOTSAVESTATE|D3DXFX_DONOTSAVESHADERSTATE);
+	HRESULT hr = m_pEffect->Begin(NULL, D3DXFX_DONOTSAVESTATE|D3DXFX_DONOTSAVESHADERSTATE);
 
     if( FAILED(hr) )
 	{
@@ -164,7 +179,7 @@ bool CEffect::Begin()
         return false;
 	}
 
-	SetMatrix( VIEW, CAMERA.GetViewMatrix() );
+	SetMatrix(VIEW, CAMERA.GetViewMatrix() );
 	SetMatrix(PROJECTION, CAMERA.GetProjectionMatrix() );
 	SetMatrix(VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
 

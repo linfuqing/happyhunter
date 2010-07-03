@@ -40,12 +40,14 @@ namespace zerO
 
 	inline bool FRUSTUM::Test(const CRectangle3D& Rect, UINT32 uTestFlag)
 	{
-		return TEST_FLAG( uTestFlag, Rect.Test(Left  ) )
-			&& TEST_FLAG( uTestFlag, Rect.Test(Right ) )
-			&& TEST_FLAG( uTestFlag, Rect.Test(Top   ) )
-			&& TEST_FLAG( uTestFlag, Rect.Test(Bottom) )
-			&& TEST_FLAG( uTestFlag, Rect.Test(Far   ) )
-			&& TEST_FLAG( uTestFlag, Rect.Test(Near  ) );
+		INT32 nFlag = uTestFlag;
+
+		return TEST_FLAG( nFlag, Rect.Test(Left  ) )
+			&& TEST_FLAG( nFlag, Rect.Test(Right ) )
+			&& TEST_FLAG( nFlag, Rect.Test(Top   ) )
+			&& TEST_FLAG( nFlag, Rect.Test(Bottom) )
+			&& TEST_FLAG( nFlag, Rect.Test(Far   ) )
+			&& TEST_FLAG( nFlag, Rect.Test(Near  ) );
 	}
 
 	inline void FRUSTUM::Transform(const D3DXMATRIX& Matrix)
@@ -77,6 +79,8 @@ namespace zerO
 		const D3DXMATRIX& GetProjectionMatrix()const;
 		const D3DXMATRIX& GetViewProjectionMatrix()const;
 
+		const CRectangle3D& GetSearchRectangle()const;
+
 		//投影矩阵参数.
 		void SetProjection(
 			FLOAT fFOV, 
@@ -90,6 +94,10 @@ namespace zerO
 		D3DXMATRIX m_ViewProjectionMatrix;
 
 		FRUSTUM m_Frustum;
+
+		CRectangle3D m_SearchRectangle;
+
+		D3DXVECTOR3	m_FarPlanePoints[8];
 	};
 
 	inline const D3DXMATRIX& CCamera::GetViewMatrix()const
@@ -105,5 +113,10 @@ namespace zerO
 	inline const D3DXMATRIX& CCamera::GetViewProjectionMatrix()const
 	{
 		return m_ViewProjectionMatrix; 
+	}
+
+	inline const CRectangle3D& CCamera::GetSearchRectangle()const
+	{
+		return m_SearchRectangle;
 	}
 }
