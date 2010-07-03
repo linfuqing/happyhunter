@@ -44,7 +44,7 @@ namespace zerO
 #endif
 
 #ifndef DEBUG_DELETE
-#define SAFE_DELETE(Param) \
+#define DEBUG_DELETE(Param) \
 	if(Param)\
 		delete (Param);
 #endif

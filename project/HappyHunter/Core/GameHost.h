@@ -7,9 +7,21 @@
 namespace zerO
 {
 
-#define GAMEHOST CGameHost::GetInstance()
+#define GAMEHOST zerO::CGameHost::GetInstance()
 #define DEVICE   GAMEHOST.GetDevice()
 #define CAMERA   GAMEHOST.GetCamera()
+
+	typedef enum
+	{
+		RESOURCE_EFFECT = 0,
+		RESOURCE_VERTEX_BUFFER,
+		RESOURCE_INDEX_BUFFER,
+		RESOURCE_TEXTURE,
+		RESOURCE_SURFACE,
+		RESOURCE_MODEL,
+
+		TOTAL_RESOURCE_TYPES
+	}RESOURCETYPE;
 
 	typedef UINT16 RESOURCEHANDLE;
 
@@ -45,13 +57,13 @@ namespace zerO
 
 		const DEVICESETTINGS& GetDeviceSettings()const;
 
-		RESOURCEHANDLE AddResource(CResource* const pResource);
-		CResource* GetResource(RESOURCEHANDLE Handle);
-		void RemoveResource(const CResource* pResource);
+		RESOURCEHANDLE AddResource(CResource* const pResource, RESOURCETYPE Type);
+		CResource* GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type);
+		void RemoveResource(const CResource* pResource, RESOURCETYPE Type);
 
-		void Destroy(); 
-		void Disable(); 
-		void Restore(); 
+		virtual bool Destroy(); 
+		virtual bool Disable(); 
+		virtual bool Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc); 
 
 		virtual bool Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
 		virtual bool BeginRender();
@@ -60,10 +72,11 @@ namespace zerO
 		//LPDIRECT3D9 m_pDirect;
 		LPDIRECT3DDEVICE9 m_pDevice;
 		DEVICESETTINGS m_DeviceSettings;
+		D3DSURFACE_DESC m_DeviceSurfaceDest;
 
 		static CGameHost* sm_pInstance;
 
-		std::vector<CResource*> m_ResourceList;
+		std::vector<CResource*> m_ResourceList[TOTAL_RESOURCE_TYPES];
 
 		CRenderQueue* m_pRenderQueue;
 

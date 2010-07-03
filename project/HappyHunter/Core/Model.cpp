@@ -3,7 +3,8 @@
 
 using namespace zerO;
 
-CModel::CModel(void)
+CModel::CModel(void) :
+CResource(RESOURCE_MODEL)
 {
 }
 

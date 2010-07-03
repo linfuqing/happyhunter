@@ -11,8 +11,8 @@ namespace zerO
 {
 #define MAX(x, y) ( (x) > (y) ? (x) : (y) )
 #define MIN(x, y) ( (x) < (y) ? (x) : (y) )
-#define ROUND(x) (INT)( (x) + 0.5f) 
-#define CLAMP(Value, Max, Min) ( (Value) > (Max) ? (Max) : ( (Value) < (Min) ? (Min) : (Value) ) )
+#define ROUND(x) (INT)( (x) > 0 ? ( (x) + 0.5f ) : ( (x) < 0 ? ( (x) - 0.5f ) : 0 ) )
+#define CLAMP(Value, Min, Max) ( (Value) > (Max) ? (Max) : ( (Value) < (Min) ? (Min) : (Value) ) )
 }
 
 #endif

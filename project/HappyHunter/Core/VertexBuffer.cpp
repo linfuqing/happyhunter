@@ -4,6 +4,7 @@
 using namespace zerO;
 
 CVertexBuffer::CVertexBuffer(void) :
+CResource(RESOURCE_VERTEX_BUFFER),
 m_pBuffer(NULL),
 m_pVertexDeclaration(NULL),
 m_uVertexElementCount(0),
@@ -36,7 +37,7 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 	m_dwUsage      = dwUsage;
 	m_Pool         = Pool;
 
-	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, 0, Pool, &m_pBuffer,NULL);
+	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, 0, Pool, &m_pBuffer, NULL);
 
 	if( FAILED(hr) )
 	{
@@ -49,7 +50,7 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 	{
 		void* pVertices;
 
-		hr = m_pBuffer->Lock(0, m_uByteSize, &pVertices, D3DLOCK_DISCARD);
+		hr = m_pBuffer->Lock(0, m_uByteSize, &pVertices, 0);
 
 		if( FAILED(hr) )
 		{

@@ -100,16 +100,16 @@ zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeR
 
 		m_pMembers = pObject;
 
-		SET_FLAG( m_uWorldMaskZ, pObject->GetMaskZ() );
-		SET_FLAG( m_uLocalMaskZ, pObject->GetMaskZ() );
+		SET_FLAG(m_uWorldMaskZ, uMaskZ);
+		SET_FLAG(m_uLocalMaskZ, uMaskZ);
 
 		if(m_pParent)
 			m_pParent->__DescendantMemberAdded(uMaskZ);
-
-		pObject->SetQueadTrre(this, uMaskZ);
 	}
 	else
 		__RebuildLocalMaskZ();
+
+	pObject->SetQueadTrre(this, uMaskZ);
 
 	return uMaskZ;
 }

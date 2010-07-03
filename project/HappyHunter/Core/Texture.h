@@ -23,7 +23,7 @@ namespace zerO
 
 		bool Load(const PBASICCHAR pcFileName = NULL);
 
-			void SetMatrix(D3DXMATRIX* pMatrix);
+		void SetMatrix(D3DXMATRIX* pMatrix);
 
 			LPDIRECT3DTEXTURE9 GetTexture()const;
 			D3DXMATRIX*        GetMatrix()const;

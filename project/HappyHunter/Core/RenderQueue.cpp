@@ -56,11 +56,13 @@ void CRenderQueue::Render()
 
 		UINT32 uFlags = 0xffffffff;
 
-		LPRENDERENTRY pCurrentEntry = NULL, pPreviousEntry = NULL;
+		LPRENDERENTRY pCurrentEntry = m_ppEntryList[0], pPreviousEntry = NULL;
 
-		m_ppEntryList[0]->pParent->Render(
-			m_ppEntryList[0], 
+		pCurrentEntry->pParent->Render(
+			pCurrentEntry, 
 			uFlags);
+
+		CEffect* pEffect;
 
 		for (UINT i = 1; i < m_uActiveEntries; i ++)
 		{
@@ -71,9 +73,9 @@ void CRenderQueue::Render()
 
 			if (pPreviousEntry->hEffect != pCurrentEntry->hEffect)
 			{
-				CEffect* pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect) );
+				pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect, RESOURCE_EFFECT) );
 
-				pEffect->GetEffect()->End();
+				pEffect->End();
 
 				SET_BIT(uFlags, EFFECT);
 				SET_BIT(uFlags, EFFECT_PASS);
@@ -112,11 +114,11 @@ void CRenderQueue::Render()
 			pCurrentEntry->pParent->Render(pCurrentEntry, uFlags);
 		}
 
-		if(pCurrentEntry && pCurrentEntry->hEffect)
+		if(pCurrentEntry->hEffect)
 		{
-			CEffect* pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect) );
+			pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pCurrentEntry->hEffect, RESOURCE_EFFECT) );
 
-			pEffect->GetEffect()->End();
+			pEffect->End();
 		}
 	}
 	

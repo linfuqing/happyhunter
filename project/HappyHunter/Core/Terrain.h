@@ -87,6 +87,12 @@ namespace zerO
 		FLOAT GetHeight(UINT uIndex)const;
 		const D3DXVECTOR3& GetNormal(UINT x, UINT y)const;
 
+		CRenderMethod& GetRenderMethod();
+
+		void SetQuadTree(CQuadTree* pQuadTree);
+
+		void Render();
+
 		void Destroy();
 
 		virtual bool SubmitSection(CTerrainSection* pSection)const;
@@ -157,5 +163,10 @@ namespace zerO
 			y = m_uTableHeight - 1;
 
 		return m_pNormalTable[(y * m_uTableWidth) + x];
+	}
+
+	inline CRenderMethod& CTerrain::GetRenderMethod()
+	{
+		return m_RenderMethod;
 	}
 }

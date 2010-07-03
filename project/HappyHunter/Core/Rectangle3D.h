@@ -14,6 +14,7 @@ namespace zerO
 	public:
 		CBasicRectangle3D() {}
 		CBasicRectangle3D(const CBasicRectangle3D<T>& Rect);
+		CBasicRectangle3D(const T& MinX, const T& MaxX, const T& MinY, const T& MaxY, const T& MinZ, const T& MaxZ);
 
 		T GetSizeZ()const;
 
@@ -50,9 +51,22 @@ namespace zerO
 	}
 
 	template<typename T>
+	inline CBasicRectangle3D<T>::CBasicRectangle3D(const T& MinX, const T& MaxX, const T& MinY, const T& MaxY, const T& MinZ, const T& MaxZ)
+	{
+		m_MinX = MinX;
+		m_MaxX = MaxX;
+
+		m_MinY = MinY;
+		m_MaxY = MaxY;
+
+		m_MinZ = MinZ;
+		m_MaxZ = MaxZ;
+	}
+
+	template<typename T>
 	inline T CBasicRectangle3D<T>::GetSizeZ()const
 	{
-		return m_MaxZ - m_MaxZ;
+		return m_MaxZ - m_MinZ;
 	}
 
 	template<typename T>

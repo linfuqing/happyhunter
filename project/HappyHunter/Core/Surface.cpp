@@ -4,6 +4,7 @@
 using namespace zerO;
 
 CSurface::CSurface(void) :
+CResource(RESOURCE_SURFACE),
 m_uNumTextures(0),
 m_TextureFlag(0)
 {
