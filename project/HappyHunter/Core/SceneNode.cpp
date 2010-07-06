@@ -55,7 +55,7 @@ void CSceneNode::UpdateTransform()
 	m_bIsTransformDirty = false;
 }
 
-void CSceneNode::Update()
+void CSceneNode::Update(float fElapsedTime)
 {
 	if(m_bIsTransformDirty)
 		UpdateTransform();

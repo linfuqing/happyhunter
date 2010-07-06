@@ -68,6 +68,7 @@ namespace zerO
 		virtual bool Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
 		virtual bool BeginRender();
 		virtual bool EndRender();
+		virtual void Update(float fElapsedTime);
 	private:
 		//LPDIRECT3D9 m_pDirect;
 		LPDIRECT3DDEVICE9 m_pDevice;

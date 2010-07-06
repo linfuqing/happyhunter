@@ -113,3 +113,8 @@ bool CGameHost::EndRender()
 
 	return true;
 }
+
+void CGameHost::Update(float fElapsedTime)
+{
+	m_pRenderQueue->Update(fElapsedTime);
+}

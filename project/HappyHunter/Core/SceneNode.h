@@ -37,7 +37,7 @@ namespace zerO
 		virtual void UpdateTransform();
 
 		//渲染之外的所有变换更新,进行CPU计算.
-		virtual void Update();
+		virtual void Update(float fElapsedTime);
 
 		//渲染机制,供子集重载
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);

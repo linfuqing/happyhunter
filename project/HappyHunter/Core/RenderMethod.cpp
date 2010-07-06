@@ -51,3 +51,26 @@ bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName, zerO::UINT uStage)
 
 	return false;
 }
+
+void CRenderMethod::Destory()
+{
+	if ( m_EffectList.empty() )
+		return;
+
+	for ( std::vector<CEffect*>::iterator i = m_EffectList.begin(); i != m_EffectList.end(); i ++ )
+	{
+		DEBUG_DELETE( *i );
+		i = m_EffectList.erase( i );
+	}
+	m_EffectList.clear();
+
+	if ( m_SurfaceList.empty() )
+		return;
+
+	for ( std::vector<CSurface*>::iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); i ++ )
+	{
+		DEBUG_DELETE( *i );
+		i = m_SurfaceList.erase( i );
+	}
+	m_SurfaceList.clear();
+}
