@@ -1,6 +1,7 @@
 #ifndef BASICUTILS_H
 #define BASICUTILS_H
 
+#include "debug.h"
 #include "datatype.h"
 
 ///
@@ -149,6 +150,26 @@ namespace zerO
 		_asm mov nResult, eax
 
 		return nResult;
+	}
+
+	//-----------------------------------------------------------------------------
+	// Desc: 从绝对路径中提取文件名
+	//-----------------------------------------------------------------------------
+	inline void RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
+	{
+		//先将fullPath的类型变换为LPWSTR
+		WCHAR wszBuf[MAX_PATH];
+		MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
+		wszBuf[MAX_PATH-1] = L'\0';
+
+		WCHAR* wszFullPath = wszBuf;
+
+		//从绝对路径中提取文件名
+		LPWSTR pch=wcsrchr(wszFullPath,'\\');
+		if (pch)
+			lstrcpy(fileName, ++pch);
+		else
+			lstrcpy(fileName, wszFullPath);
 	}
 }
 

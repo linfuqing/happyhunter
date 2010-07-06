@@ -197,6 +197,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SkinMesh.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StaticMesh.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -320,6 +328,14 @@
 			</File>
 			<File
 				RelativePath=".\SceneNode.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SkinMesh.h"
+				>
+			</File>
+			<File
+				RelativePath=".\StaticMesh.h"
 				>
 			</File>
 			<File
