@@ -54,36 +54,7 @@ void CCamera::SetProjection(
 {
 	D3DXMatrixPerspectiveFovLH(&m_ProjectionMatrix, fFOV, fAspect, fNearPlane, fFarPlane);
 
-	m_bIsTransformDirty = true;
-}
-
-void CCamera::UpdateTransform()
-{
-	CSceneNode::UpdateTransform();
-
-	D3DXMatrixMultiply(&m_ViewProjectionMatrix, &m_WorldMatrix, &m_ProjectionMatrix);
-
-	/*m_ViewProjectionMatrix._11 = 0.0f;
-	m_ViewProjectionMatrix._12 = 0.0f;
-	m_ViewProjectionMatrix._13 = 1.0f;
-	m_ViewProjectionMatrix._14 = 1.0f;
-
-	m_ViewProjectionMatrix._21 = 1.0f;
-	m_ViewProjectionMatrix._22 = 0.0f;
-	m_ViewProjectionMatrix._23 = 0.0f;
-	m_ViewProjectionMatrix._24 = 0.0f;
-
-	m_ViewProjectionMatrix._31 = 0.0f;
-	m_ViewProjectionMatrix._32 = 0.0f;
-	m_ViewProjectionMatrix._33 = 1.7f;
-	m_ViewProjectionMatrix._34 = 0.0f;
-
-	m_ViewProjectionMatrix._41 = 0.0f;
-	m_ViewProjectionMatrix._42 = -439.0f;
-	m_ViewProjectionMatrix._43 = -5.0f;
-	m_ViewProjectionMatrix._44 = 0.0f;*/
-
-	m_Frustum.ExtractFromMatrix(m_ViewProjectionMatrix);
+	D3DXMatrixInverse(&m_InverseProjectionMatrix, NULL, &m_ProjectionMatrix);
 
 	static D3DXVECTOR3 p0(-1.0f,1.0f,1.0f);
 	static D3DXVECTOR3 p1(-1.0f,-1.0f,1.0f);
@@ -94,26 +65,39 @@ void CCamera::UpdateTransform()
 	static D3DXVECTOR3 p6(1.0f,-1.0f,0.0f);
 	static D3DXVECTOR3 p7(1.0f,1.0f,0.0f);
 
-	D3DXVec3TransformCoord(&m_FarPlanePoints[0], &p0, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[1], &p1, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[2], &p2, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[3], &p3, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[4], &p4, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[5], &p5, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[6], &p6, &m_ViewProjectionMatrix);
-	D3DXVec3TransformCoord(&m_FarPlanePoints[7], &p7, &m_ViewProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[0], &p0, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[1], &p1, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[2], &p2, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[3], &p3, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[4], &p4, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[5], &p5, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[6], &p6, &m_InverseProjectionMatrix);
+	D3DXVec3TransformCoord(&m_FarPlanePoints[7], &p7, &m_InverseProjectionMatrix);
 
-	m_SearchRectangle.Set(
-		m_WorldMatrix._41, m_WorldMatrix._41, 
-		m_WorldMatrix._42, m_WorldMatrix._42, 
-		m_WorldMatrix._43, m_WorldMatrix._43);
+	m_LocalRect.Set(
+		m_Position.x, m_Position.x, 
+		m_Position.y, m_Position.y, 
+		m_Position.z, m_Position.z);
 
-	m_SearchRectangle.Union(m_FarPlanePoints[0]);
-	m_SearchRectangle.Union(m_FarPlanePoints[1]);
-	m_SearchRectangle.Union(m_FarPlanePoints[2]);
-	m_SearchRectangle.Union(m_FarPlanePoints[3]);
-	m_SearchRectangle.Union(m_FarPlanePoints[4]);
-	m_SearchRectangle.Union(m_FarPlanePoints[5]);
-	m_SearchRectangle.Union(m_FarPlanePoints[6]);
-	m_SearchRectangle.Union(m_FarPlanePoints[7]);
+	m_LocalRect.Union(m_FarPlanePoints[0]);
+	m_LocalRect.Union(m_FarPlanePoints[1]);
+	m_LocalRect.Union(m_FarPlanePoints[2]);
+	m_LocalRect.Union(m_FarPlanePoints[3]);
+	m_LocalRect.Union(m_FarPlanePoints[4]);
+	m_LocalRect.Union(m_FarPlanePoints[5]);
+	m_LocalRect.Union(m_FarPlanePoints[6]);
+	m_LocalRect.Union(m_FarPlanePoints[7]);
+
+	m_bIsTransformDirty = true;
+}
+
+void CCamera::UpdateTransform()
+{
+	CSceneNode::UpdateTransform();
+
+	D3DXMatrixMultiply(&m_ViewProjectionMatrix, &m_InverseWorldMatrix, &m_ProjectionMatrix);
+
+	m_Frustum.ExtractFromMatrix(m_ViewProjectionMatrix);
+
+	D3DXMatrixMultiply(&m_InverseViewProjectionMatrix, &m_InverseProjectionMatrix, &m_WorldMatrix);
 }

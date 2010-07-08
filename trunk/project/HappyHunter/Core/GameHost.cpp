@@ -102,6 +102,13 @@ bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSe
 	return true;
 }
 
+bool CGameHost::Update(zerO::FLOAT fElapsedTime)
+{
+	m_fElapsedTime = fElapsedTime;
+
+	return true;
+}
+
 bool CGameHost::BeginRender()
 {
 	return true;
@@ -112,9 +119,4 @@ bool CGameHost::EndRender()
 	m_pRenderQueue->Render();
 
 	return true;
-}
-
-void CGameHost::Update(float fElapsedTime)
-{
-	m_pRenderQueue->Update(fElapsedTime);
 }

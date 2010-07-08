@@ -10,6 +10,7 @@ namespace zerO
 #define GAMEHOST zerO::CGameHost::GetInstance()
 #define DEVICE   GAMEHOST.GetDevice()
 #define CAMERA   GAMEHOST.GetCamera()
+#define TIME     GAMEHOST.GetElapsedTime()
 
 	typedef enum
 	{
@@ -53,6 +54,8 @@ namespace zerO
 		CRenderQueue& GetRenderQueue();
 		static CGameHost& GetInstance();
 
+		FLOAT GetElapsedTime()const;
+
 		CCamera& GetCamera();
 
 		const DEVICESETTINGS& GetDeviceSettings()const;
@@ -66,14 +69,15 @@ namespace zerO
 		virtual bool Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc); 
 
 		virtual bool Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
+		virtual bool Update(FLOAT fElapsedTime);
 		virtual bool BeginRender();
 		virtual bool EndRender();
-		virtual void Update(float fElapsedTime);
 	private:
 		//LPDIRECT3D9 m_pDirect;
 		LPDIRECT3DDEVICE9 m_pDevice;
 		DEVICESETTINGS m_DeviceSettings;
 		D3DSURFACE_DESC m_DeviceSurfaceDest;
+		FLOAT m_fElapsedTime;
 
 		static CGameHost* sm_pInstance;
 
@@ -111,5 +115,10 @@ namespace zerO
 	inline const CGameHost::DEVICESETTINGS& CGameHost::GetDeviceSettings()const
 	{
 		return m_DeviceSettings;
+	}
+
+	inline FLOAT CGameHost::GetElapsedTime()const
+	{
+		return m_fElapsedTime;
 	}
 }

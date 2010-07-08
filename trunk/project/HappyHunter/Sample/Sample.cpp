@@ -6,156 +6,152 @@
 #include "DXUT.h"
 #include "resource.h"
 #include "core.h"
-#include "StaticMesh.h"
-#include "SkinMesh.h"
 
-//顶点描述：位置和纹理坐标
-const D3DVERTEXELEMENT9 g_VERTEX_DESCRIPTION[] =
-{
-	{0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
-
-	{0, 16, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
-	D3DDECL_END()
-};
-
-//测试类
-class CTest :
-	public zerO::CSceneNode
-{
-public:
-	//顶点格式
-	typedef struct
-	{
-		D3DXVECTOR4 Position;
-		D3DXVECTOR2 TextureUV;
-	}VERTEX;
-
-	zerO::CEffect& GetEffect()
-	{
-		return m_Effect;
-	}
-
-	//创建
-	bool Create()
-	{
-		//圆柱体构建
-		VERTEX Vertices[100];
-
-		for( DWORD i=0; i<50; i++ )
-		{
-			FLOAT theta = (2*D3DX_PI*i)/(50-1);
-			Vertices[2*i+0].Position = D3DXVECTOR4( sinf(theta),-1.0f, cosf(theta), 1.0f );
-			Vertices[2*i+0].TextureUV.x = ((FLOAT)i)/(50-1);
-			Vertices[2*i+0].TextureUV.y = 1.0f;
-
-			Vertices[2*i+1].Position = D3DXVECTOR4( sinf(theta), 1.0f, cosf(theta), 1.0f );
-			Vertices[2*i+1].TextureUV.x = ((FLOAT)i)/(50-1);
-			Vertices[2*i+1].TextureUV.y = 0.0f;
-		}
-
-		//属性创建及加载
-		if( !m_VertexBuffer.Create(50 * 2, sizeof(VERTEX), 0, D3DPOOL_MANAGED, (void*)Vertices) )
-			return false;
-
-		if( !m_VertexBuffer.SetVertexDescription(sizeof(g_VERTEX_DESCRIPTION) / sizeof(D3DVERTEXELEMENT9), g_VERTEX_DESCRIPTION) )
-			return false;
-
-		if( !m_Effect.Load( TEXT("TerrainShader.fx") ) )
-			return false;
-
-		if( !m_Texture.Load( TEXT("terrain_heightmap.png") ) )
-			return false;
-
-		//构造世界矩阵
-		D3DXMATRIX matWorld;
-		D3DXMatrixIdentity( &matWorld );
-
-		//构造观察矩阵
-		D3DXMATRIXA16 matView;
-		D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
-		D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
-		D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
-		D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
-
-		//构造投影矩阵
-		D3DXMATRIXA16 matProj;
-		zerO::FLOAT fAspectRatio = (zerO::FLOAT)GAMEHOST.GetDeviceSettings().pp.BackBufferWidth / GAMEHOST.GetDeviceSettings().pp.BackBufferHeight;
-		D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
-
-		//为效果设置组合变换矩阵
-		D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
-
-		m_Effect.SetMatrix(zerO::CEffect::WORLD_VIEW_PROJECTION, mWorldViewProj);
-		
-		//设置剔出模式,为不剔出任何面
-		DEVICE.SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
-
-		//设置纹理
-		m_Effect.GetEffect()->SetTexture("TextureMapping", m_Texture.GetTexture() );
-
-		return true;
-	}
-
-	//向队列申请渲染
-	bool ApplyForRender()
-	{
-		UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
-
-		for (i = 0; i < uTotalPass; i ++)
-		{
-			//锁定整个队列
-			zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
-			
-			//将信息需求传送到优化队列
-			pRenderEntry->hEffect      = m_Effect.GetHandle();
-			pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::BUFFER;
-			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
-			pRenderEntry->uRenderPass  = (zerO::UINT8)i;
-			pRenderEntry->pParent      = this;
-
-			//解锁
-			GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
-		}
-
-		return true;
-	}
-
-	void Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
-	{
-		//依照更新标志进行更新
-		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
-			m_Effect.Begin();
-
-		m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
-
-		if( TEST_BIT(uFlag, zerO::CRenderQueue::MODEL) )
-			m_VertexBuffer.Activate(0, 0, true);
-
-		m_Effect.GetEffect()->CommitChanges();
-
-		//绘制
-		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2);
-
-		m_Effect.GetEffect()->EndPass();
-	}
-
-	private:
-		zerO::CVertexBuffer m_VertexBuffer;
-		zerO::CEffect m_Effect;
-		zerO::CTexture m_Texture;
-};
+////顶点描述：位置和纹理坐标
+//const D3DVERTEXELEMENT9 g_VERTEX_DESCRIPTION[] =
+//{
+//	{0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+//
+//	{0, 16, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+//	D3DDECL_END()
+//};
+//
+////测试类
+//class CTest :
+//	public zerO::CSceneNode
+//{
+//public:
+//	//顶点格式
+//	typedef struct
+//	{
+//		D3DXVECTOR4 Position;
+//		D3DXVECTOR2 TextureUV;
+//	}VERTEX;
+//
+//	zerO::CEffect& GetEffect()
+//	{
+//		return m_Effect;
+//	}
+//
+//	//创建
+//	bool Create()
+//	{
+//		//圆柱体构建
+//		VERTEX Vertices[100];
+//
+//		for( DWORD i=0; i<50; i++ )
+//		{
+//			FLOAT theta = (2*D3DX_PI*i)/(50-1);
+//			Vertices[2*i+0].Position = D3DXVECTOR4( sinf(theta),-1.0f, cosf(theta), 1.0f );
+//			Vertices[2*i+0].TextureUV.x = ((FLOAT)i)/(50-1);
+//			Vertices[2*i+0].TextureUV.y = 1.0f;
+//
+//			Vertices[2*i+1].Position = D3DXVECTOR4( sinf(theta), 1.0f, cosf(theta), 1.0f );
+//			Vertices[2*i+1].TextureUV.x = ((FLOAT)i)/(50-1);
+//			Vertices[2*i+1].TextureUV.y = 0.0f;
+//		}
+//
+//		//属性创建及加载
+//		if( !m_VertexBuffer.Create(50 * 2, sizeof(VERTEX), 0, D3DPOOL_MANAGED, (void*)Vertices) )
+//			return false;
+//
+//		if( !m_VertexBuffer.SetVertexDescription(sizeof(g_VERTEX_DESCRIPTION) / sizeof(D3DVERTEXELEMENT9), g_VERTEX_DESCRIPTION) )
+//			return false;
+//
+//		if( !m_Effect.Load( TEXT("TerrainShader.fx") ) )
+//			return false;
+//
+//		if( !m_Texture.Load( TEXT("terrain_heightmap.png") ) )
+//			return false;
+//
+//		//构造世界矩阵
+//		D3DXMATRIX matWorld;
+//		D3DXMatrixIdentity( &matWorld );
+//
+//		//构造观察矩阵
+//		D3DXMATRIXA16 matView;
+//		D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
+//		D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
+//		D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
+//		D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
+//
+//		//构造投影矩阵
+//		D3DXMATRIXA16 matProj;
+//		zerO::FLOAT fAspectRatio = (zerO::FLOAT)GAMEHOST.GetDeviceSettings().pp.BackBufferWidth / GAMEHOST.GetDeviceSettings().pp.BackBufferHeight;
+//		D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
+//
+//		//为效果设置组合变换矩阵
+//		D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
+//
+//		m_Effect.SetMatrix(zerO::CEffect::WORLD_VIEW_PROJECTION, mWorldViewProj);
+//		
+//		//设置剔出模式,为不剔出任何面
+//		DEVICE.SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
+//
+//		//设置纹理
+//		m_Effect.GetEffect()->SetTexture("TextureMapping", m_Texture.GetTexture() );
+//
+//		return true;
+//	}
+//
+//	//向队列申请渲染
+//	bool ApplyForRender()
+//	{
+//		UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
+//
+//		for (i = 0; i < uTotalPass; i ++)
+//		{
+//			//锁定整个队列
+//			zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
+//			
+//			//将信息需求传送到优化队列
+//			pRenderEntry->hEffect      = m_Effect.GetHandle();
+//			pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::BUFFER;
+//			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
+//			pRenderEntry->uRenderPass  = (zerO::UINT8)i;
+//			pRenderEntry->pParent      = this;
+//
+//			//解锁
+//			GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
+//		}
+//
+//		return true;
+//	}
+//
+//	void Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
+//	{
+//		//依照更新标志进行更新
+//		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
+//			m_Effect.Begin();
+//
+//		m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
+//
+//		if( TEST_BIT(uFlag, zerO::CRenderQueue::MODEL) )
+//			m_VertexBuffer.Activate(0, 0, true);
+//
+//		m_Effect.GetEffect()->CommitChanges();
+//
+//		//绘制
+//		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2);
+//
+//		m_Effect.GetEffect()->EndPass();
+//	}
+//
+//	private:
+//		zerO::CVertexBuffer m_VertexBuffer;
+//		zerO::CEffect m_Effect;
+//		zerO::CTexture m_Texture;
+//};
 
 
-//#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
+#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
 
 zerO::CGameHost g_Game;
-CTest g_Test;
-zerO::CStaticMesh g_Mesh;
-zerO::CSkinMesh g_SkinMesh;
-//zerO::CQuadTree g_QuadTree;
-//zerO::CTerrain  g_Terrain;
-//zerO::CTexture  g_HeightMap;
-//zerO::CSurface  g_Surface;
+//CTest g_Test;
+zerO::CQuadTree g_QuadTree;
+zerO::CTerrain  g_Terrain;
+zerO::CTexture  g_HeightMap;
+zerO::CSurface  g_Surface;
 
 
 //--------------------------------------------------------------------------------------
@@ -198,32 +194,37 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	//CAMERA.SetProjection(D3DX_PI / 2.0f, 800.0f / 600.0f, 5.0f, 3000.0f);
+	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 500.0f);
 
-	//zerO::CRectangle3D Rect;
-	//Rect.Set(- 500.0f, 500.0f, - 500.0f, 500.0f, 0.0f, 500.0f);
-	////g_QuadTree.Create(Rect, 4);
+	D3DXMATRIX Matrix, Rotation;
 
-	//g_HeightMap.Load(HEIGHT_MAP_FILE);
+	D3DXMatrixIdentity(&Matrix);
 
-	//g_Terrain.Create(NULL, &g_HeightMap, Rect, 3);
+	D3DXMatrixRotationX(&Rotation, 90);
 
-	//g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
+	Matrix *= Rotation;
 
-	//g_Surface.SetTexture(&g_HeightMap, 0);
+	CAMERA.SetTransform(Matrix);
 
-	//g_Terrain.GetRenderMethod().SetSurface(&g_Surface);
+	zerO::CRectangle3D Rect;
+	Rect.Set(- 1000.0f, 1000.0f, - 1000.0f, 1000.0f, 0.0f, 500.0f);
+	g_QuadTree.Create(Rect, 4);
 
-	//g_Terrain.SetQuadTree(&g_QuadTree);
+	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
-	//CAMERA.Update();
+	g_Terrain.Create(NULL, &g_HeightMap, Rect, 3);
 
-	//创建测试类
-	/*if( g_Test.Create() )
-		return S_FALSE;*/
+	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
-	if ( !g_Mesh.Create() )
-		return S_FALSE;
+	g_Surface.SetTexture(&g_HeightMap, 0);
+
+	g_Terrain.GetRenderMethod().SetSurface(&g_Surface);
+
+	g_Terrain.SetQuadTree(&g_QuadTree);
+
+	////创建测试类
+	//if( g_Test.Create() )
+	//	return S_FALSE;
 
     return S_OK;
 }
@@ -241,16 +242,11 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	if( !GAMEHOST.Restore(*pBackBufferSurfaceDesc) )
 		return S_FALSE;
 
-	HRESULT hr;
+	//HRESULT hr;
 
-	//恢复效果对象
-	if( g_Mesh.GetRenderMethod().GetEffect()->GetEffect() )
-        V_RETURN( g_Mesh.GetRenderMethod().GetEffect()->GetEffect()->OnResetDevice() );
-
-	if ( g_SkinMesh.OnCreate(L"HLSLSkinMesh.fx", L"we.X") )
-		return S_FALSE;
-
-	g_SkinMesh.OnReset();
+	////恢复效果对象
+	//if( g_Test.GetEffect().GetEffect() )
+ //       V_RETURN( g_Test.GetEffect().GetEffect()->OnResetDevice() );
 
 	////构造世界矩阵
 	//D3DXMATRIX matWorld;
@@ -272,39 +268,6 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	//D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
 	//g_Test.GetEffect().GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
 
-	//设置世界矩阵
-	D3DXMATRIXA16 matWorld, matRotY;
-	D3DXMatrixRotationY(&matRotY, D3DX_PI);
-	D3DXMatrixTranslation( &matWorld, 0, -1.0f, 0);
-	matWorld = matRotY * matWorld;
-
-	//设置观察矩阵
-	D3DXMATRIXA16 matView;
-	D3DXVECTOR3 vEyePt( 0.0f, 0.0f, -400.0f );
-	D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
-	D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
-	D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
-	g_SkinMesh.SetMatView(matView);
-
-	//设置投影矩阵
-	D3DXMATRIXA16 matProj;
-	float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
-	D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 1000.0f );
-
-	/*D3DXMATRIXA16 mWorldViewProj = matWorld * matView * matProj;
-	g_Mesh.GetRenderMethod().GetEffect()->GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
-
-	D3DXVECTOR4 LightDirection( -1.0f, -1.0f, -1.0f, 1.0f );
-	g_Mesh.GetRenderMethod().GetEffect()->GetEffect()->SetVector("vecLightDir", &LightDirection);*/
-
-	//为效果设置影矩阵
-	V( g_SkinMesh.GetEffect().GetEffect()->SetMatrix( "mProj", &matProj ) );
-
-	//为效果设置灯光方向
-    D3DXVECTOR4 vLightDir( 0.0f, 1.0f, -1.0f, 0.0f );
-    D3DXVec4Normalize( &vLightDir, &vLightDir );
-    V( g_SkinMesh.GetEffect().GetEffect()->SetVector( "lightDir", &vLightDir) );
-
     return S_OK;
 }
 
@@ -314,9 +277,28 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
-	g_Game.Update( fElapsedTime );
-	if (g_SkinMesh.GetPlayTime() >= 1)
-		g_SkinMesh.SetAnimationByName("Wait");
+	GAMEHOST.Update(fElapsedTime);
+
+	static FLOAT z = 0;
+
+	D3DXMATRIX Matrix, Rotation;
+
+	D3DXMatrixIdentity(&Matrix);
+
+	//Matrix._41 = 1500;
+	//Matrix._41 = -z;
+	//Matrix._42 = 100;
+	Matrix._43 = z;
+
+	/*D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
+
+	Matrix *= Rotation;*/
+
+	CAMERA.SetTransform(Matrix);
+
+	CAMERA.Update();
+
+	z -= 1;
 }
 
 
@@ -327,9 +309,9 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 {
     HRESULT hr;
 
-	//zerO::CRectangle3D Rect;
-	//Rect.Set(- 500.0f, 500.0f, - 500.0f, 500.0f, - 500.0f, 500.0f);
-	//zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( Rect/*CAMERA.GetSearchRectangle()*/ );
+	zerO::CRectangle3D Rect;
+	Rect.Set(- 500.0f, 0.0f, - 500.0f, 0.0f, 0.0f, 500.0f);
+	zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( CAMERA.GetWorldRectangle() );
 
     // Clear the render target and the zbuffer 
     V( pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 45, 50, 170 ), 1.0f, 0 ) );
@@ -340,18 +322,16 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//开始渲染
 		g_Game.BeginRender();
 
-		/*while(pObject)
+		while(pObject)
 		{
 			pObject->ApplyForRender();
-			pObject = pObject->GetForward();
-		}*/
+			pObject = pObject->GetNext();
+		}
 
 		//g_Terrain.Render();
 
 		//申请渲染
-		//g_Test.ApplyForRender();
-		//g_Mesh.ApplyForRender();
-		g_SkinMesh.ApplyForRender();
+		/*g_Test.ApplyForRender();*/
 
 		//结束渲染
 		g_Game.EndRender();
@@ -360,12 +340,6 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
     }
 }
 
-//-----------------------------------------------------------------------------
-// Desc: 键盘消息处理
-//-----------------------------------------------------------------------------
-void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserContext )
-{
-}
 
 //--------------------------------------------------------------------------------------
 // Handle messages to the application 
@@ -384,7 +358,6 @@ void CALLBACK OnD3D9LostDevice( void* pUserContext )
 {
 	//自动化释放
 	DEBUG_ASSERT(GAMEHOST.Disable(), "Disable error.");
-	g_SkinMesh.OnLost();
 }
 
 
@@ -395,7 +368,6 @@ void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 {
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
-	//g_SkinMesh.OnDestory();
 }
 
 
@@ -419,7 +391,6 @@ INT WINAPI wWinMain( HINSTANCE, HINSTANCE, LPWSTR, int )
     DXUTSetCallbackDeviceChanging( ModifyDeviceSettings );
     DXUTSetCallbackMsgProc( MsgProc );
     DXUTSetCallbackFrameMove( OnFrameMove );
-	DXUTSetCallbackKeyboard( KeyboardProc );
 
     // TODO: Perform any application-level initialization here
 

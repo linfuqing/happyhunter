@@ -24,6 +24,9 @@ namespace zerO
 		DWORD dwUsage, 
 		D3DPOOL Pool);
 
+		bool Lock(DWORD dwFlags, void** ppData);
+		bool Unlock();
+
 		void Activate()const;
 
 		LPDIRECT3DINDEXBUFFER9 GetBuffer()const;
@@ -63,6 +66,34 @@ namespace zerO
 	inline UINT CIndexBuffer::GetPrimitiveCount()const
 	{
 		return GetPrimitiveCount(m_uMemberCount);
+	}
+
+	inline bool CIndexBuffer::Lock(DWORD dwFlags, void** ppData)
+	{
+		HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	inline bool CIndexBuffer::Unlock()
+	{
+		HRESULT hr = m_pBuffer->Unlock();
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+
+			return false;
+		}
+
+		return true;
 	}
 
 	inline void CIndexBuffer::Activate()const

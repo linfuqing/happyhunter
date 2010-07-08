@@ -122,29 +122,5 @@ void CRenderQueue::Render()
 		}
 	}
 	
-	//m_uActiveEntries = 0;
-}
-
-void CRenderQueue::Update(float fElapsedTime)
-{
-	if(m_uActiveEntries)
-	{
-		Sort<LPRENDERENTRY>(m_ppEntryList, m_ppEntryList, 1, IsWrap);
-
-
-		LPRENDERENTRY pCurrentEntry = m_ppEntryList[0], pPreviousEntry = NULL;
-
-		pCurrentEntry->pParent->Update( fElapsedTime );
-
-
-		for (UINT i = 1; i < 1; i ++)
-		{
-			pCurrentEntry  = m_ppEntryList[i];
-			pPreviousEntry = m_ppEntryList[i - 1];
-
-			pCurrentEntry->pParent->Update( fElapsedTime );
-		}
-	}
-
 	m_uActiveEntries = 0;
 }

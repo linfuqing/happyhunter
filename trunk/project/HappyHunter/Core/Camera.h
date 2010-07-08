@@ -79,7 +79,7 @@ namespace zerO
 		const D3DXMATRIX& GetProjectionMatrix()const;
 		const D3DXMATRIX& GetViewProjectionMatrix()const;
 
-		const CRectangle3D& GetSearchRectangle()const;
+		const FRUSTUM& GetFrustum()const;
 
 		//投影矩阵参数.
 		void SetProjection(
@@ -91,11 +91,11 @@ namespace zerO
 		void UpdateTransform();
 	private:
 		D3DXMATRIX m_ProjectionMatrix;
+		D3DXMATRIX m_InverseProjectionMatrix;
 		D3DXMATRIX m_ViewProjectionMatrix;
+		D3DXMATRIX m_InverseViewProjectionMatrix;
 
 		FRUSTUM m_Frustum;
-
-		CRectangle3D m_SearchRectangle;
 
 		D3DXVECTOR3	m_FarPlanePoints[8];
 	};
@@ -115,8 +115,8 @@ namespace zerO
 		return m_ViewProjectionMatrix; 
 	}
 
-	inline const CRectangle3D& CCamera::GetSearchRectangle()const
+	inline const FRUSTUM& CCamera::GetFrustum()const
 	{
-		return m_SearchRectangle;
+		return m_Frustum;
 	}
 }

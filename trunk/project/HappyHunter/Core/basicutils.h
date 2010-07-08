@@ -1,16 +1,14 @@
 #ifndef BASICUTILS_H
 #define BASICUTILS_H
 
-#include "debug.h"
 #include "datatype.h"
+#include "debug.h"
 
 ///
 // 附带工具
 ///
 namespace zerO
 {
-#define PARENT_EQUAL(Target, Source, ParentType) (static_cast<ParentType>(Target) = Source)
-
 	///
 	// 快速排序
 	///
