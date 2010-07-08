@@ -605,8 +605,6 @@ void CSkinMesh::Update(float fElapsedAppTime)
 		}
 	}
 
-	//测试，可以删除 
-	D3DXMatrixTranslation(&m_WorldMatrix, 0.0f, -50.0f, 0.0f);
 
 	__UpdateFrameMatrices(m_pFrameRoot, &m_WorldMatrix);  //调用子函数
 }
@@ -670,7 +668,7 @@ VOID CSkinMesh::__DrawFrame( LPD3DXFRAME pFrame, CRenderQueue::LPRENDERENTRY pEn
 //-----------------------------------------------------------------------------
 void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag  )
 {
-    HRESULT hr;
+	HRESULT hr;
 	D3DXMESHCONTAINER_DERIVED *pMeshContainer = (D3DXMESHCONTAINER_DERIVED*)pMeshContainerBase;
 	D3DXFRAME_DERIVED *pFrame = (D3DXFRAME_DERIVED*)pFrameBase;
 	UINT iMaterial;
@@ -680,80 +678,93 @@ void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD
 	UINT iMatrixIndex;
 	UINT iPaletteEntry;
 	D3DXMATRIXA16 matTemp;
-    D3DCAPS9 d3dCaps;
-    DEVICE.GetDeviceCaps( &d3dCaps );
+	D3DCAPS9 d3dCaps;
+	DEVICE.GetDeviceCaps( &d3dCaps );
 
-    //检查是否是蒙皮网格模型
-    if (pMeshContainer->pSkinInfo != NULL)
-    {
-            if (pMeshContainer->UseSoftwareVP)
-            {
-                DEVICE.SetSoftwareVertexProcessing(TRUE);
-            }
-
-            pBoneComb = reinterpret_cast<LPD3DXBONECOMBINATION>(pMeshContainer->pBoneCombinationBuf->GetBufferPointer());
-            for (iAttrib = 0; iAttrib < pMeshContainer->NumAttributeGroups; iAttrib++)
-            { 
-                for (iPaletteEntry = 0; iPaletteEntry < pMeshContainer->NumPaletteEntries; ++iPaletteEntry)
-                {
-                    iMatrixIndex = pBoneComb[iAttrib].BoneId[iPaletteEntry];
-                    if (iMatrixIndex != UINT_MAX)
-                    {
-                        D3DXMatrixMultiply(&matTemp, &pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
-                        D3DXMatrixMultiply(&m_pAlloc->m_pBoneMatrices[iPaletteEntry], &matTemp, &m_matView);
-                    }
-                }
-                //m_pEffect->SetMatrixArray( "mWorldMatrixArray", m_pAlloc->m_pBoneMatrices, pMeshContainer->NumPaletteEntries);
-				m_Effect.GetEffect()->SetMatrixArray( "mWorldMatrixArray", m_pAlloc->m_pBoneMatrices, pMeshContainer->NumPaletteEntries);
-
-                D3DXCOLOR color1(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Ambient);
-                D3DXCOLOR color2(0.25, 0.25, 0.25, 1.0);
-                D3DXCOLOR ambEmm;
-                D3DXColorModulate(&ambEmm, &color1, &color2);
-                ambEmm += D3DXCOLOR(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Emissive);
-
-                //设置材质属性
-                //m_pEffect->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Diffuse));
-				m_Effect.GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Diffuse));
-                //m_pEffect->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);
-				m_Effect.GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);
-
-                ///设置纹理
-                //m_pEffect->SetTexture( "ColorMap", pMeshContainer->ppTextures[pBoneComb[iAttrib].AttribId] );
-				m_Effect.GetEffect()->SetTexture( "ColorMap", pMeshContainer->ppTextures[pBoneComb[iAttrib].AttribId] );
-                //设置当前骨骼数量
-                //m_pEffect->SetInt( "CurNumBones", pMeshContainer->NumInfl -1);
-				m_Effect.GetEffect()->SetInt( "CurNumBones", pMeshContainer->NumInfl -1);
-
-                //使用效果渲染网格
-               /* UINT numPasses;
-                m_pEffect->Begin( &numPasses, D3DXFX_DONOTSAVESTATE );
-                for( UINT iPass = 0; iPass < numPasses; iPass++ )
-                {
-                    m_pEffect->BeginPass( iPass );
-                    pMeshContainer->MeshData.pMesh->DrawSubset( iAttrib );
-                    m_pEffect->EndPass();
-                }
-                m_pEffect->End();*/
-
-				//依照更新标志进行更新
-				if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
-					m_Effect.Begin();
-
-				m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
-				pMeshContainer->MeshData.pMesh->DrawSubset( iAttrib );
-				m_Effect.GetEffect()->EndPass();
-
-				m_Effect.End();
-
-
-				DEVICE.SetVertexShader(NULL);
+	if (pMeshContainer->UseSoftwareVP)
+	{
+		DEVICE.SetSoftwareVertexProcessing(TRUE);
+	}
+	//检查是否是蒙皮网格模型
+	if (pMeshContainer->pSkinInfo != NULL)
+	{
+		pBoneComb = reinterpret_cast<LPD3DXBONECOMBINATION>(pMeshContainer->pBoneCombinationBuf->GetBufferPointer());
+		for (iAttrib = 0; iAttrib < pMeshContainer->NumAttributeGroups; iAttrib++)
+		{ 
+			for (iPaletteEntry = 0; iPaletteEntry < pMeshContainer->NumPaletteEntries; ++iPaletteEntry)
+			{
+				iMatrixIndex = pBoneComb[iAttrib].BoneId[iPaletteEntry];
+				if (iMatrixIndex != UINT_MAX)
+				{
+					D3DXMatrixMultiply(&matTemp, &pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
+					D3DXMatrixMultiply(&m_pAlloc->m_pBoneMatrices[iPaletteEntry], &matTemp, &m_matView);
+				}
 			}
-            if (pMeshContainer->UseSoftwareVP)
-            {
-                DEVICE.SetSoftwareVertexProcessing(FALSE);
-            }  
-    }
+			m_Effect.GetEffect()->SetMatrixArray( "mWorldMatrixArray", m_pAlloc->m_pBoneMatrices, pMeshContainer->NumPaletteEntries);
+
+			D3DXCOLOR color1(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Ambient);
+			D3DXCOLOR color2(0.25, 0.25, 0.25, 1.0);
+			D3DXCOLOR ambEmm;
+			D3DXColorModulate(&ambEmm, &color1, &color2);
+			ambEmm += D3DXCOLOR(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Emissive);
+
+			//设置材质属性
+			m_Effect.GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Diffuse));
+			m_Effect.GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);
+
+			//设置纹理
+			m_Effect.GetEffect()->SetTexture( "ColorMap", pMeshContainer->ppTextures[pBoneComb[iAttrib].AttribId] );
+			//设置当前骨骼数量
+			m_Effect.GetEffect()->SetInt( "CurNumBones", pMeshContainer->NumInfl -1);
+
+			//依照更新标志进行更新
+			if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
+				m_Effect.Begin();
+
+			m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
+			pMeshContainer->MeshData.pMesh->DrawSubset( iAttrib );
+			m_Effect.GetEffect()->EndPass();
+
+			m_Effect.End();
+		}
+	}
+	else
+	{
+		matTemp = pFrame->CombinedTransformationMatrix * m_matView;
+		m_Effect.GetEffect()->SetMatrixArray( "mWorldMatrixArray", &matTemp, 1);
+
+		for (iMaterial = 0; iMaterial < pMeshContainer->NumMaterials; iMaterial++)
+		{
+			D3DXCOLOR color1(pMeshContainer->pMaterials[iMaterial].MatD3D.Ambient);
+			D3DXCOLOR color2(0.25, 0.25, 0.25, 1.0);
+			D3DXCOLOR ambEmm;
+			D3DXColorModulate(&ambEmm, &color1, &color2);
+			ambEmm += D3DXCOLOR(pMeshContainer->pMaterials[iMaterial].MatD3D.Emissive);
+
+			//设置材质属性
+			m_Effect.GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[iMaterial].MatD3D.Diffuse));
+			m_Effect.GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);
+			//设置纹理
+			m_Effect.GetEffect()->SetTexture( "ColorMap", pMeshContainer->ppTextures[iMaterial] );
+			
+			//依照更新标志进行更新
+			if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
+				m_Effect.Begin();
+
+			m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
+			pMeshContainer->MeshData.pMesh->DrawSubset( iMaterial );
+			m_Effect.GetEffect()->EndPass();
+
+			m_Effect.End();
+		}
+	}
+
+	DEVICE.SetVertexShader(NULL);
+
+	if (pMeshContainer->UseSoftwareVP)
+	{
+		DEVICE.SetSoftwareVertexProcessing(FALSE);
+	}  
 }
 
 void CSkinMesh::SetAnimation( zerO::UINT index, DWORD dwControlPlayTime, bool bSmooth )
