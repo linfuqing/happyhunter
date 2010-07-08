@@ -39,9 +39,11 @@ void CGameHost::RemoveResource(const CResource* pResource, RESOURCETYPE Type)
 {
 	DEBUG_ASSERT(pResource, "pResource can not be NULL.");
 
-	for(std::vector<CResource*>::iterator i = m_ResourceList[Type].begin(); i != m_ResourceList[Type].end(); i ++)
+	for(std::vector<CResource*>::iterator i = m_ResourceList[Type].begin(); i != m_ResourceList[Type].end();)
 		if(*i == pResource)
 			i = m_ResourceList[Type].erase(i);
+		else
+			i ++;
 }
 
 bool CGameHost::Destroy()
