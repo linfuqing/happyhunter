@@ -222,7 +222,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	/*if( g_Test.Create() )
 		return S_FALSE;*/
 
-	if ( g_Mesh.Create() )
+	if ( !g_Mesh.Create() )
 		return S_FALSE;
 
     return S_OK;
@@ -247,7 +247,7 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	if( g_Mesh.GetRenderMethod().GetEffect()->GetEffect() )
         V_RETURN( g_Mesh.GetRenderMethod().GetEffect()->GetEffect()->OnResetDevice() );
 
-	if ( g_SkinMesh.OnCreate(L"HLSLSkinMesh.fx", L"23123.X") )
+	if ( g_SkinMesh.OnCreate(L"HLSLSkinMesh.fx", L"we.X") )
 		return S_FALSE;
 
 	g_SkinMesh.OnReset();
@@ -360,6 +360,12 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
     }
 }
 
+//-----------------------------------------------------------------------------
+// Desc: 键盘消息处理
+//-----------------------------------------------------------------------------
+void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUserContext )
+{
+}
 
 //--------------------------------------------------------------------------------------
 // Handle messages to the application 
@@ -389,7 +395,7 @@ void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 {
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
-	g_SkinMesh.OnDestory();
+	//g_SkinMesh.OnDestory();
 }
 
 
@@ -413,6 +419,7 @@ INT WINAPI wWinMain( HINSTANCE, HINSTANCE, LPWSTR, int )
     DXUTSetCallbackDeviceChanging( ModifyDeviceSettings );
     DXUTSetCallbackMsgProc( MsgProc );
     DXUTSetCallbackFrameMove( OnFrameMove );
+	DXUTSetCallbackKeyboard( KeyboardProc );
 
     // TODO: Perform any application-level initialization here
 
