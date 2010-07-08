@@ -28,6 +28,8 @@ namespace zerO
 		//世界边界盒
 		const CRectangle3D& GetWorldRectangle()const;
 
+		void SetTransform(const D3DXMATRIX& Matrix);
+
 		// 加入子集.
 		void AddChild(CSceneNode* pChild);
 
@@ -37,7 +39,7 @@ namespace zerO
 		virtual void UpdateTransform();
 
 		//渲染之外的所有变换更新,进行CPU计算.
-		virtual void Update(float fElapsedTime);
+		virtual void Update();
 
 		//渲染机制,供子集重载
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
@@ -94,4 +96,10 @@ namespace zerO
 		return m_WorldRect;
 	}
 
+	inline void CSceneNode::SetTransform(const D3DXMATRIX& Matrix)
+	{
+		m_LocalMatrix = Matrix;
+
+		m_bIsTransformDirty = true;
+	}
 }

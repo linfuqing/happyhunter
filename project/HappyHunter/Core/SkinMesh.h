@@ -84,7 +84,7 @@ namespace zerO
 		HRESULT OnDestory();
 		HRESULT OnReset();
 		HRESULT OnLost();
-		void Update(float fElapsedAppTime);
+		void Update();
 		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 		bool ApplyForRender();
 		CEffect& GetEffect() { return m_Effect; }

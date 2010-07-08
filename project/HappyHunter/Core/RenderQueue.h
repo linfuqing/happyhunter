@@ -108,9 +108,6 @@ namespace zerO
 		//渲染渲染列表中的渲染块.
 		void Render();
 
-		//更新列表
-		void Update(float fElapsedTime);
-
 	private:
 		UINT m_uActiveEntries;
 		UINT m_uMaxRenderEntries;

@@ -22,14 +22,6 @@ namespace zerO
 		CTerrainSection(void);
 		~CTerrainSection(void);
 
-		bool Create(
-			CSceneNode* pRootNode,
-			CTerrain* pParent, 
-			UINT uSectorX, UINT uSectorY, 
-			UINT uHeightMapX, UINT uHeightMapY,
-			UINT VerticesX, UINT VerticesY, 
-			const CRectangle2D& WorldRect);
-
 		CVertexBuffer& GetVertexBuffer();
 
 		UINT GetSectorX()const;
@@ -38,7 +30,17 @@ namespace zerO
 		bool ApplyForRender();
 		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
-	private:
+		virtual bool Create(
+			CSceneNode* pRootNode,
+			CTerrain* pParent, 
+			UINT uSectorX, 
+			UINT uSectorY, 
+			UINT uHeightMapX,
+			UINT uHeightMapY,
+			UINT VerticesX, 
+			UINT VerticesY, 
+			const CRectangle2D& WorldRect);
+	protected:
 		virtual bool __BuildVertexBuffer();
 
 		CTerrain* m_pTerrain;
@@ -77,12 +79,6 @@ namespace zerO
 		CTerrain(void);
 		~CTerrain(void);
 
-		bool Create(
-			CSceneNode* pRootNode, 
-			CTexture* pHeightMap, 
-			const CRectangle3D& WorldExtents, 
-			UINT8 uShift);
-
 		FLOAT GetHeight(UINT x, UINT y)const;
 		FLOAT GetHeight(UINT uIndex)const;
 		const D3DXVECTOR3& GetNormal(UINT x, UINT y)const;
@@ -94,6 +90,8 @@ namespace zerO
 		void Render();
 
 		void Destroy();
+
+		virtual bool Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, UINT8 uShift);
 
 		virtual bool SubmitSection(CTerrainSection* pSection)const;
 
@@ -168,5 +166,169 @@ namespace zerO
 	inline CRenderMethod& CTerrain::GetRenderMethod()
 	{
 		return m_RenderMethod;
+	}
+
+	class CRoamTerrainSection :
+		public CTerrainSection
+	{
+	public:
+		typedef enum
+		{
+			TOTAL_DETAIL_LEVELS = 9,
+			TOTAL_VARIANCES     = 1 << TOTAL_DETAIL_LEVELS
+		}CONSTANTS;
+
+		typedef struct TRIANGLETREENODE
+		{
+			TRIANGLETREENODE* pBase;
+			TRIANGLETREENODE* pLeftNeighbor;
+			TRIANGLETREENODE* pRightNeighbor;
+			TRIANGLETREENODE* pLeftChild;
+			TRIANGLETREENODE* pRightChild;
+		}TRIANGLETREENODE, * LPTRIANGLETREENODE;
+
+		CRoamTerrainSection();
+		~CRoamTerrainSection();
+
+		bool Create(
+			CSceneNode* pRootNode,
+			CTerrain* pParent, 
+			UINT uSectorX, UINT uSectorY, 
+			UINT uHeightMapX, UINT uHeightMapY,
+			UINT VerticesX, UINT VerticesY, 
+			const CRectangle2D& WorldRect);
+
+		void Reset();
+		void Tessellate(FLOAT fScale, FLOAT fLimit);
+		void BuildTriangleList();
+
+		FLOAT GetQueueSortValue()const;
+		UINT16 GetTotalIndices()const;
+		CIndexBuffer* GetIndexBuffer();
+
+	private:
+		void __ComputeVariance();
+
+		void __Split(LPTRIANGLETREENODE pTriangle);
+		void __RecursiveTessellate( 
+			LPTRIANGLETREENODE pTriangle, 
+			FLOAT fDistanceA, 
+			FLOAT fDistanceB, 
+			FLOAT fDistanceC, 
+			PFLOAT pfTree,
+			UINT16 uIndex,
+			FLOAT fScale, 
+			FLOAT fLimit);
+
+		void __RecursiveBuildTriangleList( 
+			LPTRIANGLETREENODE pTriangle,  
+			UINT16 uCornerA, 
+			UINT16 uCornerB, 
+			UINT16 uCornerC);
+
+		FLOAT __RecursiveComputeVariance(	
+			UINT16 uCornerA, 
+			UINT16 uCornerB,
+			UINT16 uCornerC,
+			FLOAT fHeightA, 
+			FLOAT fHeightB, 
+			FLOAT fHeightC,
+			PFLOAT pfTree,
+			UINT16 uIndex);
+
+		FLOAT m_fVarianceTreeA[TOTAL_VARIANCES];
+		FLOAT m_fVarianceTreeB[TOTAL_VARIANCES];
+		FLOAT m_fDistance0;
+		FLOAT m_fDistance1;
+		FLOAT m_fDistance2;
+		FLOAT m_fDistance3;
+		FLOAT m_fQueueSortValue;
+		UINT16 m_uMaxIndices;
+		UINT16 m_uTotalIndices;
+		PUINT16 m_puIndexList;
+
+		CIndexBuffer* m_pIndexBuffer;
+
+		TRIANGLETREENODE m_RootTriangleA;
+		TRIANGLETREENODE m_RootTriangleB;
+
+		LPTRIANGLETREENODE m_pLeftNeighborOfA;
+		LPTRIANGLETREENODE m_pRightNeighborOfA;
+		LPTRIANGLETREENODE m_pLeftNeighborOfB;
+		LPTRIANGLETREENODE m_pRightNeighborOfB;
+	};
+
+	inline FLOAT CRoamTerrainSection::GetQueueSortValue()const
+	{
+		return m_fQueueSortValue;
+	}
+
+	inline UINT16 CRoamTerrainSection::GetTotalIndices()const
+	{
+		return m_uTotalIndices;
+	}
+
+	inline CIndexBuffer* CRoamTerrainSection::GetIndexBuffer()
+	{
+		return m_pIndexBuffer;
+	}
+
+	class CRoamTerrain :
+		public CTerrain
+	{
+		typedef CRoamTerrainSection::TRIANGLETREENODE TRIANGLETREENODE, * LPTRIANGLETREENODE;
+
+		typedef enum
+		{
+			TOTAL_DETAIL_LEVELS = CRoamTerrainSection::TOTAL_DETAIL_LEVELS,
+			TESSELLATION_QUEUE_SIZE = CRoamTerrainSection::TOTAL_VARIANCES << 1,
+			MAXINUM_TRIANGLE_TREE_NODES = TESSELLATION_QUEUE_SIZE * 64
+		}CONSTANTS;
+
+	public:
+		CRoamTerrain();
+		~CRoamTerrain();
+
+		bool Create(
+			CSceneNode* pRootNode, 
+			CTexture* pHeightMap, 
+			const CRectangle3D& WorldExtents, 
+			UINT8 uShift);
+
+		bool SubmitSection(CTerrainSection* pSection)const;
+
+		void RenderSection(CTerrainSection* pSection, UINT32 uFlag, const CRenderQueue::LPRENDERENTRY pEntry)const;
+
+		void Reset();
+		bool AddToTessellationQueue(CRoamTerrainSection* pSection);
+		void ProcessTessellationQueue();
+
+		LPTRIANGLETREENODE RequestTriangleNode();
+		CRoamTerrainSection* GetSection(INT nSectionX, INT nSectionY);
+
+	private:
+		CRoamTerrainSection* m_pRoamSection;
+		LPTRIANGLETREENODE m_pTriangleNodePool;
+		UINT32 m_uNextTriangleNode;
+		CRoamTerrainSection** m_ppTessellationQueue;
+		UINT32 m_uTessellationQueueCount;
+
+		bool __AllocateSectors();
+	};
+
+	inline CRoamTerrainSection* CRoamTerrain::GetSection(INT nSectionX, INT nSectionY)
+	{
+		CRoamTerrainSection* pSection = NULL;
+
+		if (nSectionX >= 0 && nSectionX < m_uSectorCountX && nSectionY >=0 && nSectionY < m_uSectorCountY)
+		{
+			pSection = &m_pRoamSection[nSectionY * m_uSectorCountX + nSectionX];
+		}
+		else
+		{
+			//
+		}
+
+		return pSection;
 	}
 }

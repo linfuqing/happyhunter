@@ -62,7 +62,7 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 	{
 		void* pIndices;
 
-		hr = m_pBuffer->Lock(0, m_uByteSize, &pIndices, D3DLOCK_DISCARD);
+		hr = m_pBuffer->Lock(0, m_uByteSize, &pIndices, 0);
 
 		if( FAILED(hr) )
 		{
@@ -99,7 +99,7 @@ bool CIndexBuffer::CreateSingleStripGrid(
 		return false;
 	}
 
-	UINT uTotalStrips         = uVerticesY - 1,
+	UINT16 uTotalStrips         = uVerticesY - 1,
 		uTotalIndexesPerStrip = uVerticesX << 1,
 		uTotalIndexes         = (uTotalIndexesPerStrip * uTotalStrips) + (uTotalStrips << 1) - 2,
 		uStartVertex          = 0, 
@@ -116,7 +116,7 @@ bool CIndexBuffer::CreateSingleStripGrid(
 	{
 		uVertex = uStartVertex;
 
-		for(i = 0;i < uVerticesX; i ++)
+		for(i = 0; i < uVerticesX; i ++)
 		{
 			*(puIndex ++) = uVertex;
 			*(puIndex ++) = uVertex + uLineStep;
@@ -126,7 +126,7 @@ bool CIndexBuffer::CreateSingleStripGrid(
 
 		uStartVertex     += uLineStep;
 
-		if(j < uTotalStrips - 1)
+		if(j + 1 < uTotalStrips)
 		{
 			*(puIndex ++) = (uVertex - uStepX) + uLineStep;
 			*(puIndex ++) = uStartVertex;

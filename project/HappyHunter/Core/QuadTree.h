@@ -37,64 +37,87 @@ namespace zerO
 	class CQuadTreeObject :
 		public CSceneNode
 	{
+		friend class CQuadTreeNode;
 	public:
 		CQuadTreeObject(void);
 		~CQuadTreeObject(void);
 
-		CQuadTreeNode* GetParentQuadTreeNode()const;
+		/*CQuadTreeNode* GetParentQuadTreeNode()const;
 		UINT32 GetMaskZ()const;
 
-		CQuadTreeObject* GetForward()const;
-		CQuadTreeObject* GetRear()const;
+		CQuadTreeObject* GetTreeForward()const;
+		CQuadTreeObject* GetTreeRear()const;*/
 
-		void SetForward(CQuadTreeObject* pForward);
-		void SetRear(CQuadTreeObject* pRear);
+		CQuadTreeObject* GetNext()const;
 
-		void SetQueadTrre(CQuadTreeNode* pParentQuadTreeNode, UINT32 uMaskZ);
-
-		void AttachToList(CQuadTreeObject* pForward, CQuadTreeObject* pRear);
+		/*void SetQueadTree(CQuadTreeNode* pParentQuadTreeNode, UINT32 uMaskZ);*/
 
 		void AttachToQuadTree(CQuadTree* pParent);
 
-		void DetachFromList();
+		void DetachFromSearchList();
 
 		void DetachFromQuadTree();
 
-		void ClearListData();
+		/*void ClearListData();*/
 	private:
-		CQuadTreeObject* m_pForward;
-		CQuadTreeObject* m_pRear;
+		/*void __SetTreeForward(CQuadTreeObject* pTreeForward);
+		void __SetTreeRear(CQuadTreeObject* pTreeRear);
+
+		void __SetSearchForward(CQuadTreeObject* pTreeForward);
+		void __SetSearchRear(CQuadTreeObject* pTreeRear);*/
+
+		void __AttachToSearchList(CQuadTreeObject* pForward, CQuadTreeObject* pRear);
+
+		CQuadTreeObject* m_pTreeForward;
+		CQuadTreeObject* m_pTreeRear;
+
+		CQuadTreeObject* m_pSearchForward;
+		CQuadTreeObject* m_pSearchRear;
 
 		CQuadTree*     m_pParentQuadTree;
 		CQuadTreeNode* m_pParentQuadTreeNode;
 		UINT32 m_uMaskZ;
 	};
 
-	inline CQuadTreeObject* CQuadTreeObject::GetForward()const
+	/*inline CQuadTreeObject* CQuadTreeObject::GetTreeForward()const
 	{
-		return m_pForward;
+		return m_pTreeForward;
 	}
 
-	inline CQuadTreeObject* CQuadTreeObject::GetRear()const
+	inline CQuadTreeObject* CQuadTreeObject::GetTreeRear()const
 	{
-		return m_pRear;
+		return m_pTreeRear;
+	}*/
+
+	inline CQuadTreeObject* CQuadTreeObject::GetNext()const
+	{
+		return m_pSearchForward;
 	}
 
-	inline void CQuadTreeObject::SetForward(CQuadTreeObject* pForward)
+	/*inline void CQuadTreeObject::__SetTreeForward(CQuadTreeObject* pTreeForward)
 	{
-		m_pForward = pForward;
+		m_pTreeForward = pTreeForward;
 	}
 
-	inline void CQuadTreeObject::SetRear(CQuadTreeObject* pRear)
+	inline void CQuadTreeObject::__SetTreeRear(CQuadTreeObject* pTreeRear)
 	{
-		m_pRear = pRear;
+		m_pTreeRear = pTreeRear;
 	}
 
+	inline void CQuadTreeObject::__SetSearchForward(CQuadTreeObject* pForward)
+	{
+		m_pSearchForward = pForward;
+	}
 
-	inline void CQuadTreeObject::SetQueadTrre(CQuadTreeNode* pParentQuadTreeNode, UINT32 uMaskZ)
+	inline void CQuadTreeObject::__SetSearchRear(CQuadTreeObject* pRear)
+	{
+		m_pSearchRear = pRear;
+	}*/
+
+	/*inline void CQuadTreeObject::SetQueadTree(CQuadTreeNode* pParentQuadTreeNode, UINT32 uMaskZ)
 	{
 		m_pParentQuadTreeNode = pParentQuadTreeNode;
-		m_uMaskZ               = uMaskZ;
+		m_uMaskZ              = uMaskZ;
 	}
 
 	inline CQuadTreeNode* CQuadTreeObject::GetParentQuadTreeNode()const
@@ -105,37 +128,37 @@ namespace zerO
 	inline UINT32 CQuadTreeObject::GetMaskZ()const
 	{
 		return m_uMaskZ;
-	}
+	}*/
 
-	inline void CQuadTreeObject::AttachToList(CQuadTreeObject* pForward, CQuadTreeObject* pRear)
+	inline void CQuadTreeObject::__AttachToSearchList(CQuadTreeObject* pForward, CQuadTreeObject* pRear)
 	{
-		m_pForward = pForward;
-		m_pRear    = pRear;
+		m_pSearchForward = pForward;
+		m_pSearchRear    = pRear;
 
 		if(pForward)
-			pForward->SetRear(this);
+			pForward->m_pSearchRear = this;
 
 		if(pRear)
-			pRear->SetForward(this);
+			pRear->m_pSearchForward = this;
 	}
 
-	inline void CQuadTreeObject::DetachFromList()
+	inline void CQuadTreeObject::DetachFromSearchList()
 	{
-		if(m_pForward)
-			m_pForward->SetRear(m_pRear);
+		if(m_pSearchForward)
+			m_pSearchForward->m_pSearchRear = m_pSearchRear;
 
-		if(m_pRear)
-			m_pRear->SetForward(m_pForward);
+		if(m_pSearchRear)
+			m_pSearchRear->m_pSearchForward = m_pSearchForward;
 
-		m_pForward = NULL;
-		m_pRear    = NULL;
+		m_pSearchForward = NULL;
+		m_pSearchRear    = NULL;
 	}
 
-	inline void CQuadTreeObject::ClearListData()
+	/*inline void CQuadTreeObject::ClearSearchListData()
 	{
-		m_pForward = NULL;
-		m_pRear    = NULL;
-	}
+		m_pSearchForward = NULL;
+		m_pSearchRear    = NULL;
+	}*/
 
 	class CQuadTreeNode
 	{
@@ -243,15 +266,15 @@ namespace zerO
 			  uPatternY   = WorldByteRect.GetMinY() ^ WorldByteRect.GetMaxY(),
 			  uBitPattern = MAX(uPatternX, uPatternY);
 
-		INT nHighBit      = uBitPattern ? HighestBitSet(uBitPattern) + 1 : 0;
+		INT nHighBit      = uBitPattern ? (HighestBitSet(uBitPattern) + 1) : 0;
 
 		UINT uShift;
 
-		uLevel = MAXINUM_TREE_DEPTH - nHighBit - 1;
+		uLevel = MAXINUM_TREE_DEPTH - nHighBit - MININUM_TREE_DEPTH;
 
 		uLevel = MIN(uLevel, m_uDepth - 1);
 
-		uShift = MAXINUM_TREE_DEPTH - uLevel - 1;
+		uShift = MAXINUM_TREE_DEPTH - uLevel - MININUM_TREE_DEPTH;
 
 		uLevelX = WorldByteRect.GetMaxX() >> uShift;
 		uLevelY = WorldByteRect.GetMaxY() >> uShift;

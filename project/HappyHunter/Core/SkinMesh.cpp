@@ -582,9 +582,11 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 //          类LPD3DXANIMATIONCONTROLLER的一个对象
 //       (2)用函数CSkinMesh::__UpdateFrameMatrices()更新框架
 //-----------------------------------------------------------------------------
-void CSkinMesh::Update(float fElapsedAppTime)
+void CSkinMesh::Update()
 {
-	CSceneNode::Update(fElapsedAppTime);
+	CSceneNode::Update();
+
+	float fElapsedAppTime = TIME;
 
 	if( 0.0f == fElapsedAppTime ) 
         return;

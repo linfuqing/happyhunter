@@ -64,7 +64,10 @@ bool CTerrainSection::Create(
 	m_uHeightMapX = uHeightMapX;
 	m_uHeightMapY = uHeightMapY;
 
-	PARENT_EQUAL(m_WorldRect, WorldRect, CBasicRectangle2D<FLOAT>);
+	m_WorldRect.GetMaxX() = WorldRect.GetMaxX();
+	m_WorldRect.GetMinX() = WorldRect.GetMinX();
+	m_WorldRect.GetMaxY() = WorldRect.GetMaxY();
+	m_WorldRect.GetMinY() = WorldRect.GetMinY();
 
 	bool bResult  = __BuildVertexBuffer();
 
@@ -176,9 +179,9 @@ bool CTerrain:: Create(
 					   const CRectangle3D& WorldExtents, 
 					   zerO::UINT8 uShift)
 {
-	m_uSectorShift   = uShift;
-	m_uSectorUnits   = 1 << uShift;
-	m_uSectorVertices = m_uSectorUnits + 1; 
+	m_uSectorShift    = uShift;
+	m_uSectorVertices = 1 << uShift;
+	m_uSectorUnits    = m_uSectorVertices - 1; 
 
 	m_pRootNode      = pRootNode;
 	m_WorldExtents   = WorldExtents;
@@ -230,15 +233,15 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 	
 	pMap = (PUINT8)LockedRect.pBits;
 
-	uPitch = LockedRect.Pitch - m_uTableWidth + 1;
+	uPitch = (LockedRect.Pitch >> 2) - m_uTableWidth;
 
 	uTableIndex = 0;
 	uMapIndex   = 0;
 
 	for(y = 0; y < m_uTableHeight; y ++)
 	{
-		for(x = 0; x< m_uTableWidth; x ++)
-			m_pfHeightTable[uTableIndex ++] = pMap[(uMapIndex ++) >> 2] * m_MapScale.z + m_WorldExtents.GetMinZ();
+		for(x = 0; x < m_uTableWidth; x ++)
+			m_pfHeightTable[uTableIndex ++] = pMap[(uMapIndex ++) << 2] * m_MapScale.z + m_WorldExtents.GetMinZ();
 
 		uMapIndex += uPitch;
 	}
@@ -272,7 +275,7 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 
 	pMap = (PUINT8)LockedRect.pBits;
 
-	uPitch = LockedRect.Pitch - m_uTableWidth + 1;
+	uPitch = LockedRect.Pitch - (m_uTableWidth << 2);
 
 	uTableIndex = 0;
 	uMapIndex   = 0;
@@ -281,11 +284,9 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 	{
 		for(x = 0; x < m_uTableWidth; x ++)
 		{
-			int index = (y*LockedRect.Pitch)+(x*4);
-
-			Normal.z = pMap[index ++] - 127.5f;
-			Normal.y = pMap[index ++] - 127.5f;
-			Normal.x = pMap[index ++] - 127.5f;
+			Normal.z = pMap[uMapIndex ++] - 127.5f;
+			Normal.y = pMap[uMapIndex ++] - 127.5f;
+			Normal.x = pMap[uMapIndex ++] - 127.5f;
 
 			D3DXVec3Normalize(&m_pNormalTable[uTableIndex ++], &Normal);
 
@@ -321,7 +322,7 @@ bool CTerrain::_BuildVertexBuffer()
 	UINT x, y, uIndex = 0;
 	for(y = 0; y < m_uSectorVertices; y ++)
 	{
-		Vertex.y += CellSize.y;
+		Vertex.x = 0;
 
 		for(x = 0; x < m_uSectorVertices; x ++)
 		{
@@ -333,12 +334,18 @@ bool CTerrain::_BuildVertexBuffer()
 
 			uIndex ++;
 		}
+
+		Vertex.y += CellSize.y;
 	}
+
+	/*VERTEX bitch[289];
+
+	memcpy( bitch, pVertices, sizeof(bitch) );*/
 
 	HRESULT hr = m_VertexBuffer.Create(
 		m_uSectorVertices * m_uSectorVertices, 
 		sizeof(VERTEX), 
-		HARDWARE_VERTEX_SHADERS_ALLOWED ? 0 : D3DUSAGE_SOFTWAREPROCESSING, 
+		D3DUSAGE_WRITEONLY, 
 		D3DPOOL_MANAGED, 
 		pVertices);
 
@@ -355,22 +362,14 @@ bool CTerrain::_BuildVertexBuffer()
 
 bool CTerrain::_BuildIndexBuffer()
 {
-	HRESULT hr = m_IndexBuffer.CreateSingleStripGrid(
+	return m_IndexBuffer.CreateSingleStripGrid(
 		m_uSectorVertices,
 		m_uSectorVertices,
 		1,
 		1,
 		m_uSectorVertices,
-		HARDWARE_VERTEX_SHADERS_ALLOWED ? D3DUSAGE_WRITEONLY : (D3DUSAGE_WRITEONLY | D3DUSAGE_SOFTWAREPROCESSING),
+		D3DUSAGE_WRITEONLY,
 		D3DPOOL_MANAGED);
-
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	return true;
 }
 
 bool CTerrain::_AllocateSectors()
@@ -407,7 +406,7 @@ bool CTerrain::_AllocateSectors()
 				uPixelY, 
 				m_uSectorVertices, 
 				m_uSectorVertices, 
-				SectorRectangle))
+				SectorRectangle) )
 				return false;
 
 			uIndex ++;
@@ -509,4 +508,181 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 
 		pEffect->GetEffect()->EndPass();
 	}
+}
+
+CRoamTerrainSection::CRoamTerrainSection() :
+m_fDistance0(0.0f),
+m_fDistance1(0.0f),
+m_fDistance2(0.0f),
+m_fDistance3(0.0f),
+m_fQueueSortValue(0.0f),
+m_uMaxIndices(0),
+m_uTotalIndices(0),
+m_puIndexList(NULL)
+{
+}
+
+CRoamTerrainSection::~CRoamTerrainSection()
+{
+}
+
+bool CRoamTerrainSection::Create(
+			CSceneNode* pRootNode,
+			CTerrain* pParent, 
+			zerO::UINT uSectorX, 
+			zerO::UINT uSectorY, 
+			zerO::UINT uHeightMapX, 
+			zerO::UINT uHeightMapY,
+			zerO::UINT VerticesX, 
+			zerO::UINT VerticesY, 
+			const CRectangle2D& WorldRect)
+{
+	bool bResult= CTerrainSection::Create(pRootNode, pParent, uSectorX, uSectorY, uHeightMapX, uHeightMapY,VerticesX, VerticesY, WorldRect);
+
+	m_uMaxIndices = VerticesX * VerticesY * 2 * 3;
+
+	m_pIndexBuffer->Create(D3DPT_TRIANGLELIST, m_uMaxIndices, D3DUSAGE_DYNAMIC,D3DPOOL_DEFAULT, NULL);
+
+	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
+
+	m_pLeftNeighborOfA  = NULL;
+	m_pRightNeighborOfA = NULL;
+	m_pLeftNeighborOfB  = NULL;
+	m_pRightNeighborOfB = NULL;
+
+	CRoamTerrainSection* pNorthSection = pTerrain->GetSection(uSectorX    , uSectorY - 1);
+	CRoamTerrainSection* pSouthSection = pTerrain->GetSection(uSectorX    , uSectorY + 1);
+	CRoamTerrainSection* pEastSection  = pTerrain->GetSection(uSectorX + 1, uSectorY    );
+	CRoamTerrainSection* pWestSection  = pTerrain->GetSection(uSectorX - 1, uSectorY    );
+
+	if (pNorthSection)
+		m_pLeftNeighborOfA  = &pNorthSection->m_RootTriangleB;
+	if (pSouthSection)
+		m_pLeftNeighborOfB  = &pSouthSection->m_RootTriangleA;
+	if (pEastSection)
+		m_pRightNeighborOfB = &pEastSection->m_RootTriangleA;
+	if (pWestSection)
+		m_pRightNeighborOfA = &pWestSection->m_RootTriangleB;
+
+	Reset();
+
+	__ComputeVariance();
+
+	return bResult;
+}
+
+void CRoamTerrainSection::Reset()
+{
+}
+
+void CRoamTerrainSection::Tessellate(zerO::FLOAT fScale, zerO::FLOAT fLimit)
+{
+}
+
+void CRoamTerrainSection::BuildTriangleList()
+{
+}
+
+void CRoamTerrainSection::__ComputeVariance()
+{
+}
+
+void CRoamTerrainSection::__Split(LPTRIANGLETREENODE pTriangle)
+{
+}
+
+void CRoamTerrainSection::__RecursiveTessellate( 
+						   LPTRIANGLETREENODE pTriangle, 
+						   zerO::FLOAT fDistanceA, 
+						   zerO::FLOAT fDistanceB, 
+						   zerO::FLOAT fDistanceC, 
+						   zerO::PFLOAT pfTree,
+						   zerO::UINT16 uIndex,
+						   zerO::FLOAT fScale, 
+						   zerO::FLOAT fLimit)
+{
+}
+
+void CRoamTerrainSection::__RecursiveBuildTriangleList( 
+								  LPTRIANGLETREENODE pTriangle,  
+								  zerO::UINT16 uCornerA, 
+								  zerO::UINT16 uCornerB, 
+								  zerO::UINT16 uCornerC)
+{
+}
+
+zerO::FLOAT CRoamTerrainSection::__RecursiveComputeVariance(	
+								 zerO::UINT16 uCornerA, 
+								 zerO::UINT16 uCornerB,
+								 zerO::UINT16 uCornerC,
+								 zerO::FLOAT fHeightA, 
+								 zerO::FLOAT fHeightB, 
+								 zerO::FLOAT fHeightC,
+								 zerO::PFLOAT pfTree,
+								 zerO::UINT16 uIndex)
+{
+	return 0.0f;
+}
+
+CRoamTerrain::CRoamTerrain() :
+m_pRoamSection(NULL),
+m_pTriangleNodePool(NULL),
+m_uNextTriangleNode(0),
+m_ppTessellationQueue(NULL),
+m_uTessellationQueueCount(0)
+{
+}
+
+CRoamTerrain::~CRoamTerrain()
+{
+}
+
+bool CRoamTerrain::Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, zerO::UINT8 uShift)
+{
+	uShift = 4;
+
+	bool bResult = CTerrain::Create(pRootNode, pHeightMap, WorldExtents, uShift);
+
+	if (bResult)
+	{
+		DEBUG_NEW(m_pTriangleNodePool, TRIANGLETREENODE[MAXINUM_TRIANGLE_TREE_NODES]);
+		DEBUG_NEW(m_ppTessellationQueue, CRoamTerrainSection*[TESSELLATION_QUEUE_SIZE]);
+
+		memset(m_pTriangleNodePool, 0, sizeof(TRIANGLETREENODE) * MAXINUM_TRIANGLE_TREE_NODES);
+		memset(m_ppTessellationQueue, 0, sizeof(CRoamTerrainSection*) * TESSELLATION_QUEUE_SIZE);
+	}
+
+	return bResult;
+}
+
+bool CRoamTerrain::SubmitSection(CTerrainSection* pSection)const
+{
+	return true;
+}
+
+void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, const CRenderQueue::LPRENDERENTRY pEntry)const
+{
+}
+
+void CRoamTerrain::Reset()
+{
+}
+
+bool CRoamTerrain::AddToTessellationQueue(CRoamTerrainSection* pSection)
+{
+	return true;
+}
+
+void CRoamTerrain::ProcessTessellationQueue()
+{
+}
+
+CRoamTerrain::LPTRIANGLETREENODE CRoamTerrain::RequestTriangleNode()
+{
+	return NULL;
+}
+
+bool CRoamTerrain::__AllocateSectors()
+{
+	return true;
 }

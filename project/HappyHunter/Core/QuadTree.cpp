@@ -10,14 +10,22 @@ void CQuadTreeRectangle::Convert(const CRectangle3D& Rect, const D3DXVECTOR3& Of
 	ConvertRect += Offset;
 	ConvertRect *= Scale;
 
+	ConvertRect.GetMaxX() -= 0.01f;
+	ConvertRect.GetMaxY() -= 0.01f;
+	ConvertRect.GetMaxZ() -= 0.01f;
+
+	ConvertRect.GetMaxX() = MAX( ConvertRect.GetMaxX(), ConvertRect.GetMinX() );
+	ConvertRect.GetMaxY() = MAX( ConvertRect.GetMaxY(), ConvertRect.GetMinY() );
+	ConvertRect.GetMaxZ() = MAX( ConvertRect.GetMaxZ(), ConvertRect.GetMinZ() );
+
 	CBasicRectangle3D<INT> IntRect;
 
-	IntRect.GetMaxX() = ROUND( ConvertRect.GetMaxX() );
-	IntRect.GetMinX() = ROUND( ConvertRect.GetMinX() );
-	IntRect.GetMaxY() = ROUND( ConvertRect.GetMaxY() );
-	IntRect.GetMinY() = ROUND( ConvertRect.GetMinY() );
-	IntRect.GetMaxZ() = ROUND( ConvertRect.GetMaxZ() );
-	IntRect.GetMinZ() = ROUND( ConvertRect.GetMinZ() );
+	IntRect.GetMaxX() = realToInt32_floor( ConvertRect.GetMaxX() );
+	IntRect.GetMinX() = realToInt32_floor( ConvertRect.GetMinX() );
+	IntRect.GetMaxY() = realToInt32_floor( ConvertRect.GetMaxY() );
+	IntRect.GetMinY() = realToInt32_floor( ConvertRect.GetMinY() );
+	IntRect.GetMaxZ() = realToInt32_floor( ConvertRect.GetMaxZ() );
+	IntRect.GetMinZ() = realToInt32_floor( ConvertRect.GetMinZ() );
 
 	IntRect.GetMinX() = CLAMP(IntRect.GetMinX(), 0                    , 254);
 	IntRect.GetMaxX() = CLAMP(IntRect.GetMaxX(), IntRect.GetMinX() + 1, 255);
@@ -36,8 +44,10 @@ void CQuadTreeRectangle::Convert(const CRectangle3D& Rect, const D3DXVECTOR3& Of
 
 CQuadTreeObject::CQuadTreeObject() :
 m_pParentQuadTreeNode(NULL),
-m_pForward(NULL),
-m_pRear(NULL),
+m_pTreeForward(NULL),
+m_pTreeRear(NULL),
+m_pSearchForward(NULL),
+m_pSearchRear(NULL),
 m_uMaskZ(0)
 {
 }
@@ -64,8 +74,8 @@ void CQuadTreeObject::DetachFromQuadTree()
 	}
 
 	m_pParentQuadTree = NULL;
-	m_pForward        = NULL;
-	m_pRear           = NULL;
+	m_pTreeForward    = NULL;
+	m_pTreeRear       = NULL;
 }
 
 CQuadTreeNode::CQuadTreeNode() :
@@ -85,19 +95,19 @@ zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeR
 {
 	UINT32 uMaskZ = GetMaskZ( Rect.GetMinZ(), Rect.GetMaxZ() );
 
-	if(pObject->GetParentQuadTreeNode() != this)
+	if(pObject->m_pParentQuadTreeNode != this)
 	{
-		if( pObject->GetParentQuadTreeNode() )
-			pObject->GetParentQuadTreeNode()->RemoveMember(pObject);
+		if( pObject->m_pParentQuadTreeNode )
+			pObject->m_pParentQuadTreeNode->RemoveMember(pObject);
 
 		if(m_pMembers)
 		{
-			pObject->SetRear(NULL);
-			pObject->SetForward(m_pMembers);
+			pObject->m_pTreeRear    = NULL;
+			pObject->m_pTreeForward = m_pMembers;
 
-			m_pMembers->SetRear(pObject);
+			m_pMembers->m_pTreeRear = pObject;
 		}
-
+		
 		m_pMembers = pObject;
 
 		SET_FLAG(m_uWorldMaskZ, uMaskZ);
@@ -109,7 +119,8 @@ zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeR
 	else
 		__RebuildLocalMaskZ();
 
-	pObject->SetQueadTrre(this, uMaskZ);
+	pObject->m_pParentQuadTreeNode = this;
+	pObject->m_uMaskZ              = uMaskZ;
 
 	return uMaskZ;
 }
@@ -117,21 +128,21 @@ zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeR
 void CQuadTreeNode::RemoveMember(CQuadTreeObject* pObject)
 {
 	DEBUG_ASSERT(pObject, "pObject can not be NULL.");
-	DEBUG_ASSERT(pObject->GetParentQuadTreeNode() == this, "Error removing quad tree member");
+	DEBUG_ASSERT(pObject->m_pParentQuadTreeNode == this, "Error removing quad tree member");
 
 	CQuadTreeObject* pTemp;
 
-	if( ( pTemp = pObject->GetForward() ) != NULL )
-		pTemp->SetRear( pObject->GetRear() );
+	if( (pTemp = pObject->m_pTreeForward) != NULL )
+		pTemp->m_pTreeRear = pObject->m_pTreeRear;
 
-	if( ( pTemp = pObject->GetRear() ) != NULL )
-		pTemp->SetForward( pObject->GetForward() );
+	if( (pTemp = pObject->m_pTreeRear) != NULL )
+		pTemp->m_pTreeForward = pObject->m_pTreeForward;
 
 	if(m_pMembers == pObject)
-		m_pMembers = pObject->GetForward();
+		m_pMembers = pObject->m_pTreeForward;
 
-	pObject->SetForward(NULL);
-	pObject->SetRear(NULL);
+	pObject->m_pTreeForward = NULL;
+	pObject->m_pTreeRear    = NULL;
 
 	if(m_pParent)
 		m_pParent->__DescendantMemberRemoved();
@@ -145,9 +156,9 @@ void CQuadTreeNode::__RebuildLocalMaskZ()
 
 	while(pObject)
 	{
-		SET_FLAG( m_uLocalMaskZ, pObject->GetMaskZ() );
+		SET_FLAG(m_uLocalMaskZ, pObject->m_uMaskZ);
 
-		pObject = pObject->GetForward();
+		pObject = pObject->m_pTreeForward;
 	}
 
 	__RebuildWorldMaskZ();
@@ -197,23 +208,24 @@ void CQuadTreeNode::AddMemberToSearchList(
 	CQuadTreeObject* pObject;
 	if( TEST_ANY(m_uLocalMaskZ, uMaskZ) )
 	{
-		for( pObject = m_pMembers; pObject; pObject = pObject->GetForward() )
+		for(pObject = m_pMembers; pObject; pObject = pObject->m_pTreeForward)
 		{
-			if( TEST_ANY(pObject->GetMaskZ(), uMaskZ) 
+			if( TEST_ANY(pObject->m_uMaskZ, uMaskZ) 
 				&& ( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(), s_uTESTFLAG) ) )
 			{
 				if(*ppListTail)
 				{
-					pObject->AttachToList(*ppListTail, NULL);
+					pObject->__AttachToSearchList(NULL, *ppListTail);
 
 					*ppListTail = pObject;
 				}
 				else
 				{
-					pObject->ClearListData();
+					pObject->m_pSearchForward = NULL;
+					pObject->m_pSearchRear    = NULL;
 
-					*ppListTail = pObject;
-					*ppListHead = pObject;
+					*ppListTail               = pObject;
+					*ppListHead               = pObject;
 				}
 			}
 		}
@@ -232,21 +244,22 @@ void CQuadTreeNode::AddMemberToSearchList(
 	CQuadTreeObject* pObject;
 	if( TEST_ANY(m_uLocalMaskZ, uMaskZ) )
 	{
-		for( pObject = m_pMembers; pObject; pObject = pObject->GetForward() )
+		for(pObject = m_pMembers; pObject; pObject = pObject->m_pTreeForward)
 		{
-			if( TEST_ANY(pObject->GetMaskZ(), uMaskZ) 
+			if( TEST_ANY(pObject->m_uMaskZ, uMaskZ) 
 				&& WorldRect.TestHit( pObject->GetWorldRectangle() ) 
 				&&( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(),s_uTESTFLAG) ) )
 			{
 				if(*ppListTail)
 				{
-					pObject->AttachToList(*ppListTail, NULL);
+					pObject->__AttachToSearchList(NULL, *ppListTail);
 
 					*ppListTail = pObject;
 				}
 				else
 				{
-					pObject->ClearListData();
+					pObject->m_pSearchForward = NULL;
+					pObject->m_pSearchRear    = NULL;
 
 					*ppListTail = pObject;
 					*ppListHead = pObject;
@@ -350,7 +363,7 @@ CQuadTreeObject* CQuadTree::SearchObject(const CRectangle3D& WorldRectangle, con
 
 	while(uLevel < m_uDepth && bIsSearch)
 	{
-		uShift = MAXINUM_TREE_DEPTH - uLevel - 1;
+		uShift = MAXINUM_TREE_DEPTH - uLevel - MININUM_TREE_DEPTH;
 
 		LockRect.Set(
 			ByteRect.GetMinX() >> uShift,

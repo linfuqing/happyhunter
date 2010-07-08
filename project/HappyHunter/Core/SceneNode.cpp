@@ -41,6 +41,8 @@ void CSceneNode::_SetTransformDirty()
 
 void CSceneNode::UpdateTransform()
 {
+	m_bIsTransformDirty = false;
+
 	if(m_pParent)
 		D3DXMatrixMultiply(&m_WorldMatrix, &m_LocalMatrix, &m_pParent->m_WorldMatrix);
 	else
@@ -52,10 +54,24 @@ void CSceneNode::UpdateTransform()
 
 	m_WorldRect.Transform(m_WorldMatrix);
 
-	m_bIsTransformDirty = false;
+	m_Right.x    = m_WorldMatrix._11 / m_WorldMatrix._14;
+	m_Right.x    = m_WorldMatrix._12 / m_WorldMatrix._14;
+	m_Right.x    = m_WorldMatrix._13 / m_WorldMatrix._14;
+
+	m_Up.x       = m_WorldMatrix._21 / m_WorldMatrix._24;
+	m_Up.x       = m_WorldMatrix._22 / m_WorldMatrix._24;
+	m_Up.x       = m_WorldMatrix._23 / m_WorldMatrix._24;
+
+	m_Forward.x  = m_WorldMatrix._31 / m_WorldMatrix._34;
+	m_Forward.x  = m_WorldMatrix._32 / m_WorldMatrix._34;
+	m_Forward.x  = m_WorldMatrix._33 / m_WorldMatrix._34;
+
+	m_Position.x = m_WorldMatrix._41 / m_WorldMatrix._44;
+	m_Position.x = m_WorldMatrix._42 / m_WorldMatrix._44;
+	m_Position.x = m_WorldMatrix._43 / m_WorldMatrix._44;
 }
 
-void CSceneNode::Update(float fElapsedTime)
+void CSceneNode::Update()
 {
 	if(m_bIsTransformDirty)
 		UpdateTransform();

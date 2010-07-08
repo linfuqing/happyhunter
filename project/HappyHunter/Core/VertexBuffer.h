@@ -41,6 +41,9 @@ namespace zerO
 		//bool Create(UINT uCount, UINT uStride, UINT16 uFlag, void* pData);
 		bool Create(UINT uCount, UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData);
 
+		bool Lock(DWORD dwFlags, void** ppData);
+		bool Unlock();
+
 		void Activate(zerO::UINT uStream, UINT uIndex, bool bIsSetDeclaration)const;
 
 		bool SetVertexDescription(UINT uElementCount, const D3DVERTEXELEMENT9* pElementList);
@@ -69,5 +72,33 @@ namespace zerO
 	inline LPDIRECT3DVERTEXBUFFER9 CVertexBuffer::GetBuffer()const
 	{
 		return m_pBuffer;
+	}
+
+	inline bool CVertexBuffer::Lock(DWORD dwFlags, void** ppData)
+	{
+		HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	inline bool CVertexBuffer::Unlock()
+	{
+		HRESULT hr = m_pBuffer->Unlock();
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+
+			return false;
+		}
+
+		return true;
 	}
 }

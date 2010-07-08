@@ -135,7 +135,7 @@ namespace zerO
 	template<typename T>
 	inline bool CBasicRectangle3D<T>::IsValuable()const
 	{
-		return m_MaxX > m_MinX && m_MaxY > m_MinX && m_MaxZ > m_MinZ;
+		return m_MaxX >= m_MinX && m_MaxY >= m_MinY && m_MaxZ >= m_MinZ;
 	}
 
 	///
@@ -205,9 +205,9 @@ namespace zerO
 		m_MaxY = MAX(Point.y, m_MaxY);
 		m_MaxZ = MAX(Point.z, m_MaxZ);
 
-		m_MinX = MAX(Point.x, m_MinX);
-		m_MinY = MAX(Point.y, m_MinY);
-		m_MinZ = MAX(Point.z, m_MinZ);
+		m_MinX = MIN(Point.x, m_MinX);
+		m_MinY = MIN(Point.y, m_MinY);
+		m_MinZ = MIN(Point.z, m_MinZ);
 	}
 
 	inline bool CRectangle3D::TestHit(const CRectangle3D& Rect)const
