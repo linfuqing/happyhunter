@@ -107,20 +107,20 @@ namespace zerO
 	};
 
 	template<typename T>
-	inline CSurface& CParticleSystem<T>::GetSurface()
+	CSurface& CParticleSystem<T>::GetSurface()
 	{
 		return m_Surface;
 	}
 
 	template<typename T>
-	inline void CParticleSystem<T>::SetNumberEmitedPerFrame(UINT uValue)
+	void CParticleSystem<T>::SetNumberEmitedPerFrame(UINT uValue)
 	{
 		m_uNumEmitedPerFrame = uValue;
 	}
 
 	
 	template<typename T>
-	inline CParticleSystem<T>::CParticleSystem() :
+	CParticleSystem<T>::CParticleSystem() :
 	m_uNumEmitedPerFrame(0),
 	m_uNumParticles(0),
 	m_uMaxNumParticles(0),
@@ -145,7 +145,7 @@ namespace zerO
 	}
 
 	template<typename T>
-	inline CParticleSystem<T>::~CParticleSystem(void)
+	CParticleSystem<T>::~CParticleSystem(void)
 	{
 		while( m_pParticles )
 		{
@@ -163,7 +163,7 @@ namespace zerO
 	}
 
 	template<typename T>
-	inline bool CParticleSystem<T>::Create(
+	bool CParticleSystem<T>::Create(
 								 zerO::UINT uNumEmitedPerFrame,
 								 zerO::UINT uMaxNumParticles,
 								 zerO::UINT uFlush, 
@@ -207,7 +207,7 @@ namespace zerO
 	}
 
 	template<typename T>
-	inline void CParticleSystem<T>::Update()
+	void CParticleSystem<T>::Update()
 	{
 		CSceneNode::Update();
 
@@ -260,7 +260,7 @@ namespace zerO
 	}
 
 	template<typename T>
-	inline bool CParticleSystem<T>::ApplyForRender()
+	bool CParticleSystem<T>::ApplyForRender()
 	{
 		CRenderQueue::LPRENDERENTRY pEntry = RENDERQUEUE.LockRenderEntry();
 		pEntry->uModelType = CRenderQueue::RENDERENTRY::PARTICLE_TYPE;
@@ -275,7 +275,7 @@ namespace zerO
 	inline DWORD FtoDW( zerO::FLOAT f ) { return *((DWORD*)&f); }
 
 	template<typename T>
-	inline void CParticleSystem<T>::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
+	void CParticleSystem<T>::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 	{
 		HRESULT hr;
 

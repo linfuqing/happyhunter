@@ -57,7 +57,7 @@ void CRenderMethod::Destory()
 	if ( m_EffectList.empty() )
 		return;
 
-	for ( std::vector<CEffect*>::iterator i = m_EffectList.begin(); i != m_EffectList.end(); i ++ )
+	for ( std::vector<CEffect*>::iterator i = m_EffectList.begin(); i != m_EffectList.end(); )
 	{
 		DEBUG_DELETE( *i );
 		i = m_EffectList.erase( i );
@@ -67,7 +67,7 @@ void CRenderMethod::Destory()
 	if ( m_SurfaceList.empty() )
 		return;
 
-	for ( std::vector<CSurface*>::iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); i ++ )
+	for ( std::vector<CSurface*>::iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); )
 	{
 		DEBUG_DELETE( *i );
 		i = m_SurfaceList.erase( i );
