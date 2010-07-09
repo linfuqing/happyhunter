@@ -406,13 +406,14 @@ CSkinMesh::CSkinMesh() :
 m_bPlayAnim(true),
 m_pAnimController(NULL),
 m_pFrameRoot(NULL),
-//m_pEffect(NULL),
 m_dwCurrentTrack(0),
 m_fTimeCurrent(0.0f),
 m_dwPlayTime(0),
 m_fFrameTime(0.0f),
 m_lfTotalFrameTime(0.0),
-m_dwControlPlayTime(0)
+m_dwControlPlayTime(0),
+m_strMeshFile(TEXT("")),
+m_strEffectFile(TEXT("HLSLSkinMesh.fx"))
 {
 	DEBUG_NEW(m_pAlloc, CAllocateHierarchy);
 }
@@ -433,34 +434,18 @@ CSkinMesh::~CSkinMesh()
 //-----------------------------------------------------------------------------
 // Desc:创建并加载蒙皮网格模型
 //-----------------------------------------------------------------------------
-HRESULT CSkinMesh::OnCreate(BASICCHAR * strEffectName, BASICCHAR *strFileName)
+bool CSkinMesh::Create()
 {
 	HRESULT hr;
 
-	//创建效果
-	/*DWORD dwShaderFlags = D3DXFX_NOT_CLONEABLE;
-    #ifdef DEBUG_VS
-        dwShaderFlags |= D3DXSHADER_FORCE_VS_SOFTWARE_NOOPT;
-    #endif
-    #ifdef DEBUG_PS
-        dwShaderFlags |= D3DXSHADER_FORCE_PS_SOFTWARE_NOOPT;
-    #endif
-
-	hr = D3DXCreateEffectFromFile( &DEVICE, strEffectName, NULL, NULL, 
-		dwShaderFlags, NULL, &m_pEffect, NULL );*/
-	if ( !m_Effect.Load( strEffectName ) )
+	if ( !m_Effect.Load( (PBASICCHAR)m_strEffectFile.c_str() ) )
+		return false;
+	
+	hr = __LoadFromXFile((PBASICCHAR)m_strMeshFile.c_str());
+	if(FAILED(hr))
 		return false;
 
-	/*if(FAILED(hr))
-	{
-		DEBUG_RELEASE(m_pEffect);
-		return hr;
-	}*/
-	
-	hr = __LoadFromXFile(strFileName);
-	if(FAILED(hr))
-		return hr;
-	return S_OK;
+	return true;
 }
 
 
@@ -586,7 +571,7 @@ void CSkinMesh::Update()
 {
 	CSceneNode::Update();
 
-	float fElapsedAppTime = TIME;
+	FLOAT fElapsedAppTime = TIME;
 
 	if( 0.0f == fElapsedAppTime ) 
         return;
@@ -606,7 +591,6 @@ void CSkinMesh::Update()
 			m_dwPlayTime++;
 		}
 	}
-
 
 	__UpdateFrameMatrices(m_pFrameRoot, &m_WorldMatrix);  //调用子函数
 }
@@ -925,13 +909,13 @@ bool CSkinMesh::ApplyForRender()
 //-----------------------------------------------------------------------------
 // Desc: 释放蒙皮网格模型
 //-----------------------------------------------------------------------------
-HRESULT CSkinMesh::OnDestory()
+HRESULT CSkinMesh::Destory()
 {
 	delete this;
 	return S_OK;
 }
 
-HRESULT CSkinMesh::OnReset()
+HRESULT CSkinMesh::Reset()
 {
 	HRESULT hr;
 	hr = m_Effect.GetEffect()->OnResetDevice();
@@ -959,7 +943,7 @@ HRESULT CSkinMesh::OnReset()
 	return hr;
 }
 
-HRESULT CSkinMesh::OnLost()
+HRESULT CSkinMesh::Lost()
 {
 	HRESULT hr;
 	hr = m_Effect.GetEffect()->OnLostDevice();
