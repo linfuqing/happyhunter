@@ -9,6 +9,7 @@
 ///
 namespace zerO
 {
+#define CASE(Value, Type) ( *( (Type*)&Value ) )
 	///
 	// ©ЛкыеепР
 	///

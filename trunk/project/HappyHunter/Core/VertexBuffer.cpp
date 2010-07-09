@@ -13,6 +13,7 @@ m_uMemberCount(0),
 m_uStride(0),
 m_uByteSize(0),
 m_dwUsage(0),
+m_dwFVF(0),
 m_Pool(D3DPOOL_FORCE_DWORD)
 {
 }
@@ -21,7 +22,7 @@ CVertexBuffer::~CVertexBuffer(void)
 {
 }
 
-bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData)//(UINT uCount, UINT uStride, UINT16 uFlag, void* pData)
+bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData, DWORD dwFVF)//(UINT uCount, UINT uStride, UINT16 uFlag, void* pData)
 {
 	DEBUG_ASSERT(m_pBuffer == NULL, "Buffer already allocated");
 	/*DEBUG_ASSERT(m_puBackupCopy == NULL, "Backup buffer already allocated");*/
@@ -35,9 +36,11 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 	m_uByteSize    = uStride * uCount;
 
 	m_dwUsage      = dwUsage;
+	m_dwFVF        = dwFVF;
+
 	m_Pool         = Pool;
 
-	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, 0, Pool, &m_pBuffer, NULL);
+	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, dwFVF, Pool, &m_pBuffer, NULL);
 
 	if( FAILED(hr) )
 	{
@@ -154,13 +157,14 @@ void CVertexBuffer::Activate(zerO::UINT uStream, zerO::UINT uIndex, bool bIsSetD
 
 	HRESULT hr = DEVICE.SetStreamSource(uStream, m_pBuffer, uIndex * m_uStride, m_uStride);
 
-	if( FAILED(hr) )
-		DEBUG_ERROR(hr);
+	DEBUG_ASSERT(SUCCEEDED(hr), hr);
 
-	if(uStream == 0 && bIsSetDeclaration && m_pVertexDeclaration)
-	{
+	if(m_dwFVF)
+		hr = DEVICE.SetFVF(m_dwFVF);
+	else if(uStream == 0 && bIsSetDeclaration && m_pVertexDeclaration)
 		hr = DEVICE.SetVertexDeclaration(m_pVertexDeclaration);
+	else
+		hr = S_FALSE;
 
-		DEBUG_ASSERT(SUCCEEDED(hr), hr);
-	}
+	DEBUG_ASSERT(SUCCEEDED(hr), hr);
 }

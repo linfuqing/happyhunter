@@ -2,15 +2,19 @@
 
 #include "debug.h"
 #include "datatype.h"
+#include "LightManager.h"
 #include <vector>
 
 namespace zerO
 {
 
-#define GAMEHOST zerO::CGameHost::GetInstance()
-#define DEVICE   GAMEHOST.GetDevice()
-#define CAMERA   GAMEHOST.GetCamera()
-#define TIME     GAMEHOST.GetElapsedTime()
+#define GAMEHOST     zerO::CGameHost::GetInstance()
+#define DEVICE       GAMEHOST.GetDevice()
+#define CAMERA       GAMEHOST.GetCamera()
+#define RENDERQUEUE  GAMEHOST.GetRenderQueue()
+#define ELAPSEDTIME  GAMEHOST.GetElapsedTime()
+#define TIME         GAMEHOST.GetTime()
+#define LIGHTMANAGER GAMEHOST.GetLightManager()
 
 	typedef enum
 	{
@@ -55,10 +59,15 @@ namespace zerO
 		static CGameHost& GetInstance();
 
 		FLOAT GetElapsedTime()const;
+		FLOAT64 GetTime()const;
 
 		CCamera& GetCamera();
 
+		CLightManager& GetLightManager();
+
 		const DEVICESETTINGS& GetDeviceSettings()const;
+
+		void SetLightEnable(bool bValue);
 
 		RESOURCEHANDLE AddResource(CResource* const pResource, RESOURCETYPE Type);
 		CResource* GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type);
@@ -78,6 +87,7 @@ namespace zerO
 		DEVICESETTINGS m_DeviceSettings;
 		D3DSURFACE_DESC m_DeviceSurfaceDest;
 		FLOAT m_fElapsedTime;
+		FLOAT64 m_fTime;
 
 		static CGameHost* sm_pInstance;
 
@@ -86,6 +96,10 @@ namespace zerO
 		CRenderQueue* m_pRenderQueue;
 
 		CCamera* m_pCamera;
+
+		CLightManager m_LightManager;
+
+		bool m_bLightEnable;
 	};
 
 	inline IDirect3DDevice9& CGameHost::GetDevice()
@@ -120,5 +134,20 @@ namespace zerO
 	inline FLOAT CGameHost::GetElapsedTime()const
 	{
 		return m_fElapsedTime;
+	}
+
+	inline FLOAT64 CGameHost::GetTime()const
+	{
+		return m_fTime;
+	}
+
+	inline CLightManager& CGameHost::GetLightManager()
+	{
+		return m_LightManager;
+	}
+
+	inline void CGameHost::SetLightEnable(bool bValue)
+	{
+		m_bLightEnable = bValue;
 	}
 }

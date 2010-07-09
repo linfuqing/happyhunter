@@ -169,6 +169,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Model.cpp"
 				>
 			</File>
@@ -267,6 +271,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\color.h"
+				>
+			</File>
+			<File
 				RelativePath=".\core.h"
 				>
 			</File>
@@ -295,7 +303,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightManager.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Model.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ParticleSystem.h"
 				>
 			</File>
 			<File

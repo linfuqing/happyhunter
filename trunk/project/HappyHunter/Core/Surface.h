@@ -29,6 +29,10 @@ namespace zerO
 		UINT32              GetTotalTexturesNumber()const;
 		TEXITUREFLAGTYPE    GetTextureFlag()const;
 
+		bool LoadTexuture(const PBASICCHAR pcFileName, UINT uIndex);
+
+		void Activate();
+
 	private:
 		D3DMATERIAL9     m_Material;
 		CTexture*        m_pTextures[MAXINUM_TEXTURE_PER_SURFACE];
@@ -58,6 +62,21 @@ namespace zerO
 		}
 
 		m_pTextures[uIndex] = pTexture;
+	}
+
+	inline bool CSurface::LoadTexuture(const PBASICCHAR pcFileName, UINT uIndex)
+	{
+		CTexture* pTexture;
+
+		DEBUG_NEW(pTexture, CTexture);
+
+		if( pTexture->Load(pcFileName) )
+		{
+			SetTexture(pTexture, uIndex);
+			return true;
+		}
+
+		return false;
 	}
 
 	inline CTexture* CSurface::GetTexture(UINT uIndex)const

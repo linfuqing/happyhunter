@@ -7,153 +7,172 @@
 #include "resource.h"
 #include "core.h"
 
-////顶点描述：位置和纹理坐标
-//const D3DVERTEXELEMENT9 g_VERTEX_DESCRIPTION[] =
-//{
-//	{0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
-//
-//	{0, 16, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
-//	D3DDECL_END()
-//};
-//
-////测试类
-//class CTest :
-//	public zerO::CSceneNode
-//{
-//public:
-//	//顶点格式
-//	typedef struct
-//	{
-//		D3DXVECTOR4 Position;
-//		D3DXVECTOR2 TextureUV;
-//	}VERTEX;
-//
-//	zerO::CEffect& GetEffect()
-//	{
-//		return m_Effect;
-//	}
-//
-//	//创建
-//	bool Create()
-//	{
-//		//圆柱体构建
-//		VERTEX Vertices[100];
-//
-//		for( DWORD i=0; i<50; i++ )
-//		{
-//			FLOAT theta = (2*D3DX_PI*i)/(50-1);
-//			Vertices[2*i+0].Position = D3DXVECTOR4( sinf(theta),-1.0f, cosf(theta), 1.0f );
-//			Vertices[2*i+0].TextureUV.x = ((FLOAT)i)/(50-1);
-//			Vertices[2*i+0].TextureUV.y = 1.0f;
-//
-//			Vertices[2*i+1].Position = D3DXVECTOR4( sinf(theta), 1.0f, cosf(theta), 1.0f );
-//			Vertices[2*i+1].TextureUV.x = ((FLOAT)i)/(50-1);
-//			Vertices[2*i+1].TextureUV.y = 0.0f;
-//		}
-//
-//		//属性创建及加载
-//		if( !m_VertexBuffer.Create(50 * 2, sizeof(VERTEX), 0, D3DPOOL_MANAGED, (void*)Vertices) )
-//			return false;
-//
-//		if( !m_VertexBuffer.SetVertexDescription(sizeof(g_VERTEX_DESCRIPTION) / sizeof(D3DVERTEXELEMENT9), g_VERTEX_DESCRIPTION) )
-//			return false;
-//
-//		if( !m_Effect.Load( TEXT("TerrainShader.fx") ) )
-//			return false;
-//
-//		if( !m_Texture.Load( TEXT("terrain_heightmap.png") ) )
-//			return false;
-//
-//		//构造世界矩阵
-//		D3DXMATRIX matWorld;
-//		D3DXMatrixIdentity( &matWorld );
-//
-//		//构造观察矩阵
-//		D3DXMATRIXA16 matView;
-//		D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
-//		D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
-//		D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
-//		D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
-//
-//		//构造投影矩阵
-//		D3DXMATRIXA16 matProj;
-//		zerO::FLOAT fAspectRatio = (zerO::FLOAT)GAMEHOST.GetDeviceSettings().pp.BackBufferWidth / GAMEHOST.GetDeviceSettings().pp.BackBufferHeight;
-//		D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
-//
-//		//为效果设置组合变换矩阵
-//		D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
-//
-//		m_Effect.SetMatrix(zerO::CEffect::WORLD_VIEW_PROJECTION, mWorldViewProj);
-//		
-//		//设置剔出模式,为不剔出任何面
-//		DEVICE.SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
-//
-//		//设置纹理
-//		m_Effect.GetEffect()->SetTexture("TextureMapping", m_Texture.GetTexture() );
-//
-//		return true;
-//	}
-//
-//	//向队列申请渲染
-//	bool ApplyForRender()
-//	{
-//		UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
-//
-//		for (i = 0; i < uTotalPass; i ++)
-//		{
-//			//锁定整个队列
-//			zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
-//			
-//			//将信息需求传送到优化队列
-//			pRenderEntry->hEffect      = m_Effect.GetHandle();
-//			pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::BUFFER;
-//			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
-//			pRenderEntry->uRenderPass  = (zerO::UINT8)i;
-//			pRenderEntry->pParent      = this;
-//
-//			//解锁
-//			GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
-//		}
-//
-//		return true;
-//	}
-//
-//	void Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
-//	{
-//		//依照更新标志进行更新
-//		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
-//			m_Effect.Begin();
-//
-//		m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
-//
-//		if( TEST_BIT(uFlag, zerO::CRenderQueue::MODEL) )
-//			m_VertexBuffer.Activate(0, 0, true);
-//
-//		m_Effect.GetEffect()->CommitChanges();
-//
-//		//绘制
-//		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2);
-//
-//		m_Effect.GetEffect()->EndPass();
-//	}
-//
-//	private:
-//		zerO::CVertexBuffer m_VertexBuffer;
-//		zerO::CEffect m_Effect;
-//		zerO::CTexture m_Texture;
-//};
-
-
-#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
+#define PARTICLESYSTEM
 
 zerO::CGameHost g_Game;
-//CTest g_Test;
+
+#ifdef TEST
+//顶点描述：位置和纹理坐标
+const D3DVERTEXELEMENT9 g_VERTEX_DESCRIPTION[] =
+{
+	{0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+
+	{0, 16, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+	D3DDECL_END()
+};
+
+//测试类
+class CTest :
+	public zerO::CSceneNode
+{
+public:
+	//顶点格式
+	typedef struct
+	{
+		D3DXVECTOR4 Position;
+		D3DXVECTOR2 TextureUV;
+	}VERTEX;
+
+	zerO::CEffect& GetEffect()
+	{
+		return m_Effect;
+	}
+
+	//创建
+	bool Create()
+	{
+		//圆柱体构建
+		VERTEX Vertices[100];
+
+		for( DWORD i=0; i<50; i++ )
+		{
+			FLOAT theta = (2*D3DX_PI*i)/(50-1);
+			Vertices[2*i+0].Position = D3DXVECTOR4( sinf(theta),-1.0f, cosf(theta), 1.0f );
+			Vertices[2*i+0].TextureUV.x = ((FLOAT)i)/(50-1);
+			Vertices[2*i+0].TextureUV.y = 1.0f;
+
+			Vertices[2*i+1].Position = D3DXVECTOR4( sinf(theta), 1.0f, cosf(theta), 1.0f );
+			Vertices[2*i+1].TextureUV.x = ((FLOAT)i)/(50-1);
+			Vertices[2*i+1].TextureUV.y = 0.0f;
+		}
+
+		//属性创建及加载
+		if( !m_VertexBuffer.Create(50 * 2, sizeof(VERTEX), 0, D3DPOOL_MANAGED, (void*)Vertices) )
+			return false;
+
+		if( !m_VertexBuffer.SetVertexDescription(sizeof(g_VERTEX_DESCRIPTION) / sizeof(D3DVERTEXELEMENT9), g_VERTEX_DESCRIPTION) )
+			return false;
+
+		if( !m_Effect.Load( TEXT("TerrainShader.fx") ) )
+			return false;
+
+		if( !m_Texture.Load( TEXT("terrain_heightmap.png") ) )
+			return false;
+
+		//构造世界矩阵
+		D3DXMATRIX matWorld;
+		D3DXMatrixIdentity( &matWorld );
+
+		//构造观察矩阵
+		D3DXMATRIXA16 matView;
+		D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
+		D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
+		D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
+		D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
+
+		//构造投影矩阵
+		D3DXMATRIXA16 matProj;
+		zerO::FLOAT fAspectRatio = (zerO::FLOAT)GAMEHOST.GetDeviceSettings().pp.BackBufferWidth / GAMEHOST.GetDeviceSettings().pp.BackBufferHeight;
+		D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
+
+		//为效果设置组合变换矩阵
+		D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
+
+		m_Effect.SetMatrix(zerO::CEffect::WORLD_VIEW_PROJECTION, mWorldViewProj);
+		
+		//设置剔出模式,为不剔出任何面
+		DEVICE.SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
+
+		//设置纹理
+		m_Effect.GetEffect()->SetTexture("TextureMapping", m_Texture.GetTexture() );
+
+		return true;
+	}
+
+	//向队列申请渲染
+	bool ApplyForRender()
+	{
+		UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
+
+		for (i = 0; i < uTotalPass; i ++)
+		{
+			//锁定整个队列
+			zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
+			
+			//将信息需求传送到优化队列
+			pRenderEntry->hEffect      = m_Effect.GetHandle();
+			pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::BUFFER;
+			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
+			pRenderEntry->uRenderPass  = (zerO::UINT8)i;
+			pRenderEntry->pParent      = this;
+
+			//解锁
+			GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
+		}
+
+		return true;
+	}
+
+	void Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
+	{
+		//依照更新标志进行更新
+		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
+			m_Effect.Begin();
+
+		m_Effect.GetEffect()->BeginPass(pEntry->uRenderPass);
+
+		if( TEST_BIT(uFlag, zerO::CRenderQueue::MODEL) )
+			m_VertexBuffer.Activate(0, 0, true);
+
+		m_Effect.GetEffect()->CommitChanges();
+
+		//绘制
+		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2);
+
+		m_Effect.GetEffect()->EndPass();
+	}
+
+	private:
+		zerO::CVertexBuffer m_VertexBuffer;
+		zerO::CEffect m_Effect;
+		zerO::CTexture m_Texture;
+};
+
+CTest g_Test;
+#endif
+
+#ifdef TERRAIN
+#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
+
 zerO::CQuadTree g_QuadTree;
 zerO::CTerrain  g_Terrain;
 zerO::CTexture  g_HeightMap;
 zerO::CSurface  g_Surface;
+#endif
 
+#ifdef PARTICLESYSTEM
 
+typedef struct
+{
+	D3DXVECTOR3 m_vVel;       //当前速度
+	D3DXVECTOR3 m_vPos0;      //初始位置
+	D3DXVECTOR3 m_vVel0;      //初始速度
+	FLOAT       m_fTime0;     //创建时间
+}PARTICLEPARAMETERS;
+
+zerO::CParticleSystem<PARTICLEPARAMETERS>* g_pSprayParticles = NULL;
+
+#endif
 //--------------------------------------------------------------------------------------
 // Rejects any D3D9 devices that aren't acceptable to the app by returning false
 //--------------------------------------------------------------------------------------
@@ -179,6 +198,73 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
     return true;
 }
 
+#ifdef PARTICLESYSTEM
+
+void InitParticle(zerO::CParticleSystem<PARTICLEPARAMETERS>::LPPARTICLE pParticle)
+{
+	//为新粒子设置初始位置、初始速度、当前位置、当前速度、颜色和创建时间等属性
+    float fRand = ((FLOAT)rand()/(FLOAT)RAND_MAX)*2.0f - 1.0f;  //[-1,1]
+    pParticle->Parameter.m_vPos0 = D3DXVECTOR3(0,1,0);    //粒子初始位置
+    pParticle->Parameter.m_vVel0.x  = 8.0f*fRand;         //粒子初始速度
+    pParticle->Parameter.m_vVel0.z  = 10.0f;
+	pParticle->Parameter.m_vVel0.y  = 0.0f;
+
+    pParticle->Vertex.Position = pParticle->Parameter.m_vPos0;     
+    pParticle->Parameter.m_vVel = pParticle->Parameter.m_vVel0;
+
+    pParticle->Vertex.Color = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);  //粒子颜色
+    pParticle->Parameter.m_fTime0     = TIME;            //粒子创建时间
+}
+
+void UpdateParticle(zerO::CParticleSystem<PARTICLEPARAMETERS>::LPPARTICLE pParticle)
+{
+	//计算粒子的新位置
+    float fT = TIME - pParticle->Parameter.m_fTime0;  //当前粒子已存活的时间
+    float fGravity = -9.8f;
+    pParticle->Vertex.Position    = pParticle->Parameter.m_vVel0 * fT + pParticle->Parameter.m_vPos0;
+    pParticle->Vertex.Position.y += (0.5f * fGravity) * (fT * fT);
+    pParticle->Parameter.m_vVel.y  = pParticle->Parameter.m_vVel0.y + fGravity * fT; 
+}
+
+bool IsParticleDestroy(zerO::CParticleSystem<PARTICLEPARAMETERS>::LPPARTICLE pParticle)
+{
+	return pParticle->Vertex.Position.y < 0;
+}
+
+D3DXVECTOR3 g_vPos;
+D3DXVECTOR3 g_vVel;
+
+UINT GetParticleRenderSteps(const zerO::CParticleSystem<PARTICLEPARAMETERS>::PARTICLE& Particle)
+{
+	//根据粒子的运动速度确定其模糊程度,
+    g_vPos = Particle.Vertex.Position;
+    g_vVel = Particle.Parameter.m_vVel;
+
+    FLOAT       fLengthSq = D3DXVec3LengthSq(&g_vVel);
+    UINT        dwSteps;
+
+    if( fLengthSq < 1.0f )        dwSteps = 2;  //确定粒子的模糊程度
+    else if( fLengthSq <  4.00f ) dwSteps = 3;
+    else if( fLengthSq <  9.00f ) dwSteps = 4;
+    else if( fLengthSq < 12.25f ) dwSteps = 5;
+    else if( fLengthSq < 16.00f ) dwSteps = 6;
+    else if( fLengthSq < 20.25f ) dwSteps = 7;
+    else                          dwSteps = 8;
+
+    g_vVel *= -0.04f / (FLOAT)dwSteps;
+
+	return dwSteps;
+}
+
+void SetParticleRenderData(const zerO::CParticleSystem<PARTICLEPARAMETERS>::PARTICLE& Particle, zerO::CParticleSystem<PARTICLEPARAMETERS>::PARTICLEVERTEX& Vertex)
+{
+	Vertex.Position = g_vPos;                             //点图元的位置
+    Vertex.Color    = Particle.Vertex.Color;    //点图元的颜色
+
+	g_vPos          += g_vVel;                            //为实现模糊效果确定该点图元的下一位置
+}
+
+#endif
 
 //--------------------------------------------------------------------------------------
 // Create any D3D9 resources that will live through a device reset (D3DPOOL_MANAGED)
@@ -196,6 +282,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 500.0f);
 
+#ifdef TERRAIN
 	D3DXMATRIX Matrix, Rotation;
 
 	D3DXMatrixIdentity(&Matrix);
@@ -221,10 +308,49 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Terrain.GetRenderMethod().SetSurface(&g_Surface);
 
 	g_Terrain.SetQuadTree(&g_QuadTree);
+#endif
 
-	////创建测试类
-	//if( g_Test.Create() )
-	//	return S_FALSE;
+#ifdef TEST
+	//创建测试类
+	if( g_Test.Create() )
+		return S_FALSE;
+#endif
+
+#ifdef PARTICLESYSTEM
+	DEBUG_NEW(g_pSprayParticles, zerO::CParticleSystem<PARTICLEPARAMETERS>);
+	g_pSprayParticles->Create(
+		1000, 1000, 500, 2000, 0.1f, 100.0f, 0.0f, 0.0f, 0.0f, 1.0f, 
+		InitParticle, UpdateParticle, IsParticleDestroy, GetParticleRenderSteps, SetParticleRenderData);
+
+	//设置材料
+	D3DMATERIAL9 mtrl;
+	 ZeroMemory( &mtrl, sizeof(D3DMATERIAL9) );
+     mtrl.Diffuse.r = mtrl.Ambient.r = 1.0f;
+     mtrl.Diffuse.g = mtrl.Ambient.g = 1.0f;
+     mtrl.Diffuse.b = mtrl.Ambient.b = 1.0f;
+     mtrl.Diffuse.a = mtrl.Ambient.a = 1.0f;
+     
+	 g_pSprayParticles->GetSurface().SetMaterial(mtrl);
+	 g_pSprayParticles->GetSurface().LoadTexuture(TEXT("heightmap.jpg"),0);
+
+	 //设置灯光
+	 D3DXVECTOR3 vecDir;
+     D3DLIGHT9 light;
+	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
+     light.Type       = D3DLIGHT_DIRECTIONAL;
+     light.Diffuse.r  = 1.0f;
+     light.Diffuse.g  = 1.0f;
+     light.Diffuse.b  = 1.0f;
+	 vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+	 light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     light.Range       = 1000.0f;
+
+	 LIGHTMANAGER.SetLight(light, 0);
+	 LIGHTMANAGER.SetAmbient(0x00808080);
+	 
+	 GAMEHOST.SetLightEnable(true);
+#endif
 
     return S_OK;
 }
@@ -242,31 +368,33 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	if( !GAMEHOST.Restore(*pBackBufferSurfaceDesc) )
 		return S_FALSE;
 
-	//HRESULT hr;
+#ifdef TEST
+	HRESULT hr;
 
-	////恢复效果对象
-	//if( g_Test.GetEffect().GetEffect() )
- //       V_RETURN( g_Test.GetEffect().GetEffect()->OnResetDevice() );
+	//恢复效果对象
+	if( g_Test.GetEffect().GetEffect() )
+        V_RETURN( g_Test.GetEffect().GetEffect()->OnResetDevice() );
 
-	////构造世界矩阵
-	//D3DXMATRIX matWorld;
-	//D3DXMatrixIdentity( &matWorld );
+	//构造世界矩阵
+	D3DXMATRIX matWorld;
+	D3DXMatrixIdentity( &matWorld );
 
-	////构造观察矩阵
-	//D3DXMATRIXA16 matView;
-	//D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
- //   D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
- //   D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
- //   D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
+	//构造观察矩阵
+	D3DXMATRIXA16 matView;
+	D3DXVECTOR3 vEyePt( 0.0f, 3.0f,-5 );
+    D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
+    D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
+    D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
 
-	////构造投影矩阵
-	//D3DXMATRIXA16 matProj;
-	//float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
- //   D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
+	//构造投影矩阵
+	D3DXMATRIXA16 matProj;
+	float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
+    D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 100.0f );
 
-	////为效果设置组合变换矩阵
-	//D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
-	//g_Test.GetEffect().GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
+	//为效果设置组合变换矩阵
+	D3DXMATRIX mWorldViewProj = matWorld * matView * matProj;
+	g_Test.GetEffect().GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
+#endif
 
     return S_OK;
 }
@@ -299,6 +427,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	CAMERA.Update();
 
 	z -= 1;
+
+#ifdef PARTICLESYSTEM
+	g_pSprayParticles->SetNumberEmitedPerFrame( (UINT)(1000*ELAPSEDTIME) );
+	g_pSprayParticles->Update();
+#endif
 }
 
 
@@ -309,9 +442,11 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 {
     HRESULT hr;
 
+#ifdef TERRAIN
 	zerO::CRectangle3D Rect;
 	Rect.Set(- 500.0f, 0.0f, - 500.0f, 0.0f, 0.0f, 500.0f);
 	zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( CAMERA.GetWorldRectangle() );
+#endif
 
     // Clear the render target and the zbuffer 
     V( pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 45, 50, 170 ), 1.0f, 0 ) );
@@ -322,6 +457,7 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//开始渲染
 		g_Game.BeginRender();
 
+#ifdef TERRAIN
 		while(pObject)
 		{
 			pObject->ApplyForRender();
@@ -329,9 +465,16 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		}
 
 		//g_Terrain.Render();
+#endif
 
+#ifdef TEST
 		//申请渲染
-		/*g_Test.ApplyForRender();*/
+		g_Test.ApplyForRender();
+#endif
+
+#ifdef PARTICLESYSTEM
+		g_pSprayParticles->ApplyForRender();
+#endif
 
 		//结束渲染
 		g_Game.EndRender();

@@ -894,7 +894,7 @@ bool CSkinMesh::ApplyForRender()
 
 		//将信息需求传送到优化队列
 		pRenderEntry->hEffect      = m_Effect.GetHandle();
-		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL;
+		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL_TYPE;
 		pRenderEntry->hModel       = RESOURCE_MODEL;
 		pRenderEntry->uRenderPass  = (zerO::UINT8)i;
 		pRenderEntry->pParent      = this;
