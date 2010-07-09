@@ -1,6 +1,7 @@
 #pragma once
 
 #include "debug.h"
+#include "BasicString.h"
 #include "Effect.h"
 #include "Texture.h"
 #include "SceneNode.h"
@@ -79,71 +80,93 @@ namespace zerO
 
 		VOID __DrawFrame( LPD3DXFRAME pFrame, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
 		VOID __DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
+	
 	public:
-		HRESULT OnCreate(BASICCHAR * strEffectName, BASICCHAR *strFileName);
-		HRESULT OnDestory();
-		HRESULT OnReset();
-		HRESULT OnLost();
-		void Update();
-		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
-		bool ApplyForRender();
-		CEffect& GetEffect() { return m_Effect; }
-		VOID SetMatView(const D3DXMATRIXA16& view) { m_matView = view; }
-		/** 通过索引设定动作
-		@param
-		index 目标动作索引
-		@param
-		dwControlPlayTime 动作播放时间
-		@param
-		bSmooth 是否平滑过渡
-		*/
+		bool Create();
+		virtual bool ApplyForRender();
+		virtual void Update();
+		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
+
+		HRESULT Destory();
+		HRESULT Reset();
+		HRESULT Lost();
+
+		void SetMeshFile(const BASICSTRING& file);
+		void SetEffectFile(const BASICSTRING& file);
+		void SetMatView(const D3DXMATRIXA16& view);
+
+		const BASICSTRING& GetMeshFile() const;
+		const BASICSTRING& GetEffectFile() const;
+		const CEffect& GetEffect() const;
+		
+		// 通过索引设定动作
 		void SetAnimation( UINT index, DWORD dwControlPlayTime = 0, bool bSmooth = true );
-		/** 通过名称设定动作
-		@param
-		pName 目标动作名称
-		@param
-		dwControlPlayTime 动作播放时间
-		@param
-		bSmooth 是否平滑过渡
-		*/
+		// 通过名称设定动作
 		void SetAnimationByName( LPSTR pName, DWORD dwControlPlayTime = 0, bool bSmooth = true );
-		/** 动作平滑过渡
-		*/
+		// 动作平滑过渡
 		void AnimationChangeSmooth(LPD3DXANIMATIONSET pAnimSet);
-		/** 得到当前正在播放的动画的播放次数
-		*/
+		// 得到当前正在播放的动画的播放次数
 		DWORD GetPlayTime();
-		/** 从名称获取动作ID
-		@param
-		sString 名称
-		*/
+		// 从名称获取动作ID
 		DWORD GetAnimIndex( char sString[] );
+		// 动画是否能播放
 		bool CanPlay(LPSTR pName, DWORD count);
 
 	private:
 		CAllocateHierarchy*         m_pAlloc;
 		LPD3DXFRAME					m_pFrameRoot;
-		//ID3DXEffect*				m_pEffect;
 		CEffect						m_Effect;
 		D3DXMATRIXA16				m_matView;
 		LPD3DXANIMATIONCONTROLLER	m_pAnimController;
 		BOOL						m_bPlayAnim;
-
-		/// 当前动作
-		DWORD						m_dwCurrentTrack;
-		/// 当前时间 
-		float						m_fTimeCurrent;
-		/// 当前动作播放次数
-		DWORD						m_dwPlayTime;
-		/// 当前动画播放时间
-		float						m_fFrameTime;
-		/// 当前动画总播放时间
-		double						m_lfTotalFrameTime;
-		/// 当前动作设定播放次数(0为重复播放)
-		DWORD						m_dwControlPlayTime;
-		/// 动作名称　
-		char						m_szASName[64];
-		/// 当前动作名称
-		std::string					m_strNowAnimSetName;
+		
+		DWORD						m_dwCurrentTrack;		// 当前动作
+		FLOAT						m_fTimeCurrent;			// 当前时间	
+		DWORD						m_dwPlayTime;			// 当前动作播放次数	
+		FLOAT						m_fFrameTime;			// 当前动画播放时间	
+		DOUBLE						m_lfTotalFrameTime;		// 当前动画总播放时间
+		DWORD						m_dwControlPlayTime;	// 当前动作设定播放次数(0为重复播放)　
+		char						m_szASName[64];			// 动作名称
+		std::string					m_strNowAnimSetName;	// 当前动作名称
+		BASICSTRING					m_strMeshFile;			// 模型文件
+		BASICSTRING					m_strEffectFile;		// shader文件
 	};
+
+	//---------------------------------------------------------------------------
+	// 设置函数
+	//---------------------------------------------------------------------------
+
+	inline void CSkinMesh::SetMeshFile(const BASICSTRING &file)
+	{
+		m_strMeshFile = file;
+	}
+
+	inline void CSkinMesh::SetEffectFile(const BASICSTRING &file)
+	{
+		m_strEffectFile = file;
+	}
+
+	inline void CSkinMesh::SetMatView(const D3DXMATRIXA16& view)
+	{
+		m_matView = view;
+	}
+
+	//---------------------------------------------------------------------------
+	// 获取函数
+	//---------------------------------------------------------------------------
+
+	inline const BASICSTRING& CSkinMesh::GetMeshFile() const
+	{
+		return m_strMeshFile;
+	}
+
+	inline const BASICSTRING& CSkinMesh::GetEffectFile() const
+	{
+		return m_strEffectFile;
+	}
+
+	inline const CEffect& CSkinMesh::GetEffect() const
+	{ 
+		return m_Effect;
+	}
 }

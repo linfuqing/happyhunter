@@ -9,7 +9,9 @@ CStaticMesh::CStaticMesh() :
 m_pMesh(NULL),
 m_pPMesh(NULL),
 m_pAdjacencyBuffer(NULL),
-m_dwNumMaterials(0)
+m_dwNumMaterials(0),
+m_strMeshFile(TEXT("")),
+m_strEffectFile(TEXT("HLSLPMesh.fx"))
 {
 }
 
@@ -21,7 +23,7 @@ CStaticMesh::~CStaticMesh()
 bool CStaticMesh::Create()
 {
 	//创建效果
-	if( !m_RenderMethod.LoadEffect(TEXT("HLSLPMesh.fx") ) )
+	if( !m_RenderMethod.LoadEffect( (PBASICCHAR)m_strMeshFile.c_str() ) )
 		return false;
 
 	//加载网格模型
@@ -29,7 +31,7 @@ bool CStaticMesh::Create()
 
 	HRESULT hr;
 
-	hr = D3DXLoadMeshFromX( L"Dwarf.x", D3DXMESH_MANAGED, 
+	hr = D3DXLoadMeshFromX( m_strEffectFile.c_str(), D3DXMESH_MANAGED, 
 		&DEVICE, &m_pAdjacencyBuffer, 
 		&pD3DXMtrlBuffer, NULL, &m_dwNumMaterials, 
 		&m_pMesh );
@@ -159,6 +161,11 @@ bool CStaticMesh::ApplyForRender()
 	}
 
 	return true;
+}
+
+void CStaticMesh::Update()
+{
+	CSceneNode::Update();
 }
 
 void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
