@@ -39,7 +39,7 @@ namespace zerO
 		~CVertexBuffer(void);
 
 		//bool Create(UINT uCount, UINT uStride, UINT16 uFlag, void* pData);
-		bool Create(UINT uCount, UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData);
+		bool Create(UINT uCount, UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData, DWORD dwFVF = 0);
 
 		bool Lock(DWORD dwFlags, void** ppData);
 		bool Unlock();
@@ -61,6 +61,7 @@ namespace zerO
 		/*UINT m_uLockOffset;
 		UINT m_uLockSize;*/
 		DWORD m_dwUsage;
+		DWORD m_dwFVF;
 
 		D3DPOOL m_Pool;
 

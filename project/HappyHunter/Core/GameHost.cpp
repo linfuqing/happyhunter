@@ -9,7 +9,9 @@ using namespace zerO;
 CGameHost* CGameHost::sm_pInstance = NULL;
 
 CGameHost::CGameHost(void) :
-m_pDevice(NULL)
+m_pDevice(NULL),
+m_bLightEnable(false),
+m_fTime(0)
 {
 	DEBUG_ASSERT(!sm_pInstance, "Only one instance of CGameHost is permitted.");
 
@@ -40,10 +42,12 @@ void CGameHost::RemoveResource(const CResource* pResource, RESOURCETYPE Type)
 	DEBUG_ASSERT(pResource, "pResource can not be NULL.");
 
 	for(std::vector<CResource*>::iterator i = m_ResourceList[Type].begin(); i != m_ResourceList[Type].end();)
+	{
 		if(*i == pResource)
 			i = m_ResourceList[Type].erase(i);
 		else
 			i ++;
+	}
 }
 
 bool CGameHost::Destroy()
@@ -107,6 +111,11 @@ bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSe
 bool CGameHost::Update(zerO::FLOAT fElapsedTime)
 {
 	m_fElapsedTime = fElapsedTime;
+
+	m_fTime += fElapsedTime;
+
+	if(m_bLightEnable)
+		m_LightManager.Activate();
 
 	return true;
 }

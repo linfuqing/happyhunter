@@ -434,7 +434,7 @@ bool CTerrain::SubmitSection(CTerrainSection* pSection)const
 			
 			pRenderEntry->hEffect      = pEffect->GetHandle();
 			pRenderEntry->hSurface     = m_RenderMethod.GetSurface()->GetHandle();
-			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER;
+			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER_TYPE;
 			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
 			pRenderEntry->uModelParamA = pSection->GetVertexBuffer().GetHandle();
 			pRenderEntry->uModelParamB = m_IndexBuffer.GetHandle();

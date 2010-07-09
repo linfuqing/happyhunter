@@ -79,11 +79,12 @@ namespace zerO
 			CSceneNode*	pParent;
 			UINT32	uUserData;
 #pragma pack()
-			enum TYPE
+			typedef enum
 			{
-				BUFFER = 0,	
-				MODEL,		
-			};
+				BUFFER_TYPE = 0,	
+				MODEL_TYPE,		
+				PARTICLE_TYPE
+			}TYPE;
 
 			void Clear()
 			{

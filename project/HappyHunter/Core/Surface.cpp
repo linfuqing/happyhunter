@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "Surface.h"
+#include "GameHost.h"
 
 using namespace zerO;
 
@@ -14,4 +15,14 @@ m_TextureFlag(0)
 
 CSurface::~CSurface(void)
 {
+}
+
+void CSurface::Activate()
+{
+     DEVICE.SetMaterial(&m_Material);
+
+	 if(m_uNumTextures)
+		 for(UINT i = 0; i < MAXINUM_TEXTURE_PER_SURFACE; i ++)
+			if( TEST_BIT(m_TextureFlag, i) )
+				DEVICE.SetTexture( i, m_pTextures[i]->GetTexture() );
 }
