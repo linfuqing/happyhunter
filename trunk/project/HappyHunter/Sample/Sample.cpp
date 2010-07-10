@@ -7,7 +7,7 @@
 #include "resource.h"
 #include "core.h"
 
-#define PARTICLESYSTEM
+#define TERRAIN//PARTICLESYSTEM
 
 zerO::CGameHost g_Game;
 

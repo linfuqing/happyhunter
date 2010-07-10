@@ -151,6 +151,7 @@ m_pNormalTable(NULL)
 
 CTerrain::~CTerrain(void)
 {
+	Destroy();
 }
 
 void CTerrain::Render()
@@ -416,8 +417,17 @@ bool CTerrain::_AllocateSectors()
 	return true;
 }
 
-void CTerrain::Destroy()
+bool CTerrain::Destroy()
 {
+	DEBUG_DELETE_ARRAY(m_pSector);
+	DEBUG_DELETE_ARRAY(m_pfHeightTable);
+	DEBUG_DELETE_ARRAY(m_pNormalTable);
+
+	m_pSector      = NULL;
+	m_pfHeightTable = NULL;
+	m_pNormalTable = NULL;
+
+	return true;
 }
 
 bool CTerrain::SubmitSection(CTerrainSection* pSection)const

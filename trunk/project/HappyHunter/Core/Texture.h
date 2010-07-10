@@ -21,6 +21,8 @@ namespace zerO
 				D3DFORMAT Format     = D3DFMT_UNKNOWN, 
 				D3DPOOL   Pool       = D3DPOOL_MANAGED);
 
+		bool Destroy();
+
 		bool Load(const PBASICCHAR pcFileName = NULL);
 
 		void SetMatrix(D3DXMATRIX* pMatrix);

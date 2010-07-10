@@ -21,6 +21,8 @@ namespace zerO
 		CSurface(void);
 		~CSurface(void);
 
+		bool Destroy();
+
 		void SetMaterial(D3DMATERIAL9& Material);
 		void SetTexture(CTexture* pTexture, UINT uIndex);
 
@@ -38,6 +40,7 @@ namespace zerO
 		CTexture*        m_pTextures[MAXINUM_TEXTURE_PER_SURFACE];
 		UINT             m_uNumTextures;
 		TEXITUREFLAGTYPE m_TextureFlag;
+		TEXITUREFLAGTYPE m_DestroyFlag;
 	};
 
 	inline void CSurface::SetMaterial(D3DMATERIAL9& Material)
@@ -72,9 +75,14 @@ namespace zerO
 
 		if( pTexture->Load(pcFileName) )
 		{
+			SET_BIT(m_DestroyFlag, uIndex);
+
 			SetTexture(pTexture, uIndex);
+
 			return true;
 		}
+		else
+			DEBUG_DELETE(pTexture);
 
 		return false;
 	}

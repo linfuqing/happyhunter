@@ -571,7 +571,7 @@ void CSkinMesh::Update()
 {
 	CSceneNode::Update();
 
-	FLOAT fElapsedAppTime = ELAPSEDTIME;
+	FLOAT fElapsedAppTime = TIME;
 
 	if( 0.0f == fElapsedAppTime ) 
         return;

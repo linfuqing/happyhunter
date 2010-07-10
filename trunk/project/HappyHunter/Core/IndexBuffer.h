@@ -14,6 +14,9 @@ namespace zerO
 		~CIndexBuffer(void);
 
 		bool Create(D3DPRIMITIVETYPE Type, UINT uCount, DWORD dwUsage, D3DPOOL Pool, void* pData);
+		bool Destroy(); 
+		bool Disable(); 
+		bool Restore(); 
 
 		bool CreateSingleStripGrid(
 		UINT uVerticesX,
@@ -37,6 +40,11 @@ namespace zerO
 	private:
 		LPDIRECT3DINDEXBUFFER9 m_pBuffer;
 		D3DPRIMITIVETYPE m_Type;
+		PUINT8 m_puData;
+
+		void* m_pLockData;
+		UINT m_uLockOffset;
+		UINT m_uLockSize;
 
 		UINT m_uMemberCount;
 		UINT m_uStride;
@@ -79,6 +87,11 @@ namespace zerO
 			return false;
 		}
 
+		m_uLockOffset = 0;
+		m_uLockSize   = m_uByteSize;
+
+		m_pLockData   = *ppData;
+
 		return true;
 	}
 
@@ -92,6 +105,13 @@ namespace zerO
 
 			return false;
 		}
+
+		if(m_puData && m_Pool == D3DPOOL_DEFAULT)
+			memcpy(m_puData + m_uLockOffset, m_pLockData, m_uLockSize);
+
+		m_uLockOffset = 0;
+		m_uLockSize   = 0;
+		m_pLockData   = NULL;
 
 		return true;
 	}

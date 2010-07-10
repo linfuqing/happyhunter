@@ -18,7 +18,14 @@ m_Forward(0.0f, 0.0f, 1.0f)
 
 CSceneNode::~CSceneNode(void)
 {
+	Destroy();
+}
+
+bool CSceneNode::Destroy()
+{
 	m_Children.clear();
+
+	return true;
 }
 
 

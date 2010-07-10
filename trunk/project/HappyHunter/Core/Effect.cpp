@@ -14,6 +14,45 @@ m_pSurface(NULL)
 
 CEffect::~CEffect(void)
 {
+	Destroy();
+}
+
+
+bool CEffect::Destroy()
+{
+	DEBUG_RELEASE(m_pEffect);
+
+	m_pEffect = NULL;
+
+	return true;
+}
+
+bool CEffect::Disable()
+{
+	HRESULT hr = m_pEffect->OnLostDevice();
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool CEffect::Restore()
+{
+	HRESULT hr = m_pEffect->OnResetDevice();
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+
+		return false;
+	}
+
+	return true;
 }
 
 bool CEffect::Load(const PBASICCHAR pcFileName)

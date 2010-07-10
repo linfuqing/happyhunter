@@ -12,6 +12,7 @@ m_pMatrix(NULL)
 
 CTexture::~CTexture(void)
 {
+	Destroy();
 }
 
 bool CTexture::Create(
@@ -54,6 +55,15 @@ bool CTexture::Create(
 	}
 
 	return false;
+}
+
+bool CTexture::Destroy()
+{
+	DEBUG_RELEASE(m_pTexture);
+
+	m_pTexture = NULL;
+
+	return true;
 }
 
 bool CTexture::Load(const PBASICCHAR pcFileName)

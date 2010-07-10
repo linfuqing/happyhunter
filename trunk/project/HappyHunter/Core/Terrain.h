@@ -89,7 +89,7 @@ namespace zerO
 
 		void Render();
 
-		void Destroy();
+		bool Destroy();
 
 		virtual bool Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, UINT8 uShift);
 

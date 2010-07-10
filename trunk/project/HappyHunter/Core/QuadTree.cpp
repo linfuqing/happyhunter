@@ -333,7 +333,7 @@ void CQuadTree::Create(const CRectangle3D& Boundary, zerO::UINT uDepth)
 	}
 }
 
-void CQuadTree::Destroy()
+bool CQuadTree::Destroy()
 {
 	for (UINT i = 0; i < MAXINUM_TREE_DEPTH; i ++)
 	{
@@ -343,6 +343,8 @@ void CQuadTree::Destroy()
 	}
 
 	m_uDepth = 0;
+
+	return true;
 }
 
 CQuadTreeObject* CQuadTree::SearchObject(const CRectangle3D& WorldRectangle, const LPFRUSTUM pFrustum)
