@@ -87,7 +87,7 @@ namespace zerO
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
-		HRESULT Destory();
+		bool Destroy();
 		HRESULT Reset();
 		HRESULT Lost();
 

@@ -30,7 +30,6 @@ namespace zerO
 
 	private:
 		LPD3DXMESH              m_pMesh;			// 原网格模型
-		LPD3DXPMESH             m_pPMesh;			// 层次细节网格模型
 		LPD3DXBUFFER            m_pAdjacencyBuffer; // 网格模型面邻接信息
 		DWORD                   m_dwNumMaterials;   // 材质数量	
 		CRenderMethod			m_RenderMethod;		// 渲染方法

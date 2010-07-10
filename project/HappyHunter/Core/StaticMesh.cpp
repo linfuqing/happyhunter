@@ -7,7 +7,6 @@ using namespace zerO;
 
 CStaticMesh::CStaticMesh() :
 m_pMesh(NULL),
-m_pPMesh(NULL),
 m_pAdjacencyBuffer(NULL),
 m_dwNumMaterials(0),
 m_strMeshFile(TEXT("")),
@@ -17,13 +16,14 @@ m_strEffectFile(TEXT("HLSLPMesh.fx"))
 
 CStaticMesh::~CStaticMesh()
 {
-	/*m_RenderMethod.Destory();*/
+	DEBUG_RELEASE(m_pAdjacencyBuffer);
+	DEBUG_RELEASE(m_pMesh);
 }
 
 bool CStaticMesh::Create()
 {
 	//创建效果
-	if( !m_RenderMethod.LoadEffect( (PBASICCHAR)m_strMeshFile.c_str() ) )
+	if( !m_RenderMethod.LoadEffect( (PBASICCHAR)m_strEffectFile.c_str() ) )
 		return false;
 
 	//加载网格模型
@@ -31,7 +31,7 @@ bool CStaticMesh::Create()
 
 	HRESULT hr;
 
-	hr = D3DXLoadMeshFromX( m_strEffectFile.c_str(), D3DXMESH_MANAGED, 
+	hr = D3DXLoadMeshFromX( m_strMeshFile.c_str(), D3DXMESH_MANAGED, 
 		&DEVICE, &m_pAdjacencyBuffer, 
 		&pD3DXMtrlBuffer, NULL, &m_dwNumMaterials, 
 		&m_pMesh );
@@ -76,66 +76,59 @@ bool CStaticMesh::Create()
 
 	DEBUG_RELEASE( pD3DXMtrlBuffer );
 
-	LPD3DXMESH pTempMesh;  //临时网格模型变量
+	LPD3DXMESH pMeshSysMem = m_pMesh;
+	D3DVERTEXELEMENT9 decl[]=
+	{
+		{0, 0,  D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+		{0, 12, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+		{0, 20, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+		{0, 32, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TANGENT, 0},
+		D3DDECL_END()
+	};
 
-	//整理原始网格模型
-	hr = D3DXCleanMesh( D3DXCLEAN_SIMPLIFICATION, m_pMesh, 
-		(DWORD*)m_pAdjacencyBuffer->GetBufferPointer(), &pTempMesh, 
-		(DWORD*)m_pAdjacencyBuffer->GetBufferPointer(), NULL );
-
+	LPD3DXMESH  pMeshSysMem2  = NULL;
+	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+	
+	//确保顶点包含法线
+	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
 	if( FAILED(hr) )
 	{
 		DEBUG_WARNING(hr);
 		return false;
 	}
 
-	DEBUG_RELEASE( m_pMesh );
-	m_pMesh = pTempMesh;
-
-	//熔合重复的顶点
-	D3DXWELDEPSILONS Epsilons;
-	ZeroMemory( &Epsilons, sizeof(D3DXWELDEPSILONS) );
-	hr = D3DXWeldVertices( m_pMesh, D3DXWELDEPSILONS_WELDPARTIALMATCHES,
-		&Epsilons, 
-		(DWORD*)m_pAdjacencyBuffer->GetBufferPointer(),  
-		(DWORD*)m_pAdjacencyBuffer->GetBufferPointer(),
-		NULL, NULL );
-
+	//计算切线
+	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
 	if( FAILED(hr) )
 	{
 		DEBUG_WARNING(hr);
 		return false;
 	}
 
-	//检查处理、简化后的网格模型是否有效
-	hr = D3DXValidMesh( m_pMesh, (DWORD*)m_pAdjacencyBuffer->GetBufferPointer(), NULL );
+	D3DVERTEXELEMENT9 decl2[]=
+	{
+		{0, 0,  D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+		{0, 16, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+		{0, 24, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+		{0, 36, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TANGENT, 0},
+		D3DDECL_END()
+	};
 
+	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &m_pMesh );
 	if( FAILED(hr) )
 	{
 		DEBUG_WARNING(hr);
 		return false;
 	}
 
-	//生成层次细节网格模型
-	hr = D3DXGeneratePMesh( m_pMesh, (DWORD*)m_pAdjacencyBuffer->GetBufferPointer(),
-		NULL, NULL, 1, D3DXMESHSIMP_VERTEX, &m_pPMesh );
-
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	DWORD cVerticesMin = m_pPMesh->GetMinVertices();
-	DWORD cVerticesMax = m_pPMesh->GetMaxVertices();
-
-	hr = m_pPMesh->SetNumVertices(cVerticesMax);
-
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
+	//释放临时网格模型对象
+	DEBUG_RELEASE(pMeshSysMem);
+	DEBUG_RELEASE(pMeshSysMem2);
 
 	return true;
 }
@@ -190,8 +183,8 @@ void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 
 		m_RenderMethod.GetEffect()->GetEffect()->BeginPass(pEntry->uRenderPass);
 
 		//绘制
-		if (m_pPMesh != NULL)
-			m_pPMesh->DrawSubset( i );
+		if (m_pMesh != NULL)
+			m_pMesh->DrawSubset( i );
 
 		m_RenderMethod.GetEffect()->GetEffect()->EndPass();
 

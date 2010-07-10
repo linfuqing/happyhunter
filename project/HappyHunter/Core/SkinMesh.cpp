@@ -129,29 +129,68 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 	
     NumFaces = pMesh->GetNumFaces();
 
-	//确保网格顶点包含法线
-    if (!(pMesh->GetFVF() & D3DFVF_NORMAL))
-    {
-        pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
-        hr = pMesh->CloneMeshFVF( pMesh->GetOptions(), 
-			                      pMesh->GetFVF() | D3DFVF_NORMAL, 
-								  &DEVICE, 
-			                      &pMeshContainer->MeshData.pMesh );
-		if (FAILED(hr))
-		{
-			DestroyMeshContainer(pMeshContainer);
-			return hr;
-		}
+	LPD3DXMESH pMeshSysMem = pMesh;
+	D3DVERTEXELEMENT9   decl[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
 
-		pMesh = pMeshContainer->MeshData.pMesh;
-        D3DXComputeNormals( pMesh, NULL );
-    }
-    else 
-    {
-        pMeshContainer->MeshData.pMesh = pMesh;
-        pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
-        pMesh->AddRef();
-    }
+	LPD3DXMESH  pMeshSysMem2  = NULL;
+	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+	
+	//确保顶点包含法线
+	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//计算切线
+	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	D3DVERTEXELEMENT9   decl2[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   36,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   52,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   56,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   68,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
+
+	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMesh );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	pMeshContainer->MeshData.pMesh = pMesh;
+	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+
+	//释放临时网格模型对象
+	DEBUG_RELEASE(pMeshSysMem);
+	DEBUG_RELEASE(pMeshSysMem2);
 	
     //为网格模型准备材质和纹理
     pMeshContainer->NumMaterials = max(1, NumMaterials); 
@@ -294,20 +333,6 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 		                                                        &pMeshContainer->MeshData.pMesh);
 	if (FAILED(hr))
 		return hr;
-
-	// FVF has to match our declarator. Vertex shaders are not as forgiving as FF pipeline
-	DWORD NewFVF = (pMeshContainer->MeshData.pMesh->GetFVF() & D3DFVF_POSITION_MASK) | D3DFVF_NORMAL | D3DFVF_TEX1 | D3DFVF_LASTBETA_UBYTE4;
-	if (NewFVF != pMeshContainer->MeshData.pMesh->GetFVF())
-	{
-		LPD3DXMESH pMesh;
-		hr = pMeshContainer->MeshData.pMesh->CloneMeshFVF(pMeshContainer->MeshData.pMesh->GetOptions(), NewFVF, &DEVICE, &pMesh);
-		if (!FAILED(hr))
-		{
-			pMeshContainer->MeshData.pMesh->Release();
-			pMeshContainer->MeshData.pMesh = pMesh;
-			pMesh = NULL;
-		}
-	}
 
 	D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
 	LPD3DVERTEXELEMENT9 pDeclCur;
@@ -571,7 +596,7 @@ void CSkinMesh::Update()
 {
 	CSceneNode::Update();
 
-	FLOAT fElapsedAppTime = TIME;
+	FLOAT fElapsedAppTime = ELAPSEDTIME;
 
 	if( 0.0f == fElapsedAppTime ) 
         return;
@@ -909,10 +934,10 @@ bool CSkinMesh::ApplyForRender()
 //-----------------------------------------------------------------------------
 // Desc: 释放蒙皮网格模型
 //-----------------------------------------------------------------------------
-HRESULT CSkinMesh::Destory()
+bool CSkinMesh::Destroy()
 {
 	delete this;
-	return S_OK;
+	return true;
 }
 
 HRESULT CSkinMesh::Reset()
