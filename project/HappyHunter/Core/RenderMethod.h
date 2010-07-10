@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <list>
 #include "Effect.h"
 
 namespace zerO
@@ -28,10 +29,12 @@ namespace zerO
 		bool LoadEffect(const PBASICCHAR pcFileName);
 		bool LoadEffect(const PBASICCHAR pcFileName, UINT uStage);
 
-		void Destory();
+		bool Destroy();
 	private:
 		std::vector<CEffect*> m_EffectList;
 		std::vector<CSurface*> m_SurfaceList;
+
+		std::list<CEffect*> m_EffectDestroyList;
 
 		UINT m_uActiveEffect;
 		UINT m_uActiveSurface;

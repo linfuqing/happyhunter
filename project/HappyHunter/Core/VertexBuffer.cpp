@@ -7,6 +7,11 @@ CVertexBuffer::CVertexBuffer(void) :
 CResource(RESOURCE_VERTEX_BUFFER),
 m_pBuffer(NULL),
 m_pVertexDeclaration(NULL),
+m_puData(NULL),
+m_pLockData(NULL),
+
+m_uLockOffset(0),
+m_uLockSize(0),
 m_uVertexElementCount(0),
 uStride(0),
 m_uMemberCount(0),
@@ -20,6 +25,7 @@ m_Pool(D3DPOOL_FORCE_DWORD)
 
 CVertexBuffer::~CVertexBuffer(void)
 {
+	Destroy();
 }
 
 bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData, DWORD dwFVF)//(UINT uCount, UINT uStride, UINT16 uFlag, void* pData)
@@ -49,27 +55,40 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 		return false;
 	}
 
+	if(Pool == D3DPOOL_DEFAULT)
+	{
+		DEBUG_NEW(m_puData, UINT8[m_uByteSize]);
+
+		memset(m_puData, 0, m_uByteSize);
+	}
+
 	if(pData)
 	{
 		void* pVertices;
 
-		hr = m_pBuffer->Lock(0, m_uByteSize, &pVertices, 0);
+		/*hr = m_pBuffer->Lock(0, m_uByteSize, &pVertices, 0);
 
 		if( FAILED(hr) )
 		{
 			DEBUG_WARNING(hr);
 			return false;
-		}
+		}*/
+
+		if( !Lock(0, &pVertices) )
+			return false;
 
 		memcpy(pVertices, pData, m_uByteSize);
 
-		hr = m_pBuffer->Unlock();
+		if( !Unlock() )
+			return false;
+
+		/*hr = m_pBuffer->Unlock();
 
 		if( FAILED(hr) )
 		{
 			DEBUG_WARNING(hr);
 			return false;
-		}
+		}*/
 	}
 
 	return true;
@@ -125,6 +144,61 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 	//SET_BIT( m_uStateFlags, (VOLATILE, (m_uUsageFlags & D3DUSAGE_DYNAMIC) ? true : false) );
 
 	//return false;
+}
+
+
+bool CVertexBuffer::Destroy()
+{
+	DEBUG_DELETE_ARRAY(m_puData);
+	DEBUG_RELEASE(m_pBuffer);
+	DEBUG_RELEASE(m_pVertexDeclaration);
+
+	m_pBuffer            = NULL;
+	m_pVertexDeclaration = NULL;
+	m_puData             = NULL;
+
+	return true;
+}
+
+bool CVertexBuffer::Disable()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		DEBUG_RELEASE(m_pBuffer);
+		m_pBuffer = NULL;
+	}
+
+	return true;
+}
+
+bool CVertexBuffer::Restore()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, m_dwUsage, m_dwFVF, m_Pool, &m_pBuffer, NULL);
+
+		if( FAILED(hr) )
+		{
+			m_pBuffer = NULL;
+			DEBUG_WARNING(hr);
+			return false;
+		}
+
+		if(m_puData)
+		{
+			void* pVertices;
+
+			if( !Lock(0, &pVertices) )
+				return false;
+
+			memcpy(pVertices, m_puData, m_uByteSize);
+
+			if( !Unlock() )
+				return false;
+		}
+	}
+
+	return true;
 }
 
 bool CVertexBuffer::SetVertexDescription(zerO::UINT uElementCount, const D3DVERTEXELEMENT9* pElementList)

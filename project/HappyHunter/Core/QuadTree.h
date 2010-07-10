@@ -235,7 +235,7 @@ namespace zerO
 		~CQuadTree(void);
 
 		void Create(const CRectangle3D& Boundary, UINT uDepth);
-		void Destroy();
+		bool Destroy();
 
 		CQuadTreeObject* SearchObject(const CRectangle3D& WorldRectangle, const LPFRUSTUM pFrustum = NULL);
 

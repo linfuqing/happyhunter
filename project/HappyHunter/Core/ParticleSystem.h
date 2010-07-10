@@ -37,6 +37,8 @@ namespace zerO
 
 		~CParticleSystem(void);
 
+		bool Destroy();
+
 		CSurface& GetSurface();
 
 		void SetNumberEmitedPerFrame(UINT uValue);
@@ -57,8 +59,6 @@ namespace zerO
 			CHECKPARTICLE pfnIsDestroy,
 			GETPARTICLEDATA pfnGetSteps,
 			SETPARTICLEDATA pfnSetRenderData);
-
-		bool Restore();
 
 		void Update();
 
@@ -90,8 +90,6 @@ namespace zerO
 
 		CVertexBuffer m_VertexBuffer;
 
-		LPDIRECT3DTEXTURE9 m_pTexture;   //粒子纹理
-
 		UINT  m_uBase;       //每次填充顶点缓冲区时的起始位置:m_uBase += m_uFlush;     
 		UINT  m_uFlush;      //一次填充顶点缓冲区的粒子数量
 		UINT  m_uDiscard;    //顶点缓冲区能够容纳的最大粒子数量
@@ -107,13 +105,13 @@ namespace zerO
 	};
 
 	template<typename T>
-	CSurface& CParticleSystem<T>::GetSurface()
+	inline CSurface& CParticleSystem<T>::GetSurface()
 	{
 		return m_Surface;
 	}
 
 	template<typename T>
-	void CParticleSystem<T>::SetNumberEmitedPerFrame(UINT uValue)
+	inline void CParticleSystem<T>::SetNumberEmitedPerFrame(UINT uValue)
 	{
 		m_uNumEmitedPerFrame = uValue;
 	}
@@ -141,25 +139,12 @@ namespace zerO
 	m_pParticles(NULL),
 	m_pParticlesFree(NULL)
 	{
-		m_pTexture = NULL;
 	}
 
 	template<typename T>
 	CParticleSystem<T>::~CParticleSystem(void)
 	{
-		while( m_pParticles )
-		{
-			PARTICLENODE* pSpark = m_pParticles;
-			m_pParticles = pSpark->pNext;
-			delete pSpark;
-		}
-
-		while( m_pParticlesFree )
-		{
-			PARTICLENODE *pSpark = m_pParticlesFree;
-			m_pParticlesFree = pSpark->pNext;
-			delete pSpark;
-		}
+		Destroy();
 	}
 
 	template<typename T>
@@ -204,6 +189,26 @@ namespace zerO
 			D3DPOOL_DEFAULT, 
 			NULL, 
 			D3DFVF_XYZ | D3DFVF_DIFFUSE);
+	}
+
+	template<typename T>
+	bool CParticleSystem<T>::Destroy()
+	{
+		while(m_pParticles)
+		{
+			PARTICLENODE* pParticle = m_pParticles;
+			m_pParticles = pParticle->pNext;
+			DEBUG_DELETE(pParticle);
+		}
+
+		while(m_pParticlesFree)
+		{
+			PARTICLENODE *pParticle = m_pParticlesFree;
+			m_pParticlesFree = pParticle->pNext;
+			DEBUG_DELETE(pParticle);
+		}
+
+		return true;
 	}
 
 	template<typename T>
@@ -262,6 +267,13 @@ namespace zerO
 	template<typename T>
 	bool CParticleSystem<T>::ApplyForRender()
 	{
+		if( !(m_pfnInit && m_pfnUpdate && m_pfnIsDestroy && m_pfnGetSteps && m_pfnSetRenderData) )
+		{
+			DEBUG_WARNING("Particle System had be created.");
+
+			return false;
+		}
+
 		CRenderQueue::LPRENDERENTRY pEntry = RENDERQUEUE.LockRenderEntry();
 		pEntry->uModelType = CRenderQueue::RENDERENTRY::PARTICLE_TYPE;
 		pEntry->hModel     = m_VertexBuffer.GetHandle();
@@ -277,6 +289,8 @@ namespace zerO
 	template<typename T>
 	void CParticleSystem<T>::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 	{
+		DEBUG_ASSERT(m_pfnInit && m_pfnUpdate && m_pfnIsDestroy && m_pfnGetSteps && m_pfnSetRenderData, "Particle System had be created.");
+
 		HRESULT hr;
 
 		//DEVICE.SetRenderState( D3DRS_ZWRITEENABLE, false );     //禁用深度缓冲区操作
@@ -305,20 +319,23 @@ namespace zerO
 
 		LPPARTICLENODE   pParticle = m_pParticles;
 		LPPARTICLEVERTEX pVertices;
-		UINT             uNumParticlesToRender = 0, uParticleVertexSize = sizeof(PARTICLEVERTEX);
+		UINT             uNumParticlesToRender = 0;//, uParticleVertexSize = sizeof(PARTICLEVERTEX);
 
 		m_uBase += m_uFlush;
 
 		if(m_uBase >= m_uDiscard)
 			m_uBase = 0;
 
-		hr = m_VertexBuffer.GetBuffer()->Lock(
+		/*hr = m_VertexBuffer.GetBuffer()->Lock(
 			m_uBase * uParticleVertexSize,
 			m_uFlush * uParticleVertexSize,
 			(void**) &pVertices, 
 			m_uBase ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD);
 
-		DEBUG_ASSERT(SUCCEEDED(hr), hr);
+		DEBUG_ASSERT(SUCCEEDED(hr), hr);*/
+
+		if( !m_VertexBuffer.Lock(m_uBase, m_uFlush, m_uBase ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD, (void**)&pVertices) )
+			return;
 
 		//渲染粒子
 		while( pParticle )
@@ -334,9 +351,12 @@ namespace zerO
 
 				if( ++ uNumParticlesToRender == m_uFlush )  //填充完毕指定的数据块
 				{
-				   hr = m_VertexBuffer.GetBuffer()->Unlock();
+				   /*hr = m_VertexBuffer.GetBuffer()->Unlock();
 
-				   DEBUG_ASSERT(SUCCEEDED(hr), hr);
+				   DEBUG_ASSERT(SUCCEEDED(hr), hr);*/
+
+					if( !m_VertexBuffer.Unlock() )
+						return;
 
 				   hr = DEVICE.DrawPrimitive(D3DPT_POINTLIST, m_uBase, uNumParticlesToRender);
 
@@ -346,13 +366,16 @@ namespace zerO
 					if(m_uBase >= m_uDiscard)
 						m_uBase = 0;
 
-					hr = m_VertexBuffer.GetBuffer()->Lock(
+					/*hr = m_VertexBuffer.GetBuffer()->Lock(
 						m_uBase * uParticleVertexSize, 
 						m_uFlush * uParticleVertexSize, 
 						(void**)&pVertices, 
 						m_uBase ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD);
 
-					DEBUG_ASSERT(SUCCEEDED(hr), hr);
+					DEBUG_ASSERT(SUCCEEDED(hr), hr);*/
+
+					if( !m_VertexBuffer.Lock(m_uBase, m_uFlush, m_uBase ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD, (void**)&pVertices) )
+						return;
 
 					uNumParticlesToRender = 0;  //将需要渲染的顶点数重新置零
 				} //end if
@@ -361,9 +384,12 @@ namespace zerO
 		} //end while
 
 		// Unlock the vertex buffer
-		hr = m_VertexBuffer.GetBuffer()->Unlock();
+		/*hr = m_VertexBuffer.GetBuffer()->Unlock();*/
 
-		DEBUG_ASSERT(SUCCEEDED(hr), hr);
+		if( !m_VertexBuffer.Unlock() )
+			return;
+
+		/*DEBUG_ASSERT(SUCCEEDED(hr), hr);*/
 
 		//渲染剩余不足一块的粒子
 		if(uNumParticlesToRender)

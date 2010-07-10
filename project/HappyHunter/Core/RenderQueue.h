@@ -97,6 +97,8 @@ namespace zerO
 		CRenderQueue(UINT uMaxRenderEntries);
 		~CRenderQueue(void);
 
+		bool Destroy();
+
 		//锁定渲染队列从渲染块池获取一个渲染块.
 		LPRENDERENTRY LockRenderEntry();
 

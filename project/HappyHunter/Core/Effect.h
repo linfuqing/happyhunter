@@ -50,6 +50,10 @@ namespace zerO
 		CEffect(void);
 		~CEffect();
 
+		bool Destroy(); 
+		bool Disable(); 
+		bool Restore(); 
+
 		bool Load(const PBASICCHAR pcFileName = NULL);
 
 		//检查枚举是否可用.

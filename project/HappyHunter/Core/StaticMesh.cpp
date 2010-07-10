@@ -17,7 +17,7 @@ m_strEffectFile(TEXT("HLSLPMesh.fx"))
 
 CStaticMesh::~CStaticMesh()
 {
-	m_RenderMethod.Destory();
+	/*m_RenderMethod.Destory();*/
 }
 
 bool CStaticMesh::Create()

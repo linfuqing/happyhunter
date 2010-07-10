@@ -21,6 +21,8 @@ m_fTime(0)
 CGameHost::~CGameHost(void)
 {
 	sm_pInstance = NULL;
+
+	Destroy();
 }
 
 RESOURCEHANDLE CGameHost::AddResource(CResource* const pResource, RESOURCETYPE Type)
@@ -60,6 +62,15 @@ bool CGameHost::Destroy()
 		for(Iteractor = m_ResourceList[uIndex].begin(); Iteractor != m_ResourceList[uIndex].end(); Iteractor ++)
 			if( !(*Iteractor)->Destroy() )
 				return false;
+
+	DEBUG_DELETE(m_pRenderQueue);
+	DEBUG_DELETE(m_pCamera);
+
+	m_pRenderQueue = NULL;
+	m_pCamera      = NULL;
+
+	for(INT i = 0; i < TOTAL_RESOURCE_TYPES; i ++)
+		m_ResourceList[i].clear();
 
 	return true;
 }

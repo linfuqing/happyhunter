@@ -12,6 +12,7 @@ m_uActiveSurface(0)
 
 CRenderMethod::~CRenderMethod(void)
 {
+	Destroy();
 }
 
 bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName)
@@ -22,19 +23,23 @@ bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName)
 
 	if( pEffect->Load(pcFileName) )
 	{
+		m_EffectDestroyList.push_back(pEffect);
+
 		m_uActiveEffect = m_EffectList.size();
 
 		m_EffectList.push_back(pEffect);
 
 		return true;
 	}
+	else
+		DEBUG_DELETE(pEffect);
 
 	return false;
 }
 
 bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName, zerO::UINT uStage)
 {
-	DEBUG_ASSERT(uStage < m_EffectList.max_size(), "Stage error!");
+	DEBUG_ASSERT(uStage < m_EffectList.size(), "Stage error!");
 
 	CEffect* pEffect;
 	
@@ -42,35 +47,30 @@ bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName, zerO::UINT uStage)
 
 	if( pEffect->Load(pcFileName) )
 	{
-		m_EffectList.insert(m_EffectList.begin() + uStage, pEffect);
+		m_EffectDestroyList.push_back(pEffect);
+
+		m_EffectList[uStage] = pEffect;
 
 		m_uActiveEffect = uStage;
 
 		return true;
 	}
+	else
+		DEBUG_DELETE(pEffect);
 
 	return false;
 }
 
-void CRenderMethod::Destory()
+bool CRenderMethod::Destroy()
 {
-	if ( m_EffectList.empty() )
-		return;
+	for(std::list<CEffect*>::iterator i = m_EffectDestroyList.begin(); i != m_EffectDestroyList.end(); i ++)
+		DEBUG_DELETE(*i);
 
-	for ( std::vector<CEffect*>::iterator i = m_EffectList.begin(); i != m_EffectList.end(); )
-	{
-		DEBUG_DELETE( *i );
-		i = m_EffectList.erase( i );
-	}
+	m_EffectDestroyList.clear();
+
 	m_EffectList.clear();
 
-	if ( m_SurfaceList.empty() )
-		return;
-
-	for ( std::vector<CSurface*>::iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); )
-	{
-		DEBUG_DELETE( *i );
-		i = m_SurfaceList.erase( i );
-	}
 	m_SurfaceList.clear();
+
+	return true;
 }

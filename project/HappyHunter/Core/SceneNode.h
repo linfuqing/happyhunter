@@ -15,6 +15,8 @@ namespace zerO
 		CSceneNode(void);
 		~CSceneNode(void);
 
+		virtual bool Destroy();
+
 		CSceneNode* GetParent()const;
 
 		//±¾µØ¾ØÕó

@@ -7,8 +7,12 @@ using namespace zerO;
 CIndexBuffer::CIndexBuffer(void) :
 CResource(RESOURCE_INDEX_BUFFER),
 m_pBuffer(NULL),
+m_puData(NULL),
+m_pLockData(NULL),
 m_Type(D3DPT_FORCE_DWORD),
 
+m_uLockOffset(0),
+m_uLockSize(0),
 m_uMemberCount(0),
 m_uStride(0),
 m_uByteSize(0),
@@ -22,6 +26,7 @@ m_Format(D3DFMT_FORCE_DWORD)
 
 CIndexBuffer::~CIndexBuffer(void)
 {
+	Destroy();
 }
 
 bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsage, D3DPOOL Pool, void* pData)
@@ -58,26 +63,88 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 		return false;
 	}
 
+	if(Pool == D3DPOOL_DEFAULT)
+		DEBUG_NEW(m_puData, UINT8[m_uByteSize]);
+
+
 	if(pData)
 	{
 		void* pIndices;
 
-		hr = m_pBuffer->Lock(0, m_uByteSize, &pIndices, 0);
+		/*hr = m_pBuffer->Lock(0, m_uByteSize, &pIndices, 0);
 
 		if( FAILED(hr) )
 		{
+			DEBUG_WARNING(hr);
+			return false;
+		}*/
+
+		if( !Lock(0, &pIndices) )
+			return false;
+
+		memcpy(pIndices, pData, m_uByteSize);
+
+		/*hr = m_pBuffer->Unlock();
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+			return false;
+		}*/
+
+		if( !Unlock() )
+			return false;
+	}
+
+	return true;
+}
+
+bool CIndexBuffer::Destroy()
+{
+	DEBUG_DELETE_ARRAY(m_puData);
+	DEBUG_RELEASE(m_pBuffer);
+
+	m_puData  = NULL;
+	m_pBuffer = NULL;
+
+	return true;
+}
+
+bool CIndexBuffer::Disable()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		DEBUG_RELEASE(m_pBuffer);
+		m_pBuffer = NULL;
+	}
+
+	return true;
+}
+
+bool CIndexBuffer::Restore()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		HRESULT hr = DEVICE.CreateIndexBuffer(m_uByteSize, m_dwUsage, m_Format, m_Pool, &m_pBuffer, NULL);
+
+		if( FAILED(hr) )
+		{
+			m_pBuffer = NULL;
 			DEBUG_WARNING(hr);
 			return false;
 		}
 
-		memcpy(pIndices, pData, m_uByteSize);
-
-		hr = m_pBuffer->Unlock();
-
-		if( FAILED(hr) )
+		if(m_puData)
 		{
-			DEBUG_WARNING(hr);
-			return false;
+			void* pIndices;
+
+			if( !Lock(0, &pIndices) )
+				return false;
+
+			memcpy(pIndices, m_puData, m_uByteSize);
+
+			if( !Unlock() )
+				return false;
 		}
 	}
 

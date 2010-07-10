@@ -40,7 +40,11 @@ namespace zerO
 
 		//bool Create(UINT uCount, UINT uStride, UINT16 uFlag, void* pData);
 		bool Create(UINT uCount, UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData, DWORD dwFVF = 0);
+		bool Destroy(); 
+		bool Disable(); 
+		bool Restore(); 
 
+		bool Lock(UINT uLockStart, UINT uLockCount, DWORD dwFlags, void **ppData);
 		bool Lock(DWORD dwFlags, void** ppData);
 		bool Unlock();
 
@@ -52,6 +56,13 @@ namespace zerO
 	private:
 		LPDIRECT3DVERTEXBUFFER9	 m_pBuffer;
 		UINT uStride;
+
+		PUINT8 m_puData;
+
+		void* m_pLockData;
+		UINT m_uLockOffset;
+		UINT m_uLockSize;
+
 		/*PUINT8 m_puBackupCopy;
 		UINT16	m_uTypeFlags;
 		UINT16	m_uStateFlags;*/
@@ -75,6 +86,25 @@ namespace zerO
 		return m_pBuffer;
 	}
 
+	inline bool CVertexBuffer::Lock(UINT uLockStart, UINT uLockCount, DWORD dwFlags, void **ppData)
+	{
+		m_uLockOffset = uLockStart * m_uStride;
+		m_uLockSize   = uLockCount * m_uStride;
+
+		HRESULT hr = m_pBuffer->Lock(m_uLockOffset, m_uLockSize, ppData, dwFlags);
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+
+			return false;
+		}
+
+		m_pLockData   = *ppData;
+
+		return true;
+	}
+
 	inline bool CVertexBuffer::Lock(DWORD dwFlags, void** ppData)
 	{
 		HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
@@ -85,6 +115,11 @@ namespace zerO
 
 			return false;
 		}
+
+		m_uLockOffset = 0;
+		m_uLockSize   = m_uByteSize;
+
+		m_pLockData   = *ppData;
 
 		return true;
 	}
@@ -99,6 +134,13 @@ namespace zerO
 
 			return false;
 		}
+
+		if(m_puData && m_Pool == D3DPOOL_DEFAULT)
+			memcpy(m_puData + m_uLockOffset, m_pLockData, m_uLockSize);
+
+		m_uLockOffset = 0;
+		m_uLockSize   = 0;
+		m_pLockData   = NULL;
 
 		return true;
 	}

@@ -18,8 +18,18 @@ m_bIsLockEntry(false)
 
 CRenderQueue::~CRenderQueue(void)
 {
+	Destroy();
+}
+
+bool CRenderQueue::Destroy()
+{
 	DEBUG_DELETE_ARRAY(m_pEntryPool);
 	DEBUG_DELETE_ARRAY(m_ppEntryList);
+
+	m_pEntryPool  = NULL;
+	m_ppEntryList = NULL;
+
+	return true;
 }
 
 CRenderQueue::LPRENDERENTRY CRenderQueue::LockRenderEntry()
