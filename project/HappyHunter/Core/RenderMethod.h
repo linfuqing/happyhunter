@@ -30,6 +30,8 @@ namespace zerO
 		bool LoadEffect(const PBASICCHAR pcFileName, UINT uStage);
 
 		bool Destroy();
+		
+		void DestroySurface();
 	private:
 		std::vector<CEffect*> m_EffectList;
 		std::vector<CSurface*> m_SurfaceList;

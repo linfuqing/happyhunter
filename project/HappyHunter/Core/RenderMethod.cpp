@@ -74,3 +74,11 @@ bool CRenderMethod::Destroy()
 
 	return true;
 }
+
+void CRenderMethod::DestroySurface()
+{
+	for(std::vector<CSurface*>::iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); i ++)
+		DEBUG_DELETE(*i);
+
+	m_SurfaceList.clear();
+}

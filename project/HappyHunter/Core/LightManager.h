@@ -17,6 +17,8 @@ namespace zerO
 		CLightManager(void);
 		~CLightManager(void);
 
+		const D3DLIGHT9* GetLight(UINT uIndex)const;
+
 		void SetLight(const D3DLIGHT9& Light, UINT uIndex);
 		void SetAmbient(ARPGCOLOR Color);
 
@@ -27,6 +29,16 @@ namespace zerO
 		UINT8     m_uFlag;
 		UINT      m_uNumLights;
 	};
+
+	inline const D3DLIGHT9* CLightManager::GetLight(UINT uIndex)const
+	{
+		DEBUG_ASSERT(uIndex < MAXINUM_LIGHTS_NUMBER, "uIndex must be less than MAXINUM_LIGHTS_NUMBER.");
+
+		if( TEST_BIT(m_uFlag, uIndex) )
+			return &m_Light[uIndex];
+
+		return NULL;
+	}
 
 	inline void CLightManager::SetLight(const D3DLIGHT9& Light, UINT uIndex)
 	{

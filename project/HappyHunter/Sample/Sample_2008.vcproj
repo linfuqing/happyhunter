@@ -771,10 +771,23 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\Game.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\HLSLPMesh.fx"
+			>
+		</File>
+		<File
+			RelativePath=".\HLSLSkinMesh.fx"
+			>
+		</File>
+		<File
 			RelativePath="Sample.cpp"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
+				ExcludedFromBuild="true"
 				>
 				<Tool
 					Name="VCCLCompilerTool"

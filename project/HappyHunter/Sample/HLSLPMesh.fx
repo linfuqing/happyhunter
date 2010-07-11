@@ -5,10 +5,10 @@
 //--------------------------------------------------------------
 // 全局变量
 //--------------------------------------------------------------
-float4x4 matWorldViewProj;
-float4 MaterialAmbient = {0.1f, 0.1f, 0.1f, 1.0f};
-float4 MaterialDiffuse = {0.8f, 0.8f, 0.8f, 1.0f};
-float4 vecLightDir = {-1.0f, -1.0f, -1.0f, 1.0f};
+float4x4 matWorldViewProj:WORLDVIEWPROJECTION;
+float4 MaterialAmbient:MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};
+float4 MaterialDiffuse:MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};
+float4 vecLightDir:LIGHTDIRECTION = {-1.0f, -1.0f, -1.0f, 1.0f};
 
 //--------------------------------------------------------------
 // 纹理采样器

@@ -2,6 +2,7 @@
 #include "basicutils.h"
 #include "RenderQueue.h"
 #include "StaticMesh.h"
+#include "Camera.h"
 
 using namespace zerO;
 
@@ -16,8 +17,7 @@ m_strEffectFile(TEXT("HLSLPMesh.fx"))
 
 CStaticMesh::~CStaticMesh()
 {
-	DEBUG_RELEASE(m_pAdjacencyBuffer);
-	DEBUG_RELEASE(m_pMesh);
+	Destroy();
 }
 
 bool CStaticMesh::Create()
@@ -56,20 +56,22 @@ bool CStaticMesh::Create()
 
 		if( d3dxMaterials[i].pTextureFilename != NULL )
 		{
-			CTexture* pTex = NULL;
-			DEBUG_NEW(pTex, CTexture);
+			//CTexture* pTex = NULL;
+			//DEBUG_NEW(pTex, CTexture);
 			//创建纹理
 #ifdef _UNICODE
 			WCHAR wszBuf[MAX_PATH];
 			RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, wszBuf);
 
-			if( !pTex->Load( wszBuf ) )
-				return false;
+			//if( !pTex->Load( wszBuf ) )
+				//return false;
 #else
 			if( !pTex->Load( d3dxMaterials[i].pTextureFilename ) )
 				return false;
 #endif
-			pSurface->SetTexture(pTex, 0);
+			if( !pSurface->LoadTexuture(wszBuf, 0) )
+				return false;//SetTexture(pTex, 0) )
+
 			m_RenderMethod.SetSurface(pSurface);
 		}
 	}
@@ -133,6 +135,19 @@ bool CStaticMesh::Create()
 	return true;
 }
 
+bool CStaticMesh::Destroy()
+{
+	m_RenderMethod.DestroySurface();
+
+	DEBUG_RELEASE(m_pAdjacencyBuffer);
+	DEBUG_RELEASE(m_pMesh);
+
+	m_pAdjacencyBuffer = NULL;
+	m_pMesh            = NULL;
+
+	return true;
+}
+
 bool CStaticMesh::ApplyForRender()
 {
 	UINT uTotalPass = m_RenderMethod.GetEffect()->GetTechniqueDesc().Passes, i;
@@ -145,7 +160,6 @@ bool CStaticMesh::ApplyForRender()
 		//将信息需求传送到优化队列
 		pRenderEntry->hEffect      = m_RenderMethod.GetEffect()->GetHandle();
 		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL_TYPE;
-		pRenderEntry->hModel       = RESOURCE_MODEL;
 		pRenderEntry->uRenderPass  = (zerO::UINT8)i;
 		pRenderEntry->pParent      = this;
 
@@ -172,9 +186,21 @@ void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 
 		ambEmm += D3DXCOLOR(m_RenderMethod.GetSurface(i)->GetMaterial().Emissive);
 
 		//设置材质属性
-		m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse));
-		m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);
+		/*m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse));
+		m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);*/
 		m_RenderMethod.GetEffect()->GetEffect()->SetTexture("ColorMap", m_RenderMethod.GetSurface(i)->GetTexture(0)->GetTexture());
+
+		m_RenderMethod.GetEffect()->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
+		m_RenderMethod.GetEffect()->SetParameter(CEffect::DIFFUSE_MATERIAL_COLOR, &m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse);
+		m_RenderMethod.GetEffect()->SetParameter(CEffect::AMBIENT_MATERIAL_COLOR, &ambEmm);
+
+		const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
+
+		D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
+
+		if(pLight)
+			m_RenderMethod.GetEffect()->GetEffect()->SetVector("vecLightDir", &LightDirection);
+
 
 		//依照更新标志进行更新
 		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
