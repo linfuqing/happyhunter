@@ -62,7 +62,7 @@ namespace zerO
 		bool IsTextureUsed(UINT32 uIndex);
 
 		//∏˜÷÷…Ë÷√
-		bool SetParameter(PARAMETERHANDLE Index, const void* pData, UINT uSize= D3DX_DEFAULT);
+		bool SetParameter(PARAMETERHANDLE Index, const void* pData, INT uSize= D3DX_DEFAULT);
 		bool SetMatrix(MATRIXHANDLE Index, const D3DXMATRIX& Matrix);
 		bool SetTexture(UINT uIndex, const CTexture& Texture);
 		bool SetTextureMatrix(UINT uIndex, const D3DXMATRIX& Matrix);
@@ -112,7 +112,7 @@ namespace zerO
 		return m_TextureHandles[uIndex] != NULL;
 	}
 
-	inline bool CEffect::SetParameter(PARAMETERHANDLE Index, const void* pData, UINT uSize)
+	inline bool CEffect::SetParameter(PARAMETERHANDLE Index, const void* pData, INT uSize)
 	{
 		DEBUG_ASSERT(m_pEffect, "Effect is null!");
 		if(m_ParameterHandles[Index] != NULL)

@@ -17,6 +17,7 @@ namespace zerO
 
 	public:
 		bool Create();
+		bool Destroy();
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);

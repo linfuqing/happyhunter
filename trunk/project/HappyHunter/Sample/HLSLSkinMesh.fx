@@ -6,10 +6,10 @@
 //---------------------------------------------------------
 // 全局变量
 //---------------------------------------------------------
-float4 lightDir = {0.0f, 0.0f, -1.0f, 1.0f};
-float4 lightDiffuse = {0.6f, 0.6f, 0.6f, 1.0f}; 
-float4 MaterialAmbient = {0.1f, 0.1f, 0.1f, 1.0f};
-float4 MaterialDiffuse = {0.8f, 0.8f, 0.8f, 1.0f};
+float4 lightDir:LIGHTDIRECTION = {0.0f, 0.0f, -1.0f, 1.0f};
+float4 lightDiffuse:LIGHTDIFFUSE = {0.6f, 0.6f, 0.6f, 1.0f}; 
+float4 MaterialAmbient:MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};
+float4 MaterialDiffuse:MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};
 
 static const int MAX_MATRICES = 26;
 float4x3    mWorldMatrixArray[MAX_MATRICES];  //骨骼调色板矩阵 
