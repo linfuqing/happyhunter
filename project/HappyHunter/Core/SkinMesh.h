@@ -91,7 +91,7 @@ namespace zerO
 		HRESULT Reset();
 		HRESULT Lost();
 
-		void SetMatView(const D3DXMATRIXA16& view);
+		/*void SetMatView(const D3DXMATRIXA16& view);*/
 
 		const BASICSTRING& GetMeshFile() const;
 		const BASICSTRING& GetEffectFile() const;
@@ -132,10 +132,10 @@ namespace zerO
 	// 设置函数
 	//---------------------------------------------------------------------------
 
-	inline void CSkinMesh::SetMatView(const D3DXMATRIXA16& view)
+	/*inline void CSkinMesh::SetMatView(const D3DXMATRIXA16& view)
 	{
 		m_matView = view;
-	}
+	}*/
 
 	//---------------------------------------------------------------------------
 	// 获取函数

@@ -400,6 +400,14 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #ifdef SKINMESH
 	if ( !g_SkinMesh.Create(TEXT("player.X")) )
 		return S_FALSE;
+
+	D3DLIGHT9 Light;
+
+	Light.Direction.x = 0.0f;
+	Light.Direction.y = 1.0f;
+	Light.Direction.z = - 1.0f;
+
+	LIGHTMANAGER.SetLight(Light, 0);
 #endif
 
     return S_OK;
@@ -471,34 +479,6 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 
 #ifdef SKINMESH
 	g_SkinMesh.Reset();
-
-	//设置世界矩阵
-	D3DXMATRIXA16 matWorld, matRotY;
-	D3DXMatrixRotationY(&matRotY, D3DX_PI);
-	D3DXMatrixTranslation( &matWorld, 0, -1.0f, 0);
-	matWorld = matRotY * matWorld;
-
-	//设置观察矩阵
-	D3DXMATRIXA16 matView;
-	D3DXVECTOR3 vEyePt( 0.0f, 0.0f, -400.0f );
-	D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
-	D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
-	D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
-	g_SkinMesh.SetMatView(matView);
-
-	//设置投影矩阵
-	D3DXMATRIXA16 matProj;
-	float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
-	D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 1000.0f );
-	
-	//为效果设置影矩阵
-	g_SkinMesh.GetEffect().GetEffect()->SetMatrix( "mProj", &matProj );
-
-	//为效果设置灯光方向
-    D3DXVECTOR4 vLightDir( 0.0f, 1.0f, -1.0f, 0.0f );
-    D3DXVec4Normalize( &vLightDir, &vLightDir );
-    g_SkinMesh.GetEffect().GetEffect()->SetVector( "lightDir", &vLightDir);
-
 #endif
 
     return S_OK;
