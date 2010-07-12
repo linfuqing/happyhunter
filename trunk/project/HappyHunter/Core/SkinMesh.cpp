@@ -2,6 +2,7 @@
 #include "basicutils.h"
 #include "RenderQueue.h"
 #include "SkinMesh.h"
+#include "Camera.h"
 
 #define SKINMESH_EFFECT TEXT("HLSLSkinMesh.fx")
 
@@ -610,6 +611,19 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 //-----------------------------------------------------------------------------
 void CSkinMesh::Update()
 {
+	CSceneNode::Update();
+
+	m_matView = CAMERA.GetViewMatrix();
+
+	m_Effect.GetEffect()->SetMatrix( "mProj", &CAMERA.GetProjectionMatrix() );
+
+	const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
+
+	D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
+
+	if(pLight)
+		m_Effect.GetEffect()->SetVector("vecLightDir", &LightDirection);
+
 	FLOAT fElapsedAppTime = ELAPSEDTIME;
 
 	if( 0.0f == fElapsedAppTime ) 
