@@ -551,7 +551,7 @@ bool CRoamTerrainSection::Create(
 
 	m_uMaxIndices = VerticesX * VerticesY * 2 * 3;
 
-	m_pIndexBuffer->Create(D3DPT_TRIANGLELIST, m_uMaxIndices, D3DUSAGE_DYNAMIC,D3DPOOL_DEFAULT, NULL);
+	m_IndexBuffer.Create(D3DPT_TRIANGLELIST, m_uMaxIndices, D3DUSAGE_DYNAMIC,D3DPOOL_DEFAULT, NULL);
 
 	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
 
@@ -583,22 +583,157 @@ bool CRoamTerrainSection::Create(
 
 void CRoamTerrainSection::Reset()
 {
+	m_RootTriangleA.pLeftChild     = NULL;
+	m_RootTriangleA.pRightChild    = NULL;
+	m_RootTriangleB.pLeftChild     = NULL;
+	m_RootTriangleB.pRightChild    = NULL;
+
+	m_RootTriangleA.pBase          = &m_RootTriangleB;
+	m_RootTriangleB.pBase          = &m_RootTriangleA;
+
+	m_RootTriangleA.pLeftNeighbor  = m_pLeftNeighborOfA;
+	m_RootTriangleA.pRightNeighbor = m_pRightNeighborOfA;
+	m_RootTriangleB.pLeftNeighbor  = m_pLeftNeighborOfB;
+	m_RootTriangleB.pRightNeighbor = m_pRightNeighborOfB;
 }
 
 void CRoamTerrainSection::Tessellate(zerO::FLOAT fScale, zerO::FLOAT fLimit)
 {
+	__RecursiveTessellate(&m_RootTriangleA, m_fDistance1, m_fDistance2, m_fDistance0, m_fVarianceTreeA, 1, fScale, fLimit);
+	__RecursiveTessellate(&m_RootTriangleB, m_fDistance3, m_fDistance0, m_fDistance2, m_fVarianceTreeB, 1, fScale, fLimit);
 }
 
 void CRoamTerrainSection::BuildTriangleList()
 {
+	if( !m_IndexBuffer.Lock(0, (void**)&m_puIndexList) )
+		return;
+
+	m_uTotalIndices = 0;
+
+	__RecursiveBuildTriangleList(&m_RootTriangleA, 0        , 16   , 16*17);
+
+	__RecursiveBuildTriangleList(&m_RootTriangleB, (17*17)-1, 16*17, 16   );
+
+	m_IndexBuffer.Unlock();
+
+	m_puIndexList = NULL;
+}
+
+void CRoamTerrainSection::PrepareForRender()
+{
+	D3DXVECTOR2 Corner0( m_WorldRect.GetMinX(), m_WorldRect.GetMinY() );
+	D3DXVECTOR2 Corner1( m_WorldRect.GetMinX(), m_WorldRect.GetMaxY() );
+	D3DXVECTOR2 Corner2( m_WorldRect.GetMaxX(), m_WorldRect.GetMaxY() );
+	D3DXVECTOR2 Corner3( m_WorldRect.GetMaxX(), m_WorldRect.GetMinY() );
+
+	const D3DXVECTOR3 CameraPosition = CAMERA.GetPosition();
+
+	D3DXVECTOR2 ViewPoint(CameraPosition.x, CameraPosition.y);
+
+	Corner0 -= ViewPoint;
+	Corner1 -= ViewPoint;
+	Corner2 -= ViewPoint;
+	Corner3 -= ViewPoint;
+
+	m_fDistance0 = D3DXVec2Length(&Corner0);
+	m_fDistance1 = D3DXVec2Length(&Corner1);
+	m_fDistance2 = D3DXVec2Length(&Corner2);
+	m_fDistance3 = D3DXVec2Length(&Corner3);
+
+	m_fQueueSortValue = MIN(m_fDistance0     , m_fDistance1);
+	m_fQueueSortValue = MIN(m_fQueueSortValue, m_fDistance2);
+	m_fQueueSortValue = MIN(m_fQueueSortValue, m_fDistance3);
+
+	( (CRoamTerrain*)m_pTerrain )->AddToTessellationQueue(this);
 }
 
 void CRoamTerrainSection::__ComputeVariance()
 {
+	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
+
+	UINT uIndex0 = pTerrain->GetTableIndex(m_uHeightMapX                  , m_uHeightMapY                  );
+	UINT uIndex1 = pTerrain->GetTableIndex(m_uHeightMapX                  , m_uHeightMapY + m_VerticesY - 1);
+	UINT uIndex2 = pTerrain->GetTableIndex(m_uHeightMapX + m_VerticesX - 1, m_uHeightMapY + m_VerticesY - 1);
+	UINT uIndex3 = pTerrain->GetTableIndex(m_uHeightMapX + m_VerticesX - 1, m_uHeightMapY                  );
+
+	FLOAT fHeight0 = pTerrain->GetHeight(uIndex0);
+	FLOAT fHeight1 = pTerrain->GetHeight(uIndex1);
+	FLOAT fHeight2 = pTerrain->GetHeight(uIndex2);
+	FLOAT fHeight3 = pTerrain->GetHeight(uIndex3);
+
+	__RecursiveComputeVariance(uIndex1, uIndex2, uIndex0, fHeight1, fHeight2, fHeight0, m_fVarianceTreeA, 1);
+	__RecursiveComputeVariance(uIndex3, uIndex0, uIndex2, fHeight3, fHeight0, fHeight2, m_fVarianceTreeB, 1);
 }
 
 void CRoamTerrainSection::__Split(LPTRIANGLETREENODE pTriangle)
 {
+	if(pTriangle->pLeftChild)
+		return;
+
+	if( pTriangle->pBase && (pTriangle->pBase->pBase != pTriangle) )
+		__Split(pTriangle->pBase);
+
+	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
+	pTriangle->pLeftChild  = pTerrain->RequestTriangleNode();
+	pTriangle->pRightChild = pTerrain->RequestTriangleNode();
+
+	DEBUG_ASSERT(pTriangle->pLeftChild  != pTriangle, "recursive link");
+	DEBUG_ASSERT(pTriangle->pRightChild != pTriangle, "recursive link");
+
+	if (!pTriangle->pLeftChild || !pTriangle->pRightChild)
+	{
+		pTriangle->pLeftChild  = 0;
+		pTriangle->pRightChild = 0;
+		return;
+	}
+
+	pTriangle->pLeftChild->pBase           = pTriangle->pLeftNeighbor;
+	pTriangle->pLeftChild->pLeftNeighbor   = pTriangle->pRightChild;
+
+	pTriangle->pRightChild->pBase          = pTriangle->pRightNeighbor;
+	pTriangle->pRightChild->pRightNeighbor = pTriangle->pLeftChild;
+
+	if (pTriangle->pLeftNeighbor != NULL)
+	{
+		if (pTriangle->pLeftNeighbor->pBase == pTriangle)
+			pTriangle->pLeftNeighbor->pBase = pTriangle->pLeftChild;
+		else if (pTriangle->pLeftNeighbor->pLeftNeighbor == pTriangle)
+			pTriangle->pLeftNeighbor->pLeftNeighbor = pTriangle->pLeftChild;
+		else if (pTriangle->pLeftNeighbor->pRightNeighbor == pTriangle)
+			pTriangle->pLeftNeighbor->pRightNeighbor = pTriangle->pLeftChild;
+		else
+			DEBUG_ERROR("Invalid Left Neighbor!");
+	}
+
+	if (pTriangle->pRightNeighbor != NULL)
+	{
+		if (pTriangle->pRightNeighbor->pBase == pTriangle)
+			pTriangle->pRightNeighbor->pBase = pTriangle->pRightChild;
+		else if (pTriangle->pRightNeighbor->pRightNeighbor == pTriangle)
+			pTriangle->pRightNeighbor->pRightNeighbor = pTriangle->pRightChild;
+		else if (pTriangle->pRightNeighbor->pLeftNeighbor == pTriangle)
+			pTriangle->pRightNeighbor->pLeftNeighbor = pTriangle->pRightChild;
+		else
+			DEBUG_ERROR("Invalid Right Neighbor!");
+	}
+
+	if (pTriangle->pBase != NULL)
+	{
+		if ( pTriangle->pBase->pLeftChild )
+		{
+			pTriangle->pBase->pLeftChild->pRightNeighbor = pTriangle->pRightChild;
+			pTriangle->pBase->pRightChild->pLeftNeighbor = pTriangle->pLeftChild;
+			pTriangle->pLeftChild->pRightNeighbor        = pTriangle->pBase->pRightChild;
+			pTriangle->pRightChild->pLeftNeighbor        = pTriangle->pBase->pLeftChild;
+		}
+		else
+			__Split(pTriangle->pBase);
+	}
+	else
+	{
+		pTriangle->pLeftChild->pRightNeighbor = NULL;
+		pTriangle->pRightChild->pLeftNeighbor = NULL;
+	}
 }
 
 void CRoamTerrainSection::__RecursiveTessellate( 
@@ -611,6 +746,27 @@ void CRoamTerrainSection::__RecursiveTessellate(
 						   zerO::FLOAT fScale, 
 						   zerO::FLOAT fLimit)
 {
+	if( (uIndex << 1) + 1 < TOTAL_VARIANCES )
+	{
+		FLOAT fMidDist = (fDistanceB + fDistanceC) * 0.5f;
+		
+		if(!pTriangle->pLeftChild)
+		{
+			FLOAT fRatio = (pfTree[uIndex] * fScale) / (fMidDist + 0.0001f);
+
+			if (fRatio > fLimit)
+				__Split(pTriangle);
+		}
+
+		if(pTriangle->pLeftChild)
+		{
+			DEBUG_ASSERT(pTriangle->pLeftChild , "invalid triangle node");
+			DEBUG_ASSERT(pTriangle->pRightChild, "invalid triangle node");
+
+			__RecursiveTessellate(pTriangle->pLeftChild , fMidDist, fDistanceA, fDistanceB, pfTree,  uIndex << 1     , fScale, fLimit);
+			__RecursiveTessellate(pTriangle->pRightChild, fMidDist, fDistanceA, fDistanceB, pfTree, (uIndex << 1) + 1, fScale, fLimit);
+		}
+	}
 }
 
 void CRoamTerrainSection::__RecursiveBuildTriangleList( 
@@ -619,6 +775,21 @@ void CRoamTerrainSection::__RecursiveBuildTriangleList(
 								  zerO::UINT16 uCornerB, 
 								  zerO::UINT16 uCornerC)
 {
+	if(pTriangle->pLeftChild)
+	{
+		DEBUG_ASSERT(pTriangle->pRightChild, "invalid triangle node");
+		
+		UINT16 uMidPoint = (uCornerB + uCornerC) >> 1;
+
+		__RecursiveBuildTriangleList(pTriangle->pLeftChild,  uMidPoint, uCornerA, uCornerB);
+		__RecursiveBuildTriangleList(pTriangle->pRightChild, uMidPoint, uCornerC, uCornerA);
+	}
+	else if(m_uTotalIndices + 3 < m_uMaxIndices)
+	{
+		m_puIndexList[m_uTotalIndices ++] = uCornerC;
+		m_puIndexList[m_uTotalIndices ++] = uCornerB;
+		m_puIndexList[m_uTotalIndices ++] = uCornerA;
+	}
 }
 
 zerO::FLOAT CRoamTerrainSection::__RecursiveComputeVariance(	
@@ -631,6 +802,25 @@ zerO::FLOAT CRoamTerrainSection::__RecursiveComputeVariance(
 								 zerO::PFLOAT pfTree,
 								 zerO::UINT16 uIndex)
 {
+	if (uIndex < TOTAL_DETAIL_LEVELS)
+	{
+		UINT16 uMidPoint           = (uCornerB + uCornerC) >> 1;
+		FLOAT  fMidHeight          = m_pTerrain->GetHeight(uMidPoint);
+		FLOAT  fInterpolatedHeight = (fHeightB + fHeightC) * 0.5f;
+		FLOAT  fVariance           = abs(fMidHeight - fInterpolatedHeight);
+
+		FLOAT fLeft  = __RecursiveComputeVariance( uMidPoint, uCornerA, uCornerB, fMidHeight, fHeightA, fHeightB, pfTree,      uIndex << 1  );
+
+		FLOAT fRight = __RecursiveComputeVariance( uMidPoint, uCornerC, uCornerA, fMidHeight, fHeightC, fHeightA, pfTree, 1 + (uIndex << 1) );
+
+		fVariance = MAX(fVariance, fLeft ); 
+		fVariance = MAX(fVariance, fRight); 
+
+		pfTree[uIndex] = fVariance;
+
+		return fVariance;
+	}
+
 	return 0.0f;
 }
 
@@ -667,32 +857,206 @@ bool CRoamTerrain::Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRe
 
 bool CRoamTerrain::SubmitSection(CTerrainSection* pSection)const
 {
-	return true;
+	CEffect* pEffect = m_RenderMethod.GetEffect();
+
+	if (pEffect)
+	{
+		UINT uTotalPass = pEffect->GetTechniqueDesc().Passes, i;
+
+		CRoamTerrainSection* pRoamSection=(CRoamTerrainSection*)pSection;
+
+		for (i = 0; i < uTotalPass; i ++)
+		{
+			CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
+			
+			pRenderEntry->hEffect      = pEffect->GetHandle();
+			pRenderEntry->hSurface     = m_RenderMethod.GetSurface()->GetHandle();
+			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER_TYPE;
+			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
+			pRenderEntry->uModelParamA = pRoamSection->GetVertexBuffer().GetHandle();
+			pRenderEntry->uModelParamB = pRoamSection->GetIndexBuffer().GetHandle();
+			pRenderEntry->uRenderPass  = i;
+			pRenderEntry->pParent      = pSection;
+			pRenderEntry->uUserData    = 0;
+
+			GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, const CRenderQueue::LPRENDERENTRY pEntry)const
 {
+	CEffect* pEffect = m_RenderMethod.GetEffect();
+	
+	if (pEffect)
+	{	
+		CRoamTerrainSection* pRoamSection=(CRoamTerrainSection*)pSection;
+
+		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
+			pEffect->Begin();
+
+		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
+
+		if( TEST_BIT(uFlag, CRenderQueue::MODEL) )
+			m_VertexBuffer.Activate(0, 0, true);
+
+		if ( TEST_BIT(uFlag, CRenderQueue::MODEL_PARAMA) )
+			pRoamSection->GetVertexBuffer().Activate(1, 0, false);
+
+		if ( TEST_BIT(uFlag, CRenderQueue::MODEL_PARAMB) )
+			pRoamSection->GetIndexBuffer().Activate();
+
+		if ( TEST_BIT(uFlag, CRenderQueue::SURFACE) )
+			pEffect->SetSurface( m_RenderMethod.GetSurface() );
+
+		D3DXVECTOR4 SectorOffset(
+			1.0f,
+			1.0f,
+			m_WorldExtents.GetMinX() + ( m_SectorSize.x * pSection->GetSectorX() ),
+			m_WorldExtents.GetMinY() + ( m_SectorSize.y * pSection->GetSectorY() ) );
+
+
+
+		D3DXVECTOR4 UVScaleOffset(
+			1.0f / (m_uSectorCountX + 1),
+			1.0f / (m_uSectorCountY + 1),
+			(FLOAT)pSection->GetSectorX(),
+			(FLOAT)pSection->GetSectorY() );
+
+		pEffect->SetParameter(
+			CEffect::POSITION, 
+			(D3DXVECTOR4*)&SectorOffset);
+
+		pEffect->SetParameter(
+			CEffect::UV, 
+			(D3DXVECTOR4*)&UVScaleOffset);
+
+		pEffect->GetEffect()->CommitChanges();
+
+		UINT uTotalPolys = pRoamSection->GetTotalIndices() / 3;
+
+		HRESULT hr = DEVICE.DrawIndexedPrimitive(
+			pRoamSection->GetIndexBuffer().GetType(),
+			0,
+			0,
+			m_uSectorVertices * m_uSectorVertices,
+			0,
+			uTotalPolys);
+
+		pEffect->GetEffect()->EndPass();
+	}
 }
 
 void CRoamTerrain::Reset()
 {
+	m_uTessellationQueueCount = 0;
+	m_uNextTriangleNode       = 0;
+
+	UINT uTotal = m_uSectorCountY * m_uSectorCountX;
+
+	for (UINT i = 0; i < uTotal; i ++)
+	{
+		m_pRoamSection[i].Reset();
+	}
 }
 
 bool CRoamTerrain::AddToTessellationQueue(CRoamTerrainSection* pSection)
 {
-	return true;
+	if (m_uTessellationQueueCount < TESSELLATION_QUEUE_SIZE)
+	{
+		m_ppTessellationQueue[m_uTessellationQueueCount] = pSection;
+
+		m_uTessellationQueueCount ++;
+
+		return true;
+	}
+
+	DEBUG_WARNING("increase the size of the ROAM tessellation queue");
+
+	return false;
 }
+
+typedef CRoamTerrainSection* LPROAMTERRAINSECTION;
+
+bool IsWrap(
+		const LPROAMTERRAINSECTION& Source, 
+		const LPROAMTERRAINSECTION& Target)
+{
+	return Source->GetQueueSortValue() < Target->GetQueueSortValue();
+};
 
 void CRoamTerrain::ProcessTessellationQueue()
 {
+	Sort<LPROAMTERRAINSECTION>(m_ppTessellationQueue, m_ppTessellationQueue, m_uTessellationQueueCount, IsWrap);
+
+	UINT i;
+
+	for(i = 0; i < m_uTessellationQueueCount; i ++)
+		m_ppTessellationQueue[i]->Tessellate(m_fScale, m_fLimit);
+
+	for(i = 0; i < m_uTessellationQueueCount; i ++)
+		m_ppTessellationQueue[i]->BuildTriangleList();
 }
 
 CRoamTerrain::LPTRIANGLETREENODE CRoamTerrain::RequestTriangleNode()
 {
-	return NULL;
+	LPTRIANGLETREENODE pNode = 0;
+
+	if (m_uNextTriangleNode < MAXINUM_TRIANGLE_TREE_NODES)
+	{
+		pNode = &m_pTriangleNodePool[m_uNextTriangleNode];
+		memset( pNode, 0 ,sizeof(TRIANGLETREENODE) );
+
+		m_uNextTriangleNode ++;
+	}
+
+	return pNode;
 }
 
 bool CRoamTerrain::__AllocateSectors()
 {
+	DEBUG_NEW(m_pRoamSection, CRoamTerrainSection[m_uSectorCountX * m_uSectorCountY]);
+
+	D3DXVECTOR2 SectorPosition;
+	CRectangle2D SectorRectangle;
+
+	UINT x, y, uPixelX, uPixelY, uIndex = 0;
+
+	for(y=0; y < m_uSectorCountY; y ++)
+	{
+		for(x = 0; x < m_uSectorCountX; x ++)
+		{
+			SectorPosition.x = m_WorldExtents.GetMinX() + x * m_SectorSize.x;
+			SectorPosition.y = m_WorldExtents.GetMinY() + y * m_SectorSize.y;
+
+			SectorRectangle.Set(
+				SectorPosition.x, 
+				SectorPosition.x + m_SectorSize.x,
+				SectorPosition.y, 
+				SectorPosition.y + m_SectorSize.y);
+
+			uPixelX = x << m_uSectorShift;
+			uPixelY = y << m_uSectorShift;
+
+			if(!m_pRoamSection[uIndex].Create(
+				m_pRootNode, 
+				this, 
+				x, 
+				y, 
+				uPixelX, 
+				uPixelY, 
+				m_uSectorVertices, 
+				m_uSectorVertices, 
+				SectorRectangle) )
+				return false;
+
+			uIndex ++;
+		}
+	}
+
 	return true;
 }

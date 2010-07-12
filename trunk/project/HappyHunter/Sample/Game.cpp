@@ -7,11 +7,13 @@
 #include "resource.h"
 #include "core.h"
 //#include "Mission.h"
-#include "StaticMesh.h"
+//#include "Prize.h"
+#include "SkinMesh.h"
 
 //#define TERRAIN//PARTICLESYSTEM
 //#define MISSION
-#define STATICMESH
+//#define PRIZE
+#define SKINMESH
 
 zerO::CGameHost g_Game;
 
@@ -159,7 +161,7 @@ CTest g_Test;
 #define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
 
 zerO::CQuadTree g_QuadTree;
-zerO::CTerrain  g_Terrain;
+zerO::CRoamTerrain  g_Terrain;
 zerO::CTexture  g_HeightMap;
 zerO::CSurface  g_Surface;
 #endif
@@ -184,9 +186,17 @@ zerO::CMission g_Mission;
 
 #endif
 
-#ifdef STATICMESH
+#ifdef PRIZE
 
-zerO::CStaticMesh g_Mesh;
+D3DXMATRIXA16 g_MatView;
+D3DXMATRIXA16 g_MatProj;
+zerO::CPrize g_Prize;
+
+#endif
+
+#ifdef SKINMESH
+
+zerO::CSkinMesh		g_SkinMesh;
 
 #endif
 
@@ -370,21 +380,26 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #endif
 
 #ifdef MISSION
-	 g_Mission.GetParams();
+
+	 D3DLIGHT9 Light;
+
+	 Light.Direction.x = - 1.0f;
+	 Light.Direction.y = - 1.0f;
+	 Light.Direction.z = - 1.0f;
+
+	 LIGHTMANAGER.SetLight(Light, 0);
+
+	 g_Mission.Create();
 #endif
 
-#ifdef STATICMESH
-	 g_Mesh.SetMeshFile(TEXT("Brown bear.X"));
-	if ( !g_Mesh.Create() )
+#ifdef PRIZE
+	if ( !g_Prize.Create(TEXT("Brown bear.X")) )
 		return S_FALSE;
+#endif
 
-	D3DLIGHT9 Light;
-
-	Light.Direction.x = - 1.0f;
-	Light.Direction.y = - 1.0f;
-	Light.Direction.z = - 1.0f;
-
-	LIGHTMANAGER.SetLight(Light, 0);
+#ifdef SKINMESH
+	if ( !g_SkinMesh.Create(TEXT("player.X")) )
+		return S_FALSE;
 #endif
 
     return S_OK;
@@ -431,6 +446,61 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	g_Test.GetEffect().GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
 #endif
 
+#ifdef PRIZE
+	//设置观察矩阵
+	D3DXVECTOR3 vEyePt( 0.0f, 0.0f, -300.0f );
+	D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
+	D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
+	D3DXMatrixLookAtLH( &g_MatView, &vEyePt, &vLookatPt, &vUpVec );
+
+	g_Prize.SetPos(D3DXVECTOR3(0.0f, -60.0f, 0.0f));
+	g_Prize.SetAngle(D3DXVECTOR3(-1.0f, -1.0f, -1.0f));
+
+	//设置投影矩阵
+	float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
+	D3DXMatrixPerspectiveFovLH( &g_MatProj, D3DX_PI/4, fAspectRatio, 1.0f, 1000.0f );
+
+	D3DXVECTOR4 LightDirection( -1.0f, -1.0f, -1.0f, 1.0f );
+	g_Prize.GetRenderMethod().GetEffect()->GetEffect()->SetVector("vecLightDir", &LightDirection);
+
+#endif
+
+#ifdef MISSION
+	g_Mission.Reset();
+#endif
+
+#ifdef SKINMESH
+	g_SkinMesh.Reset();
+
+	//设置世界矩阵
+	D3DXMATRIXA16 matWorld, matRotY;
+	D3DXMatrixRotationY(&matRotY, D3DX_PI);
+	D3DXMatrixTranslation( &matWorld, 0, -1.0f, 0);
+	matWorld = matRotY * matWorld;
+
+	//设置观察矩阵
+	D3DXMATRIXA16 matView;
+	D3DXVECTOR3 vEyePt( 0.0f, 0.0f, -400.0f );
+	D3DXVECTOR3 vLookatPt( 0.0f, 0.0f, 0.0f );
+	D3DXVECTOR3 vUpVec( 0.0f, 1.0f, 0.0f );
+	D3DXMatrixLookAtLH( &matView, &vEyePt, &vLookatPt, &vUpVec );
+	g_SkinMesh.SetMatView(matView);
+
+	//设置投影矩阵
+	D3DXMATRIXA16 matProj;
+	float fAspectRatio = (float)pBackBufferSurfaceDesc->Width / pBackBufferSurfaceDesc->Height;
+	D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspectRatio, 1.0f, 1000.0f );
+	
+	//为效果设置影矩阵
+	g_SkinMesh.GetEffect().GetEffect()->SetMatrix( "mProj", &matProj );
+
+	//为效果设置灯光方向
+    D3DXVECTOR4 vLightDir( 0.0f, 1.0f, -1.0f, 0.0f );
+    D3DXVec4Normalize( &vLightDir, &vLightDir );
+    g_SkinMesh.GetEffect().GetEffect()->SetVector( "lightDir", &vLightDir);
+
+#endif
+
     return S_OK;
 }
 
@@ -467,6 +537,22 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_pSprayParticles->SetNumberEmitedPerFrame( (UINT)(1000*ELAPSEDTIME) );
 	g_pSprayParticles->Update();
 #endif
+
+#ifdef PRIZE
+	D3DXMATRIXA16 matWorld;
+	matWorld = g_Prize.GetWorldMatrix();
+	D3DXMATRIXA16 mWorldViewProj = matWorld * g_MatView * g_MatProj;
+	g_Prize.GetRenderMethod().GetEffect()->GetEffect()->SetMatrix( "matWorldViewProj", &mWorldViewProj );
+	g_Prize.Update();
+#endif
+
+#ifdef MISSION
+	g_Mission.Update();
+#endif
+
+#ifdef SKINMESH
+	g_SkinMesh.Update();
+#endif
 }
 
 
@@ -495,6 +581,14 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 #ifdef TERRAIN
 		while(pObject)
 		{
+			pObject->PrepareForRender();
+			pObject = pObject->GetNext();
+		}
+
+		g_Terrain.ProcessTessellationQueue();
+
+		while(pObject)
+		{
 			pObject->ApplyForRender();
 			pObject = pObject->GetNext();
 		}
@@ -511,8 +605,16 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		g_pSprayParticles->ApplyForRender();
 #endif
 
-#ifdef STATICMESH
-		g_Mesh.ApplyForRender();
+#ifdef PRIZE
+		g_Prize.ApplyForRender();
+#endif
+
+#ifdef MISSION
+	g_Mission.ApplyForRender();
+#endif
+
+#ifdef SKINMESH
+	g_SkinMesh.ApplyForRender();
 #endif
 		//结束渲染
 		g_Game.EndRender();
@@ -539,6 +641,9 @@ void CALLBACK OnD3D9LostDevice( void* pUserContext )
 {
 	//自动化释放
 	DEBUG_ASSERT(GAMEHOST.Disable(), "Disable error.");
+#ifdef SKINMESH
+	g_SkinMesh.Lost();
+#endif
 }
 
 
@@ -550,7 +655,13 @@ void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
 
-	g_Mesh.Destroy();
+#ifdef MISSION
+	g_Mission.Destroy();
+#endif
+
+#ifdef SKINMESH
+	g_SkinMesh.Destroy();
+#endif
 }
 
 

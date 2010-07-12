@@ -3,6 +3,8 @@
 #include "RenderQueue.h"
 #include "SkinMesh.h"
 
+#define SKINMESH_EFFECT TEXT("HLSLSkinMesh.fx")
+
 using namespace zerO;
 
 //=============================================================================
@@ -12,6 +14,8 @@ using namespace zerO;
 CAllocateHierarchy::~CAllocateHierarchy()
 {
 	DEBUG_DELETE_ARRAY(m_pBoneMatrices);
+
+	m_pBoneMatrices = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -103,11 +107,6 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
     }
 	
     pMesh = pMeshData->pMesh;
-	
-    if (pMesh->GetFVF() == 0)
-    {
-        return E_FAIL;
-    }
 
 	//为网格容器分配内存
 	DEBUG_NEW(pMeshContainer, D3DXMESHCONTAINER_DERIVED);
@@ -129,68 +128,9 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 	
     NumFaces = pMesh->GetNumFaces();
 
-	LPD3DXMESH pMeshSysMem = pMesh;
-	D3DVERTEXELEMENT9   decl[]   = 
-	{ 
-		{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
-		{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
-		{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
-		{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
-		{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
-		{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
-		{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
-		D3DDECL_END(), 
-	}; 
-
-	LPD3DXMESH  pMeshSysMem2  = NULL;
-	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-	
-	//确保顶点包含法线
-	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	//计算切线
-	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	D3DVERTEXELEMENT9   decl2[]   = 
-	{ 
-		{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
-		{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
-		{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
-		{   0,   36,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
-		{   0,   52,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
-		{   0,   56,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
-		{   0,   68,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
-		D3DDECL_END(), 
-	}; 
-
-	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMesh );
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	pMeshContainer->MeshData.pMesh = pMesh;
-	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
-
-	//释放临时网格模型对象
-	DEBUG_RELEASE(pMeshSysMem);
-	DEBUG_RELEASE(pMeshSysMem2);
+    pMeshContainer->MeshData.pMesh = pMesh;
+    pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+	pMesh->AddRef();
 	
     //为网格模型准备材质和纹理
     pMeshContainer->NumMaterials = max(1, NumMaterials); 
@@ -334,6 +274,66 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 	if (FAILED(hr))
 		return hr;
 
+	LPD3DXMESH pMeshSysMem = pMeshContainer->MeshData.pMesh;
+	D3DVERTEXELEMENT9   decl[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
+
+	LPD3DXMESH  pMeshSysMem2  = NULL;
+	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+	
+	//确保顶点包含法线
+	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//计算切线
+	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	D3DVERTEXELEMENT9   decl2[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   36,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   52,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   56,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   68,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
+
+	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMeshContainer->MeshData.pMesh );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//释放临时网格模型对象
+	DEBUG_RELEASE(pMeshSysMem);
+	DEBUG_RELEASE(pMeshSysMem2);
+
 	D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
 	LPD3DVERTEXELEMENT9 pDeclCur;
 	hr = pMeshContainer->MeshData.pMesh->GetDeclaration(pDecl);
@@ -380,6 +380,9 @@ HRESULT CAllocateHierarchy::DestroyFrame(LPD3DXFRAME pFrameToFree)
 	{
 		DEBUG_DELETE_ARRAY( pFrameToFree->Name );
 		DEBUG_DELETE( pFrameToFree );
+
+		pFrameToFree->Name = NULL;
+		pFrameToFree       = NULL;
 	}
     return S_OK; 
 }
@@ -401,22 +404,40 @@ HRESULT CAllocateHierarchy::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContai
     DEBUG_DELETE_ARRAY( pMeshContainer->pAdjacency );
     DEBUG_DELETE_ARRAY( pMeshContainer->pMaterials );
     DEBUG_DELETE_ARRAY( pMeshContainer->pBoneOffsetMatrices );
+
+	pMeshContainer->Name                = NULL;
+	pMeshContainer->pAdjacency          = NULL;
+	pMeshContainer->pMaterials          = NULL;
+	pMeshContainer->pBoneOffsetMatrices = NULL;
 	
     if (pMeshContainer->ppTextures != NULL)
     {
         for (iMaterial = 0; iMaterial < pMeshContainer->NumMaterials; iMaterial++)
         {
             DEBUG_RELEASE( pMeshContainer->ppTextures[iMaterial] );
+
+			pMeshContainer->ppTextures[iMaterial] = NULL;
         }
     }
-    DEBUG_DELETE_ARRAY( pMeshContainer->ppTextures );
 
+    DEBUG_DELETE_ARRAY( pMeshContainer->ppTextures );
     DEBUG_DELETE_ARRAY( pMeshContainer->ppBoneMatrixPtrs );
+
+	pMeshContainer->ppTextures       = NULL;
+	pMeshContainer->ppBoneMatrixPtrs = NULL;
+
     DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
     DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
     DEBUG_RELEASE( pMeshContainer->pSkinInfo );
-    DEBUG_RELEASE( pMeshContainer->pOrigMesh );
+    //DEBUG_RELEASE( pMeshContainer->pOrigMesh );
     DEBUG_DELETE( pMeshContainer );
+
+	pMeshContainer->pBoneCombinationBuf = NULL;
+	pMeshContainer->MeshData.pMesh      = NULL;
+	pMeshContainer->pSkinInfo           = NULL;
+	pMeshContainer->pOrigMesh           = NULL;
+	pMeshContainerBase                  = NULL;
+
     return S_OK;
 }
 
@@ -436,9 +457,7 @@ m_fTimeCurrent(0.0f),
 m_dwPlayTime(0),
 m_fFrameTime(0.0f),
 m_lfTotalFrameTime(0.0),
-m_dwControlPlayTime(0),
-m_strMeshFile(TEXT("")),
-m_strEffectFile(TEXT("HLSLSkinMesh.fx"))
+m_dwControlPlayTime(0)
 {
 	DEBUG_NEW(m_pAlloc, CAllocateHierarchy);
 }
@@ -449,24 +468,21 @@ m_strEffectFile(TEXT("HLSLSkinMesh.fx"))
 //-----------------------------------------------------------------------------
 CSkinMesh::~CSkinMesh()
 {
-	D3DXFrameDestroy(m_pFrameRoot, m_pAlloc);
-    DEBUG_RELEASE(m_pAnimController);
-	/*DEBUG_RELEASE(m_pEffect);*/
-	DEBUG_DELETE(m_pAlloc);
+	Destroy();
 }
 
 
 //-----------------------------------------------------------------------------
 // Desc:创建并加载蒙皮网格模型
 //-----------------------------------------------------------------------------
-bool CSkinMesh::Create()
+bool CSkinMesh::Create(PBASICCHAR fileName)
 {
 	HRESULT hr;
 
-	if ( !m_Effect.Load( (PBASICCHAR)m_strEffectFile.c_str() ) )
+	if ( !m_Effect.Load( SKINMESH_EFFECT ) )
 		return false;
 	
-	hr = __LoadFromXFile((PBASICCHAR)m_strMeshFile.c_str());
+	hr = __LoadFromXFile( fileName );
 	if(FAILED(hr))
 		return false;
 
@@ -594,8 +610,6 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 //-----------------------------------------------------------------------------
 void CSkinMesh::Update()
 {
-	CSceneNode::Update();
-
 	FLOAT fElapsedAppTime = ELAPSEDTIME;
 
 	if( 0.0f == fElapsedAppTime ) 
@@ -679,7 +693,6 @@ VOID CSkinMesh::__DrawFrame( LPD3DXFRAME pFrame, CRenderQueue::LPRENDERENTRY pEn
 //-----------------------------------------------------------------------------
 void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag  )
 {
-	HRESULT hr;
 	D3DXMESHCONTAINER_DERIVED *pMeshContainer = (D3DXMESHCONTAINER_DERIVED*)pMeshContainerBase;
 	D3DXFRAME_DERIVED *pFrame = (D3DXFRAME_DERIVED*)pFrameBase;
 	UINT iMaterial;
@@ -920,6 +933,7 @@ bool CSkinMesh::ApplyForRender()
 		//将信息需求传送到优化队列
 		pRenderEntry->hEffect      = m_Effect.GetHandle();
 		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL_TYPE;
+		pRenderEntry->hModel       = RESOURCE_MODEL;
 		pRenderEntry->uRenderPass  = (zerO::UINT8)i;
 		pRenderEntry->pParent      = this;
 
@@ -935,7 +949,16 @@ bool CSkinMesh::ApplyForRender()
 //-----------------------------------------------------------------------------
 bool CSkinMesh::Destroy()
 {
-	delete this;
+	if(m_pFrameRoot && m_pAlloc)
+		D3DXFrameDestroy(m_pFrameRoot, m_pAlloc);
+
+    DEBUG_RELEASE(m_pAnimController);
+	/*DEBUG_RELEASE(m_pEffect);*/
+	DEBUG_DELETE(m_pAlloc);
+
+	m_pAnimController = NULL;
+	m_pAlloc          = NULL;
+
 	return true;
 }
 

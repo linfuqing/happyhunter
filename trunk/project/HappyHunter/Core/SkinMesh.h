@@ -82,7 +82,7 @@ namespace zerO
 		VOID __DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
 	
 	public:
-		bool Create();
+		bool Create(PBASICCHAR fileName);
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
@@ -91,8 +91,6 @@ namespace zerO
 		HRESULT Reset();
 		HRESULT Lost();
 
-		void SetMeshFile(const BASICSTRING& file);
-		void SetEffectFile(const BASICSTRING& file);
 		void SetMatView(const D3DXMATRIXA16& view);
 
 		const BASICSTRING& GetMeshFile() const;
@@ -128,23 +126,11 @@ namespace zerO
 		DWORD						m_dwControlPlayTime;	// 当前动作设定播放次数(0为重复播放)　
 		char						m_szASName[64];			// 动作名称
 		std::string					m_strNowAnimSetName;	// 当前动作名称
-		BASICSTRING					m_strMeshFile;			// 模型文件
-		BASICSTRING					m_strEffectFile;		// shader文件
 	};
 
 	//---------------------------------------------------------------------------
 	// 设置函数
 	//---------------------------------------------------------------------------
-
-	inline void CSkinMesh::SetMeshFile(const BASICSTRING &file)
-	{
-		m_strMeshFile = file;
-	}
-
-	inline void CSkinMesh::SetEffectFile(const BASICSTRING &file)
-	{
-		m_strEffectFile = file;
-	}
 
 	inline void CSkinMesh::SetMatView(const D3DXMATRIXA16& view)
 	{
@@ -154,16 +140,6 @@ namespace zerO
 	//---------------------------------------------------------------------------
 	// 获取函数
 	//---------------------------------------------------------------------------
-
-	inline const BASICSTRING& CSkinMesh::GetMeshFile() const
-	{
-		return m_strMeshFile;
-	}
-
-	inline const BASICSTRING& CSkinMesh::GetEffectFile() const
-	{
-		return m_strEffectFile;
-	}
 
 	inline const CEffect& CSkinMesh::GetEffect() const
 	{ 

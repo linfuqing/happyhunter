@@ -56,6 +56,10 @@ CQuadTreeObject::~CQuadTreeObject()
 {
 }
 
+void CQuadTreeObject::PrepareForRender()
+{
+}
+
 void CQuadTreeObject::AttachToQuadTree(CQuadTree* pParent)
 {
 	DetachFromQuadTree();

@@ -48,6 +48,8 @@ namespace zerO
 		CQuadTreeObject* GetTreeForward()const;
 		CQuadTreeObject* GetTreeRear()const;*/
 
+		virtual void PrepareForRender();
+
 		CQuadTreeObject* GetNext()const;
 
 		/*void SetQueadTree(CQuadTreeNode* pParentQuadTreeNode, UINT32 uMaskZ);*/

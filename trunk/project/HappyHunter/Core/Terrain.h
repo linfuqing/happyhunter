@@ -79,6 +79,11 @@ namespace zerO
 		CTerrain(void);
 		~CTerrain(void);
 
+		UINT GetTableWidth()const;
+		UINT GetTableHeight()const;
+
+		UINT GetTableIndex(UINT uMapX, UINT uMapY)const;
+
 		FLOAT GetHeight(UINT x, UINT y)const;
 		FLOAT GetHeight(UINT uIndex)const;
 		const D3DXVECTOR3& GetNormal(UINT x, UINT y)const;
@@ -133,6 +138,24 @@ namespace zerO
 		PFLOAT m_pfHeightTable;
 		LPD3DXVECTOR3 m_pNormalTable;
 	};
+
+	inline UINT CTerrain::GetTableWidth()const
+	{
+		return m_uTableWidth;
+	}
+	
+	inline UINT CTerrain::GetTableHeight()const
+	{
+		return m_uTableHeight;
+	}
+
+	inline UINT CTerrain::GetTableIndex(UINT uMapX, UINT uMapY)const
+	{
+		uMapX = uMapX < m_uTableWidth  ? uMapX : (m_uTableWidth  - 1);
+		uMapY = uMapY < m_uTableHeight ? uMapY : (m_uTableHeight - 1);
+
+		return uMapY * m_uTableWidth + uMapX;
+	}
 
 	inline FLOAT CTerrain::GetHeight(UINT x, UINT y)const
 	{
@@ -202,9 +225,11 @@ namespace zerO
 		void Tessellate(FLOAT fScale, FLOAT fLimit);
 		void BuildTriangleList();
 
+		void PrepareForRender();
+
 		FLOAT GetQueueSortValue()const;
 		UINT16 GetTotalIndices()const;
-		CIndexBuffer* GetIndexBuffer();
+		CIndexBuffer& GetIndexBuffer();
 
 	private:
 		void __ComputeVariance();
@@ -247,7 +272,7 @@ namespace zerO
 		UINT16 m_uTotalIndices;
 		PUINT16 m_puIndexList;
 
-		CIndexBuffer* m_pIndexBuffer;
+		CIndexBuffer m_IndexBuffer;
 
 		TRIANGLETREENODE m_RootTriangleA;
 		TRIANGLETREENODE m_RootTriangleB;
@@ -268,9 +293,9 @@ namespace zerO
 		return m_uTotalIndices;
 	}
 
-	inline CIndexBuffer* CRoamTerrainSection::GetIndexBuffer()
+	inline CIndexBuffer& CRoamTerrainSection::GetIndexBuffer()
 	{
-		return m_pIndexBuffer;
+		return m_IndexBuffer;
 	}
 
 	class CRoamTerrain :
@@ -313,6 +338,9 @@ namespace zerO
 		CRoamTerrainSection** m_ppTessellationQueue;
 		UINT32 m_uTessellationQueueCount;
 
+		FLOAT m_fScale;
+		FLOAT m_fLimit;
+
 		bool __AllocateSectors();
 	};
 
@@ -320,7 +348,7 @@ namespace zerO
 	{
 		CRoamTerrainSection* pSection = NULL;
 
-		if (nSectionX >= 0 && nSectionX < m_uSectorCountX && nSectionY >=0 && nSectionY < m_uSectorCountY)
+		if (nSectionX >= 0 && nSectionX < (INT)m_uSectorCountX && nSectionY >=0 && nSectionY < (INT)m_uSectorCountY)
 		{
 			pSection = &m_pRoamSection[nSectionY * m_uSectorCountX + nSectionX];
 		}

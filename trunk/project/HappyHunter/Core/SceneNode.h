@@ -19,6 +19,8 @@ namespace zerO
 
 		CSceneNode* GetParent()const;
 
+		const D3DXVECTOR3& GetPosition()const;
+
 		//本地矩阵
 		const D3DXMATRIX& GetLocalMatrix()const;
 		//世界矩阵
@@ -71,6 +73,11 @@ namespace zerO
 	inline CSceneNode* CSceneNode::GetParent()const
 	{
 		return m_pParent;
+	}
+
+	inline const D3DXVECTOR3& CSceneNode::GetPosition()const
+	{
+		return m_Position;
 	}
 
 	inline const D3DXMATRIX& CSceneNode::GetLocalMatrix()const
