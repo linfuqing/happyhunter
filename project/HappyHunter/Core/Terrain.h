@@ -92,11 +92,11 @@ namespace zerO
 
 		void Render();
 
-		bool Destroy();
-
 		virtual void SetQuadTree(CQuadTree* pQuadTree);
 
 		virtual bool Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, UINT8 uShift);
+
+		virtual bool Destroy();
 
 		virtual bool SubmitSection(CTerrainSection* pSection)const;
 
@@ -322,6 +322,8 @@ namespace zerO
 			CTexture* pHeightMap, 
 			const CRectangle3D& WorldExtents, 
 			UINT8 uShift);
+
+		bool Destroy();
 
 		bool SubmitSection(CTerrainSection* pSection)const;
 

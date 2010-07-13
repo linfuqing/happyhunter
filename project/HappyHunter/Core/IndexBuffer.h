@@ -78,6 +78,9 @@ namespace zerO
 
 	inline bool CIndexBuffer::Lock(DWORD dwFlags, void** ppData)
 	{
+		if(!m_pBuffer)
+			return false;
+
 		HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
 
 		if( FAILED(hr) )
@@ -97,6 +100,9 @@ namespace zerO
 
 	inline bool CIndexBuffer::Unlock()
 	{
+		if(!m_pBuffer)
+			return false;
+
 		HRESULT hr = m_pBuffer->Unlock();
 
 		if( FAILED(hr) )
@@ -118,7 +124,7 @@ namespace zerO
 
 	inline void CIndexBuffer::Activate()const
 	{
-		DEBUG_ASSERT(m_pBuffer, "Attempting to activate an invalid buffer");
+		DEBUG_WARNING(m_pBuffer, "Attempting to activate an invalid buffer");
 
 		HRESULT hr = DEVICE.SetIndices(m_pBuffer);
 
