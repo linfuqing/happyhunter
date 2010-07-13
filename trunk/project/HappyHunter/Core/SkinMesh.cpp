@@ -8,15 +8,16 @@
 
 using namespace zerO;
 
-//=============================================================================
-//Desc: AllocateHierarchy.cpp
-//=============================================================================
+CAllocateHierarchy::CAllocateHierarchy() :
+m_pBoneMatrices(NULL), 
+m_NumBoneMatricesMax(0)
+{
+}
 
 CAllocateHierarchy::~CAllocateHierarchy()
 {
 	DEBUG_DELETE_ARRAY(m_pBoneMatrices);
-
-	m_pBoneMatrices = NULL;
+	m_pBoneMatrices   = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -40,6 +41,147 @@ HRESULT CAllocateHierarchy::__AllocateName( LPCSTR Name, LPSTR *pNewName )
     }
 
     return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+//Desc: 生成蒙皮网格模型(含有每个顶点的混合权重、索引和一个骨骼组合表)
+//-----------------------------------------------------------------------------
+HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer)
+{
+	HRESULT hr = S_OK;
+	if( pMeshContainer->pSkinInfo == NULL )
+		return hr;
+
+	DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
+	DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
+
+	//获取当前设备的能力
+	D3DCAPS9 d3dCaps;
+    DEVICE.GetDeviceCaps( &d3dCaps );
+
+	pMeshContainer->NumPaletteEntries = min(26, pMeshContainer->pSkinInfo->GetNumBones());
+	DWORD Flags = D3DXMESHOPT_VERTEXCACHE;
+
+	if (d3dCaps.VertexShaderVersion >= D3DVS_VERSION(1, 1))
+	{
+		pMeshContainer->UseSoftwareVP = false;
+		Flags |= D3DXMESH_MANAGED;
+	}
+	else
+	{
+		pMeshContainer->UseSoftwareVP = true;
+		Flags |= D3DXMESH_SYSTEMMEM;
+	}
+
+	DEBUG_RELEASE(pMeshContainer->MeshData.pMesh);
+
+	hr = pMeshContainer->pSkinInfo->ConvertToIndexedBlendedMesh 
+		                                                      ( pMeshContainer->pOrigMesh,
+		                                                        Flags, 
+		                                                        pMeshContainer->NumPaletteEntries, 
+		                                                        pMeshContainer->pAdjacency, 
+		                                                        NULL, NULL, NULL,             
+		                                                        &pMeshContainer->NumInfl,
+		                                                        &pMeshContainer->NumAttributeGroups, 
+		                                                        &pMeshContainer->pBoneCombinationBuf, 
+		                                                        &pMeshContainer->MeshData.pMesh);
+	if (FAILED(hr))
+		return hr;
+
+	LPD3DXMESH pMeshSysMem = pMeshContainer->MeshData.pMesh;
+	D3DVERTEXELEMENT9   decl[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
+
+	LPD3DXMESH  pMeshSysMem2  = NULL;
+	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+	
+	//确保顶点包含法线
+	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//计算切线
+	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	D3DVERTEXELEMENT9   decl2[]   = 
+	{ 
+		{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+		{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+		{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+		{   0,   36,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+		{   0,   52,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+		{   0,   56,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+		{   0,   68,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+		D3DDECL_END(), 
+	}; 
+
+	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMeshContainer->MeshData.pMesh );
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//释放临时网格模型对象
+	DEBUG_RELEASE(pMeshSysMem);
+	DEBUG_RELEASE(pMeshSysMem2);
+
+	D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
+	LPD3DVERTEXELEMENT9 pDeclCur;
+	hr = pMeshContainer->MeshData.pMesh->GetDeclaration(pDecl);
+	if (FAILED(hr))
+		return hr;
+
+	pDeclCur = pDecl;
+	while (pDeclCur->Stream != 0xff)
+	{
+		if ((pDeclCur->Usage == D3DDECLUSAGE_BLENDINDICES) && (pDeclCur->UsageIndex == 0))
+			pDeclCur->Type = D3DDECLTYPE_D3DCOLOR;
+		pDeclCur++;
+	}
+
+	hr = pMeshContainer->MeshData.pMesh->UpdateSemantics(pDecl);
+	if (FAILED(hr))
+		return hr;
+
+	// allocate a buffer for bone matrices,
+	if( m_NumBoneMatricesMax < pMeshContainer->pSkinInfo->GetNumBones() )
+	{
+		m_NumBoneMatricesMax = pMeshContainer->pSkinInfo->GetNumBones();
+
+		// Allocate space for blend matrices
+		DEBUG_DELETE_ARRAY(m_pBoneMatrices); 
+		DEBUG_NEW(m_pBoneMatrices, D3DXMATRIXA16[m_NumBoneMatricesMax]);
+		if( m_pBoneMatrices == NULL )
+		{
+			hr = E_OUTOFMEMORY;
+			return hr;
+		}
+	}
+
+	return hr;
 }
 
 void CAllocateHierarchy::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
@@ -75,44 +217,6 @@ void CAllocateHierarchy::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, P
 		temp = wcstok_s(NULL, token, &context);
 	}
 	path += texFile;
-}
-
-void CAllocateHierarchy::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
-{
-	DWORD dwVertexNum = pMesh->GetNumVertices();
-
-	LPD3DXMESH pTempMesh;
-	pMesh->CloneMeshFVF(D3DXMESH_SYSTEMMEM, BoxVertex::FVF_Flags, &DEVICE, &pTempMesh);
-	
-	LPDIRECT3DVERTEXBUFFER9 pVertexBuffer;
-	pTempMesh->GetVertexBuffer(&pVertexBuffer);
-
-	FLOAT maxX = 0.0f, maxY = 0.0f, maxZ = 0.0f;
-	FLOAT minX = 0.0f, minY = 0.0f, minZ = 0.0f;
-	BoxVertex* pVertices;
-	pVertexBuffer->Lock(0, 0, (void**)&pVertices, 0);
-	for(DWORD i = 0; i< dwVertexNum; i ++)
-	{
-		if(pVertices[i].p.x > maxX)
-			maxX = pVertices[i].p.x;
-		if(pVertices[i].p.y > maxY)
-			maxY = pVertices[i].p.y;
-		if(pVertices[i].p.z > maxZ)
-			maxZ = pVertices[i].p.z;
-
-		if(pVertices[i].p.x < minX)
-			minX = pVertices[i].p.x;
-		if(pVertices[i].p.y < minY)
-			minY = pVertices[i].p.y;
-		if(pVertices[i].p.z < minZ)
-			minZ = pVertices[i].p.z;
-	}
-	pVertexBuffer->Unlock();
-
-	rect3d.Set(minX, maxX, minY, maxY, minZ, maxZ);
-
-	DEBUG_RELEASE(pVertexBuffer);
-	DEBUG_RELEASE(pTempMesh);
 }
 
 //-----------------------------------------------------------------------------
@@ -292,7 +396,7 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
         }
 		
 		//生成蒙皮网格模型
-        hr = __GenerateSkinnedMesh(pMeshContainer); 
+		hr = __GenerateSkinnedMesh(pMeshContainer); 
         if (FAILED(hr))
 		{
 			DestroyMeshContainer(pMeshContainer);
@@ -302,152 +406,9 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 	
     *ppNewMeshContainer = pMeshContainer;
     pMeshContainer = NULL;
+
     return hr;
 }
-
-//-----------------------------------------------------------------------------
-//Desc: 生成蒙皮网格模型(含有每个顶点的混合权重、索引和一个骨骼组合表)
-//-----------------------------------------------------------------------------
-HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer)
-{
-	HRESULT hr = S_OK;
-	if( pMeshContainer->pSkinInfo == NULL )
-		return hr;
-
-	DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
-	DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
-
-	//获取当前设备的能力
-	D3DCAPS9 d3dCaps;
-    DEVICE.GetDeviceCaps( &d3dCaps );
-
-	pMeshContainer->NumPaletteEntries = min(26, pMeshContainer->pSkinInfo->GetNumBones());
-	DWORD Flags = D3DXMESHOPT_VERTEXCACHE;
-
-	if (d3dCaps.VertexShaderVersion >= D3DVS_VERSION(1, 1))
-	{
-		pMeshContainer->UseSoftwareVP = false;
-		Flags |= D3DXMESH_MANAGED;
-	}
-	else
-	{
-		pMeshContainer->UseSoftwareVP = true;
-		Flags |= D3DXMESH_SYSTEMMEM;
-	}
-
-	DEBUG_RELEASE(pMeshContainer->MeshData.pMesh);
-
-	hr = pMeshContainer->pSkinInfo->ConvertToIndexedBlendedMesh 
-		                                                      ( pMeshContainer->pOrigMesh,
-		                                                        Flags, 
-		                                                        pMeshContainer->NumPaletteEntries, 
-		                                                        pMeshContainer->pAdjacency, 
-		                                                        NULL, NULL, NULL,             
-		                                                        &pMeshContainer->NumInfl,
-		                                                        &pMeshContainer->NumAttributeGroups, 
-		                                                        &pMeshContainer->pBoneCombinationBuf, 
-		                                                        &pMeshContainer->MeshData.pMesh);
-	if (FAILED(hr))
-		return hr;
-
-	LPD3DXMESH pMeshSysMem = pMeshContainer->MeshData.pMesh;
-	D3DVERTEXELEMENT9   decl[]   = 
-	{ 
-		{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
-		{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
-		{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
-		{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
-		{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
-		{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
-		{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
-		D3DDECL_END(), 
-	}; 
-
-	LPD3DXMESH  pMeshSysMem2  = NULL;
-	hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-	
-	//确保顶点包含法线
-	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	//计算切线
-	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	D3DVERTEXELEMENT9   decl2[]   = 
-	{ 
-		{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
-		{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
-		{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
-		{   0,   36,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
-		{   0,   52,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
-		{   0,   56,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
-		{   0,   68,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
-		D3DDECL_END(), 
-	}; 
-
-	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMeshContainer->MeshData.pMesh );
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	//释放临时网格模型对象
-	DEBUG_RELEASE(pMeshSysMem);
-	DEBUG_RELEASE(pMeshSysMem2);
-
-	D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
-	LPD3DVERTEXELEMENT9 pDeclCur;
-	hr = pMeshContainer->MeshData.pMesh->GetDeclaration(pDecl);
-	if (FAILED(hr))
-		return hr;
-
-	pDeclCur = pDecl;
-	while (pDeclCur->Stream != 0xff)
-	{
-		if ((pDeclCur->Usage == D3DDECLUSAGE_BLENDINDICES) && (pDeclCur->UsageIndex == 0))
-			pDeclCur->Type = D3DDECLTYPE_D3DCOLOR;
-		pDeclCur++;
-	}
-
-	hr = pMeshContainer->MeshData.pMesh->UpdateSemantics(pDecl);
-	if (FAILED(hr))
-		return hr;
-
-	// allocate a buffer for bone matrices,
-	if( m_NumBoneMatricesMax < pMeshContainer->pSkinInfo->GetNumBones() )
-	{
-		m_NumBoneMatricesMax = pMeshContainer->pSkinInfo->GetNumBones();
-
-		// Allocate space for blend matrices
-		DEBUG_DELETE_ARRAY(m_pBoneMatrices); 
-		DEBUG_NEW(m_pBoneMatrices, D3DXMATRIXA16[m_NumBoneMatricesMax]);
-		if( m_pBoneMatrices == NULL )
-		{
-			hr = E_OUTOFMEMORY;
-			return hr;
-		}
-	}
-
-	__GetBoundBox(pMeshContainer->MeshData.pMesh, m_Rect);
-
-	return hr;
-}
-
 
 //-----------------------------------------------------------------------------
 // Desc: 释放框架
@@ -537,7 +498,6 @@ m_fFrameTime(0.0f),
 m_lfTotalFrameTime(0.0),
 m_dwControlPlayTime(0)
 {
-	DEBUG_NEW(m_pAlloc, CAllocateHierarchy);
 }
 
 
@@ -549,25 +509,6 @@ CSkinMesh::~CSkinMesh()
 	Destroy();
 }
 
-
-//-----------------------------------------------------------------------------
-// Desc:创建并加载蒙皮网格模型
-//-----------------------------------------------------------------------------
-bool CSkinMesh::Create(const PBASICCHAR fileName)
-{
-	HRESULT hr;
-
-	if ( !m_Effect.Load( SKINMESH_EFFECT ) )
-		return false;
-	
-	hr = __LoadFromXFile( fileName );
-	if(FAILED(hr))
-		return false;
-
-	return true;
-}
-
-
 //-----------------------------------------------------------------------------
 // Desc: 从文件加载蒙皮网格模型
 //-----------------------------------------------------------------------------
@@ -575,18 +516,31 @@ HRESULT CSkinMesh::__LoadFromXFile( const PBASICCHAR strFileName )
 {
     HRESULT hr;
 
-	wcscpy(m_pAlloc->m_strFilePath, strFileName);
+	LPD3DXMESH pMesh;
+	hr = D3DXLoadMeshFromX( strFileName, D3DXMESH_MANAGED, 
+		&DEVICE, NULL, 
+		NULL, NULL, NULL, 
+		&pMesh );
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	__GetBoundBox(pMesh, m_LocalRect);
+	DEBUG_RELEASE(pMesh);
+
+	wcscpy(m_Alloc.m_strFilePath, strFileName);
 	//从.X文件加载层次框架和动画数据
     hr = D3DXLoadMeshHierarchyFromX(strFileName, D3DXMESH_MANAGED, &DEVICE, 
-		                            m_pAlloc, NULL, &m_pFrameRoot, &m_pAnimController);
+		                            &m_Alloc, NULL, &m_pFrameRoot, &m_pAnimController);
 
 	if ( FAILED(hr) )
 	{
 		DEBUG_WARNING(hr);
 		return S_FALSE;
 	}
-
-	m_LocalRect = m_pAlloc->m_Rect;
 
 	//建立各级框架的组合变换矩阵
     hr = __SetupBoneMatrixPointers(m_pFrameRoot);  
@@ -598,6 +552,47 @@ HRESULT CSkinMesh::__LoadFromXFile( const PBASICCHAR strFileName )
 	}
 
 	return S_OK;
+}
+
+void CSkinMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
+{
+	if (pMesh == NULL)
+		return;
+
+	DWORD dwVertexNum = pMesh->GetNumVertices();
+
+	LPD3DXMESH pTempMesh;
+	pMesh->CloneMeshFVF(D3DXMESH_SYSTEMMEM, BoxVertex::FVF_Flags, &DEVICE, &pTempMesh);
+	
+	LPDIRECT3DVERTEXBUFFER9 pVertexBuffer;
+	pTempMesh->GetVertexBuffer(&pVertexBuffer);
+
+	FLOAT maxX = 0.0f, maxY = 0.0f, maxZ = 0.0f;
+	FLOAT minX = 0.0f, minY = 0.0f, minZ = 0.0f;
+	BoxVertex* pVertices;
+	pVertexBuffer->Lock(0, 0, (void**)&pVertices, 0);
+	for(DWORD i = 0; i< dwVertexNum; i ++)
+	{
+		if(pVertices[i].p.x > maxX)
+			maxX = pVertices[i].p.x;
+		if(pVertices[i].p.y > maxY)
+			maxY = pVertices[i].p.y;
+		if(pVertices[i].p.z > maxZ)
+			maxZ = pVertices[i].p.z;
+
+		if(pVertices[i].p.x < minX)
+			minX = pVertices[i].p.x;
+		if(pVertices[i].p.y < minY)
+			minY = pVertices[i].p.y;
+		if(pVertices[i].p.z < minZ)
+			minZ = pVertices[i].p.z;
+	}
+	pVertexBuffer->Unlock();
+
+	rect3d.Set(minX, maxX, minY, maxY, minZ, maxZ);
+
+	DEBUG_RELEASE(pVertexBuffer);
+	DEBUG_RELEASE(pTempMesh);
 }
 
 
@@ -673,62 +668,6 @@ HRESULT CSkinMesh::__SetupBoneMatrixPointersOnMesh(LPD3DXMESHCONTAINER pMeshCont
     return S_OK;
 }
 
-
-//-----------------------------------------------------------------------------
-// Desc: 绘制框架
-//       用函数CSkinMesh::__DrawFrame()绘制框架
-//-----------------------------------------------------------------------------
-void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
-{
-	__DrawFrame(m_pFrameRoot, pEntry, uFlag);  //调用子函数
-}
-
-//-----------------------------------------------------------------------------
-// Desc: 更新框架
-//       (1)用m_pAnimController->AdvanceTime()设置时间，m_pAnimController是
-//          类LPD3DXANIMATIONCONTROLLER的一个对象
-//       (2)用函数CSkinMesh::__UpdateFrameMatrices()更新框架
-//-----------------------------------------------------------------------------
-void CSkinMesh::Update()
-{
-	CSceneNode::Update();
-
-	m_matView = CAMERA.GetViewMatrix();
-
-	m_Effect.GetEffect()->SetMatrix( "mProj", &CAMERA.GetProjectionMatrix() );
-
-	const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
-
-	D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
-
-	if(pLight)
-		m_Effect.GetEffect()->SetVector("vecLightDir", &LightDirection);
-
-	FLOAT fElapsedAppTime = ELAPSEDTIME;
-
-	if( 0.0f == fElapsedAppTime ) 
-        return;
-	
-	m_fTimeCurrent += fElapsedAppTime;
-
-	if (m_bPlayAnim && m_pAnimController != NULL)
-	{
-		if(m_dwControlPlayTime == 0 || m_dwPlayTime < m_dwControlPlayTime)
-			m_pAnimController->AdvanceTime( fElapsedAppTime, NULL );
-
-		// 计算动画播放次数
-		m_fFrameTime += fElapsedAppTime;
-		if(m_fFrameTime >= m_lfTotalFrameTime)
-		{
-			m_fFrameTime = 0.0f;
-			m_dwPlayTime++;
-		}
-	}
-
-	__UpdateFrameMatrices(m_pFrameRoot, &m_WorldMatrix);  //调用子函数
-}
-
-
 //-----------------------------------------------------------------------------
 // Desc:计算各个骨骼的组合变换矩阵
 //-----------------------------------------------------------------------------
@@ -803,6 +742,7 @@ void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD
 	{
 		DEVICE.SetSoftwareVertexProcessing(TRUE);
 	}
+
 	//检查是否是蒙皮网格模型
 	if (pMeshContainer->pSkinInfo != NULL)
 	{
@@ -815,10 +755,10 @@ void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD
 				if (iMatrixIndex != UINT_MAX)
 				{
 					D3DXMatrixMultiply(&matTemp, &pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
-					D3DXMatrixMultiply(&m_pAlloc->m_pBoneMatrices[iPaletteEntry], &matTemp, &m_matView);
+					D3DXMatrixMultiply(&m_Alloc.m_pBoneMatrices[iPaletteEntry], &matTemp, &m_matView);
 				}
 			}
-			m_Effect.GetEffect()->SetMatrixArray( "mWorldMatrixArray", m_pAlloc->m_pBoneMatrices, pMeshContainer->NumPaletteEntries);
+			m_Effect.GetEffect()->SetMatrixArray( "mWorldMatrixArray", m_Alloc.m_pBoneMatrices, pMeshContainer->NumPaletteEntries);
 
 			D3DXCOLOR color1(pMeshContainer->pMaterials[pBoneComb[iAttrib].AttribId].MatD3D.Ambient);
 			D3DXCOLOR color2(0.25, 0.25, 0.25, 1.0);
@@ -883,6 +823,167 @@ void CSkinMesh::__DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD
 	{
 		DEVICE.SetSoftwareVertexProcessing(FALSE);
 	}  
+}
+
+//-----------------------------------------------------------------------------
+// Desc:创建并加载蒙皮网格模型
+//-----------------------------------------------------------------------------
+bool CSkinMesh::Create(const PBASICCHAR fileName)
+{
+	HRESULT hr;
+
+	if ( !m_Effect.Load( SKINMESH_EFFECT ) )
+		return false;
+
+	hr = __LoadFromXFile( fileName );
+	if(FAILED(hr))
+		return false;
+
+	return true;
+}
+
+bool CSkinMesh::ApplyForRender()
+{
+	UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
+
+	for (i = 0; i < uTotalPass; i ++)
+	{
+		//锁定整个队列
+		zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
+
+		//将信息需求传送到优化队列
+		pRenderEntry->hEffect      = m_Effect.GetHandle();
+		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL_TYPE;
+		pRenderEntry->hModel       = RESOURCE_MODEL;
+		pRenderEntry->uRenderPass  = (zerO::UINT8)i;
+		pRenderEntry->pParent      = this;
+
+		//解锁
+		GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Desc: 释放蒙皮网格模型
+//-----------------------------------------------------------------------------
+bool CSkinMesh::Destroy()
+{
+	if(m_pFrameRoot)
+		D3DXFrameDestroy(m_pFrameRoot, &m_Alloc);
+
+    DEBUG_RELEASE(m_pAnimController);
+	m_pAnimController = NULL;
+
+	return true;
+}
+
+HRESULT CSkinMesh::Restore()
+{
+	HRESULT hr;
+	hr = m_Effect.GetEffect()->OnResetDevice();
+	if ( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return S_FALSE;
+	}
+
+	if (m_pAnimController == NULL)
+		return S_FALSE;
+
+	m_pAnimController->ResetTime();
+	m_pAnimController->AdvanceTime( m_fTimeCurrent, NULL );
+
+	// Initialize current track
+	if( m_szASName[0] != '\0' )
+	{
+		DWORD dwActiveSet = GetAnimIndex( m_szASName );
+		LPD3DXANIMATIONSET pAS = NULL;
+		m_pAnimController->GetAnimationSet( dwActiveSet, &pAS );
+		m_pAnimController->SetTrackAnimationSet( m_dwCurrentTrack, pAS );
+		DEBUG_RELEASE( pAS );
+	}
+
+	m_pAnimController->SetTrackEnable( m_dwCurrentTrack, TRUE );
+	m_pAnimController->SetTrackWeight( m_dwCurrentTrack, 1.0f );
+	m_pAnimController->SetTrackSpeed( m_dwCurrentTrack, 1.0f );
+	return hr;
+}
+
+HRESULT CSkinMesh::Lost()
+{
+	HRESULT hr;
+	hr = m_Effect.GetEffect()->OnLostDevice();
+	if ( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return S_FALSE;
+	}
+
+	if (m_pAnimController == NULL)
+		return S_FALSE;
+
+	LPD3DXANIMATIONSET pAS = NULL;
+	m_pAnimController->GetTrackAnimationSet(m_dwCurrentTrack, &pAS);
+	if( pAS->GetName() )
+		strcpy( m_szASName, pAS->GetName() );
+	DEBUG_RELEASE(pAS);
+	return hr;
+}
+
+//-----------------------------------------------------------------------------
+// Desc: 绘制框架
+//       用函数CSkinMesh::__DrawFrame()绘制框架
+//-----------------------------------------------------------------------------
+void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
+{
+	__DrawFrame(m_pFrameRoot, pEntry, uFlag);  //调用子函数
+}
+
+//-----------------------------------------------------------------------------
+// Desc: 更新框架
+//       (1)用m_pAnimController->AdvanceTime()设置时间，m_pAnimController是
+//          类LPD3DXANIMATIONCONTROLLER的一个对象
+//       (2)用函数CSkinMesh::__UpdateFrameMatrices()更新框架
+//-----------------------------------------------------------------------------
+void CSkinMesh::Update()
+{
+	CSceneNode::Update();
+
+	m_matView = CAMERA.GetViewMatrix();
+
+	m_Effect.GetEffect()->SetMatrix( "mProj", &CAMERA.GetProjectionMatrix() );
+
+	const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
+
+	D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
+
+	if(pLight)
+		m_Effect.GetEffect()->SetVector("vecLightDir", &LightDirection);
+
+	FLOAT fElapsedAppTime = ELAPSEDTIME;
+
+	if( 0.0f == fElapsedAppTime ) 
+        return;
+	
+	m_fTimeCurrent += fElapsedAppTime;
+
+	if (m_bPlayAnim && m_pAnimController != NULL)
+	{
+		if(m_dwControlPlayTime == 0 || m_dwPlayTime < m_dwControlPlayTime)
+			m_pAnimController->AdvanceTime( fElapsedAppTime, NULL );
+
+		// 计算动画播放次数
+		m_fFrameTime += fElapsedAppTime;
+		if(m_fFrameTime >= m_lfTotalFrameTime)
+		{
+			m_fFrameTime = 0.0f;
+			m_dwPlayTime++;
+		}
+	}
+
+	__UpdateFrameMatrices(m_pFrameRoot, &m_WorldMatrix);  //调用子函数
 }
 
 void CSkinMesh::SetAnimation( zerO::UINT index, DWORD dwControlPlayTime, bool bSmooth )
@@ -1013,89 +1114,4 @@ bool CSkinMesh::CanPlay(LPSTR pName, DWORD count)
 		return true;
 
 	return false;
-}
-
-bool CSkinMesh::ApplyForRender()
-{
-	UINT uTotalPass = m_Effect.GetTechniqueDesc().Passes, i;
-
-	for (i = 0; i < uTotalPass; i ++)
-	{
-		//锁定整个队列
-		zerO::CRenderQueue::LPRENDERENTRY pRenderEntry = GAMEHOST.GetRenderQueue().LockRenderEntry();
-
-		//将信息需求传送到优化队列
-		pRenderEntry->hEffect      = m_Effect.GetHandle();
-		pRenderEntry->uModelType   = zerO::CRenderQueue::RENDERENTRY::MODEL_TYPE;
-		pRenderEntry->hModel       = RESOURCE_MODEL;
-		pRenderEntry->uRenderPass  = (zerO::UINT8)i;
-		pRenderEntry->pParent      = this;
-
-		//解锁
-		GAMEHOST.GetRenderQueue().UnLockRenderEntry(pRenderEntry);
-	}
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Desc: 释放蒙皮网格模型
-//-----------------------------------------------------------------------------
-bool CSkinMesh::Destroy()
-{
-	if(m_pFrameRoot && m_pAlloc)
-		D3DXFrameDestroy(m_pFrameRoot, m_pAlloc);
-
-    DEBUG_RELEASE(m_pAnimController);
-	DEBUG_DELETE(m_pAlloc);
-
-	m_pAnimController = NULL;
-	m_pAlloc          = NULL;
-
-	return true;
-}
-
-HRESULT CSkinMesh::Reset()
-{
-	HRESULT hr;
-	hr = m_Effect.GetEffect()->OnResetDevice();
-	if ( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return S_FALSE;
-	}
-	m_pAnimController->ResetTime();
-	m_pAnimController->AdvanceTime( m_fTimeCurrent, NULL );
-
-	// Initialize current track
-	if( m_szASName[0] != '\0' )
-	{
-		DWORD dwActiveSet = GetAnimIndex( m_szASName );
-		LPD3DXANIMATIONSET pAS = NULL;
-		m_pAnimController->GetAnimationSet( dwActiveSet, &pAS );
-		m_pAnimController->SetTrackAnimationSet( m_dwCurrentTrack, pAS );
-		DEBUG_RELEASE( pAS );
-	}
-
-	m_pAnimController->SetTrackEnable( m_dwCurrentTrack, TRUE );
-	m_pAnimController->SetTrackWeight( m_dwCurrentTrack, 1.0f );
-	m_pAnimController->SetTrackSpeed( m_dwCurrentTrack, 1.0f );
-	return hr;
-}
-
-HRESULT CSkinMesh::Lost()
-{
-	HRESULT hr;
-	hr = m_Effect.GetEffect()->OnLostDevice();
-	if ( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return S_FALSE;
-	}
-	LPD3DXANIMATIONSET pAS = NULL;
-	m_pAnimController->GetTrackAnimationSet(m_dwCurrentTrack, &pAS);
-	if( pAS->GetName() )
-		strcpy( m_szASName, pAS->GetName() );
-	DEBUG_RELEASE(pAS);
-	return hr;
 }

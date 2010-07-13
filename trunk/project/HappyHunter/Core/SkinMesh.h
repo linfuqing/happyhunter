@@ -33,18 +33,16 @@ namespace zerO
 		bool                 UseSoftwareVP;         //标识是否使用软件顶点处理
 	};
 
-
 	//-----------------------------------------------------------------------------
 	// Desc: 该类用来从.X文件加载框架层次和网格模型数据
 	//-----------------------------------------------------------------------------
 	class CAllocateHierarchy: public ID3DXAllocateHierarchy
 	{
 	private:
-		HRESULT __GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
 		HRESULT __AllocateName( LPCSTR Name, LPSTR *pNewName );
+		HRESULT __GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
 		void __RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName);
 		void __GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile);
-		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
 
 	public:
 		STDMETHOD(CreateFrame)(THIS_ LPCSTR Name, LPD3DXFRAME *ppNewFrame);
@@ -59,24 +57,13 @@ namespace zerO
 		STDMETHOD(DestroyFrame)(THIS_ LPD3DXFRAME pFrameToFree);
 		STDMETHOD(DestroyMeshContainer)(THIS_ LPD3DXMESHCONTAINER pMeshContainerBase);
 
-		CAllocateHierarchy() : m_pBoneMatrices(NULL), m_NumBoneMatricesMax(0) {}
-		~CAllocateHierarchy();
+		CAllocateHierarchy(void);
+		~CAllocateHierarchy(void);
 
 	private:
+		BASICCHAR					m_strFilePath[MAX_PATH];
 		D3DXMATRIXA16*              m_pBoneMatrices;
 		UINT                        m_NumBoneMatricesMax;
-		BASICCHAR					m_strFilePath[MAX_PATH];
-		CRectangle3D				m_Rect;
-
-		struct BoxVertex
-		{
-			D3DXVECTOR3 p;
-
-			enum FVF
-			{
-				FVF_Flags = D3DFVF_XYZ
-			};
-		};
 
 		friend class CSkinMesh;
 	};
@@ -94,23 +81,23 @@ namespace zerO
 		HRESULT __SetupBoneMatrixPointersOnMesh( LPD3DXMESHCONTAINER pMeshContainerBase );
 
 		HRESULT __LoadFromXFile( const PBASICCHAR strFileName );
-		VOID    __UpdateFrameMatrices( LPD3DXFRAME pFrameBase, LPD3DXMATRIX pParentMatrix ); 
-
+	
+		VOID __UpdateFrameMatrices( LPD3DXFRAME pFrameBase, LPD3DXMATRIX pParentMatrix ); 
 		VOID __DrawFrame( LPD3DXFRAME pFrame, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
 		VOID __DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
 
+		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
+
 	public:
 		bool Create(const PBASICCHAR fileName);
+		virtual bool Destroy();
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
-		bool Destroy();
-		HRESULT Reset();
+		HRESULT Restore();
 		HRESULT Lost();
 
-		const BASICSTRING& GetMeshFile() const;
-		const BASICSTRING& GetEffectFile() const;
 		const CEffect& GetEffect() const;
 		
 		// 通过索引设定动作
@@ -127,7 +114,7 @@ namespace zerO
 		bool CanPlay(LPSTR pName, DWORD count);
 
 	private:
-		CAllocateHierarchy*         m_pAlloc;
+		CAllocateHierarchy			m_Alloc;
 		LPD3DXFRAME					m_pFrameRoot;
 		CEffect						m_Effect;
 		D3DXMATRIXA16				m_matView;
@@ -142,6 +129,16 @@ namespace zerO
 		DWORD						m_dwControlPlayTime;	// 当前动作设定播放次数(0为重复播放)　
 		char						m_szASName[64];			// 动作名称
 		std::string					m_strNowAnimSetName;	// 当前动作名称
+	
+		struct BoxVertex
+		{
+			D3DXVECTOR3 p;
+
+			enum FVF
+			{
+				FVF_Flags = D3DFVF_XYZ
+			};
+		};
 	};
 
 	//---------------------------------------------------------------------------
