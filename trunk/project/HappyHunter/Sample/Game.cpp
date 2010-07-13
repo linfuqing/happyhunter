@@ -13,7 +13,7 @@
 //#define TERRAIN//PARTICLESYSTEM
 //#define MISSION
 //#define PRIZE
-#define ROAMTERRAIN
+#define ROAMTERRAIN//PARTICLESYSTEM
 
 zerO::CGameHost g_Game;
 
@@ -314,7 +314,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 1000.0f);
+	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 3000.0f);
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
 	D3DXMATRIX Matrix, Rotation;
@@ -521,7 +521,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	z -= 10;
 
 #ifdef ROAMTERRAIN
-	g_Terrain.SetTessellationParameters(1.33f, 0.3f);
+	g_Terrain.SetTessellationParameters(10.33f, 0.3f);
 #endif
 
 #ifdef PARTICLESYSTEM
@@ -570,6 +570,8 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		g_Game.BeginRender();
 
 #ifdef ROAMTERRAIN
+		g_Terrain.Reset();
+
 		pCurrentObject = pObject;
 
 		while(pCurrentObject)

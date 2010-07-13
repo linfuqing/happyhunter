@@ -869,6 +869,22 @@ bool CRoamTerrain::Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRe
 	return bResult;
 }
 
+bool CRoamTerrain::Destroy()
+{
+	DEBUG_DELETE_ARRAY(m_pRoamSection);
+	DEBUG_DELETE_ARRAY(m_pTriangleNodePool);
+	DEBUG_DELETE_ARRAY(m_ppTessellationQueue);
+
+	m_pRoamSection        = NULL;
+	m_pTriangleNodePool   = NULL;
+	m_ppTessellationQueue = NULL;
+
+	m_uNextTriangleNode       = 0;
+	m_uTessellationQueueCount = 0;
+
+	return CTerrain::Destroy();
+}
+
 bool CRoamTerrain::SubmitSection(CTerrainSection* pSection)const
 {
 	CEffect* pEffect = m_RenderMethod.GetEffect();
