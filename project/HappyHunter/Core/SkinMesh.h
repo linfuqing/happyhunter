@@ -42,6 +42,9 @@ namespace zerO
 	private:
 		HRESULT __GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
 		HRESULT __AllocateName( LPCSTR Name, LPSTR *pNewName );
+		void __RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName);
+		void __GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile);
+		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
 
 	public:
 		STDMETHOD(CreateFrame)(THIS_ LPCSTR Name, LPD3DXFRAME *ppNewFrame);
@@ -59,8 +62,23 @@ namespace zerO
 		CAllocateHierarchy() : m_pBoneMatrices(NULL), m_NumBoneMatricesMax(0) {}
 		~CAllocateHierarchy();
 
+	private:
 		D3DXMATRIXA16*              m_pBoneMatrices;
 		UINT                        m_NumBoneMatricesMax;
+		BASICCHAR					m_strFilePath[MAX_PATH];
+		CRectangle3D				m_Rect;
+
+		struct BoxVertex
+		{
+			D3DXVECTOR3 p;
+
+			enum FVF
+			{
+				FVF_Flags = D3DFVF_XYZ
+			};
+		};
+
+		friend class CSkinMesh;
 	};
 
 #define ANIM_TRANSITION_TIME 0.25		//平滑变换时间
@@ -75,14 +93,14 @@ namespace zerO
 		HRESULT __SetupBoneMatrixPointers( LPD3DXFRAME pFrame );
 		HRESULT __SetupBoneMatrixPointersOnMesh( LPD3DXMESHCONTAINER pMeshContainerBase );
 
-		HRESULT __LoadFromXFile(WCHAR* strFileName);
+		HRESULT __LoadFromXFile( const PBASICCHAR strFileName );
 		VOID    __UpdateFrameMatrices( LPD3DXFRAME pFrameBase, LPD3DXMATRIX pParentMatrix ); 
 
 		VOID __DrawFrame( LPD3DXFRAME pFrame, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
 		VOID __DrawMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase, LPD3DXFRAME pFrameBase, CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag );
-	
+
 	public:
-		bool Create(PBASICCHAR fileName);
+		bool Create(const PBASICCHAR fileName);
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
@@ -90,8 +108,6 @@ namespace zerO
 		bool Destroy();
 		HRESULT Reset();
 		HRESULT Lost();
-
-		/*void SetMatView(const D3DXMATRIXA16& view);*/
 
 		const BASICSTRING& GetMeshFile() const;
 		const BASICSTRING& GetEffectFile() const;
@@ -127,15 +143,6 @@ namespace zerO
 		char						m_szASName[64];			// 动作名称
 		std::string					m_strNowAnimSetName;	// 当前动作名称
 	};
-
-	//---------------------------------------------------------------------------
-	// 设置函数
-	//---------------------------------------------------------------------------
-
-	/*inline void CSkinMesh::SetMatView(const D3DXMATRIXA16& view)
-	{
-		m_matView = view;
-	}*/
 
 	//---------------------------------------------------------------------------
 	// 获取函数

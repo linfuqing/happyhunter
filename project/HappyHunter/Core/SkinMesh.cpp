@@ -4,7 +4,7 @@
 #include "SkinMesh.h"
 #include "Camera.h"
 
-#define SKINMESH_EFFECT TEXT("HLSLSkinMesh.fx")
+#define SKINMESH_EFFECT TEXT("Shaders/HLSLSkinMesh.fx")
 
 using namespace zerO;
 
@@ -40,6 +40,79 @@ HRESULT CAllocateHierarchy::__AllocateName( LPCSTR Name, LPSTR *pNewName )
     }
 
     return S_OK;
+}
+
+void CAllocateHierarchy::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
+{
+	//先将fullPath的类型变换为LPWSTR
+	WCHAR wszBuf[MAX_PATH];
+	MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
+	wszBuf[MAX_PATH-1] = L'\0';
+
+	WCHAR* wszFullPath = wszBuf;
+
+	//从绝对路径中提取文件名
+	LPWSTR pch=wcsrchr(wszFullPath,'\\');
+	if (pch)
+		lstrcpy(fileName, ++pch);
+	else
+		lstrcpy(fileName, wszFullPath);
+}
+
+void CAllocateHierarchy::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
+{
+	PBASICCHAR context;
+	BASICCHAR file[MAX_PATH];
+	wcscpy(file, meshFile);
+	PBASICCHAR temp = wcstok_s(file, token, &context);
+	while (temp != NULL)
+	{
+		if (wcscmp(context, TEXT("")) != 0)
+		{
+			path += temp;
+			path += TEXT("/");
+		}
+		temp = wcstok_s(NULL, token, &context);
+	}
+	path += texFile;
+}
+
+void CAllocateHierarchy::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
+{
+	DWORD dwVertexNum = pMesh->GetNumVertices();
+
+	LPD3DXMESH pTempMesh;
+	pMesh->CloneMeshFVF(D3DXMESH_SYSTEMMEM, BoxVertex::FVF_Flags, &DEVICE, &pTempMesh);
+	
+	LPDIRECT3DVERTEXBUFFER9 pVertexBuffer;
+	pTempMesh->GetVertexBuffer(&pVertexBuffer);
+
+	FLOAT maxX = 0.0f, maxY = 0.0f, maxZ = 0.0f;
+	FLOAT minX = 0.0f, minY = 0.0f, minZ = 0.0f;
+	BoxVertex* pVertices;
+	pVertexBuffer->Lock(0, 0, (void**)&pVertices, 0);
+	for(DWORD i = 0; i< dwVertexNum; i ++)
+	{
+		if(pVertices[i].p.x > maxX)
+			maxX = pVertices[i].p.x;
+		if(pVertices[i].p.y > maxY)
+			maxY = pVertices[i].p.y;
+		if(pVertices[i].p.z > maxZ)
+			maxZ = pVertices[i].p.z;
+
+		if(pVertices[i].p.x < minX)
+			minX = pVertices[i].p.x;
+		if(pVertices[i].p.y < minY)
+			minY = pVertices[i].p.y;
+		if(pVertices[i].p.z < minZ)
+			minZ = pVertices[i].p.z;
+	}
+	pVertexBuffer->Unlock();
+
+	rect3d.Set(minX, maxX, minY, maxY, minZ, maxZ);
+
+	DEBUG_RELEASE(pVertexBuffer);
+	DEBUG_RELEASE(pTempMesh);
 }
 
 //-----------------------------------------------------------------------------
@@ -161,11 +234,13 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
             if (pMeshContainer->pMaterials[iMaterial].pTextureFilename != NULL)
             {
 #ifdef _UNICODE
-                WCHAR wszBuf[MAX_PATH];
+                WCHAR szFile[MAX_PATH];
 				//从纹理文件路径提取纹理文件名
-				RemovePathFromFileName(pMeshContainer->pMaterials[iMaterial].pTextureFilename, wszBuf);
-                if( FAILED( D3DXCreateTextureFromFile( &DEVICE, wszBuf,
-                                                        &pMeshContainer->ppTextures[iMaterial] ) ) )
+				__RemovePathFromFileName(pMeshContainer->pMaterials[iMaterial].pTextureFilename, szFile);
+				BASICSTRING path;
+				__GetRealPath(m_strFilePath, path, TEXT("/"), szFile);
+				if( FAILED( D3DXCreateTextureFromFile( &DEVICE, (PBASICCHAR)path.c_str(),
+					&pMeshContainer->ppTextures[iMaterial] ) ) )
                     pMeshContainer->ppTextures[iMaterial] = NULL;
 #else
 				if( FAILED( D3DXCreateTextureFromFile( &DEVICE, pMeshContainer->pMaterials[iMaterial].pTextureFilename,
@@ -368,6 +443,8 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 		}
 	}
 
+	__GetBoundBox(pMeshContainer->MeshData.pMesh, m_Rect);
+
 	return hr;
 }
 
@@ -420,8 +497,8 @@ HRESULT CAllocateHierarchy::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContai
 			pMeshContainer->ppTextures[iMaterial] = NULL;
         }
     }
-
     DEBUG_DELETE_ARRAY( pMeshContainer->ppTextures );
+
     DEBUG_DELETE_ARRAY( pMeshContainer->ppBoneMatrixPtrs );
 
 	pMeshContainer->ppTextures       = NULL;
@@ -476,7 +553,7 @@ CSkinMesh::~CSkinMesh()
 //-----------------------------------------------------------------------------
 // Desc:创建并加载蒙皮网格模型
 //-----------------------------------------------------------------------------
-bool CSkinMesh::Create(PBASICCHAR fileName)
+bool CSkinMesh::Create(const PBASICCHAR fileName)
 {
 	HRESULT hr;
 
@@ -494,10 +571,11 @@ bool CSkinMesh::Create(PBASICCHAR fileName)
 //-----------------------------------------------------------------------------
 // Desc: 从文件加载蒙皮网格模型
 //-----------------------------------------------------------------------------
-HRESULT CSkinMesh::__LoadFromXFile(WCHAR *strFileName)
+HRESULT CSkinMesh::__LoadFromXFile( const PBASICCHAR strFileName )
 {
     HRESULT hr;
 
+	wcscpy(m_pAlloc->m_strFilePath, strFileName);
 	//从.X文件加载层次框架和动画数据
     hr = D3DXLoadMeshHierarchyFromX(strFileName, D3DXMESH_MANAGED, &DEVICE, 
 		                            m_pAlloc, NULL, &m_pFrameRoot, &m_pAnimController);
@@ -507,6 +585,8 @@ HRESULT CSkinMesh::__LoadFromXFile(WCHAR *strFileName)
 		DEBUG_WARNING(hr);
 		return S_FALSE;
 	}
+
+	m_LocalRect = m_pAlloc->m_Rect;
 
 	//建立各级框架的组合变换矩阵
     hr = __SetupBoneMatrixPointers(m_pFrameRoot);  
@@ -967,7 +1047,6 @@ bool CSkinMesh::Destroy()
 		D3DXFrameDestroy(m_pFrameRoot, m_pAlloc);
 
     DEBUG_RELEASE(m_pAnimController);
-	/*DEBUG_RELEASE(m_pEffect);*/
 	DEBUG_DELETE(m_pAlloc);
 
 	m_pAnimController = NULL;

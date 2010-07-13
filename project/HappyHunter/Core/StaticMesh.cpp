@@ -4,14 +4,14 @@
 #include "StaticMesh.h"
 #include "Camera.h"
 
+#define MESH_EFFECT TEXT("Shaders/HLSLMesh.fx")
+
 using namespace zerO;
 
 CStaticMesh::CStaticMesh() :
 m_pMesh(NULL),
 m_pAdjacencyBuffer(NULL),
-m_dwNumMaterials(0),
-m_strMeshFile(TEXT("")),
-m_strEffectFile(TEXT("HLSLPMesh.fx"))
+m_dwNumMaterials(0)
 {
 }
 
@@ -20,10 +20,83 @@ CStaticMesh::~CStaticMesh()
 	Destroy();
 }
 
-bool CStaticMesh::Create()
+void CStaticMesh::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
+{
+	//先将fullPath的类型变换为LPWSTR
+	WCHAR wszBuf[MAX_PATH];
+	MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
+	wszBuf[MAX_PATH-1] = L'\0';
+
+	WCHAR* wszFullPath = wszBuf;
+
+	//从绝对路径中提取文件名
+	LPWSTR pch=wcsrchr(wszFullPath,'\\');
+	if (pch)
+		lstrcpy(fileName, ++pch);
+	else
+		lstrcpy(fileName, wszFullPath);
+}
+
+void CStaticMesh::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
+{
+	PBASICCHAR context;
+	BASICCHAR file[MAX_PATH];
+	wcscpy(file, meshFile);
+	PBASICCHAR temp = wcstok_s(file, token, &context);
+	while (temp != NULL)
+	{
+		if (wcscmp(context, TEXT("")) != 0)
+		{
+			path += temp;
+			path += TEXT("/");
+		}
+		temp = wcstok_s(NULL, token, &context);
+	}
+	path += texFile;
+}
+
+void CStaticMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
+{
+	DWORD dwVertexNum = pMesh->GetNumVertices();
+
+	LPD3DXMESH pTempMesh;
+	pMesh->CloneMeshFVF(D3DXMESH_SYSTEMMEM, BoxVertex::FVF_Flags, &DEVICE, &pTempMesh);
+	
+	LPDIRECT3DVERTEXBUFFER9 pVertexBuffer;
+	pTempMesh->GetVertexBuffer(&pVertexBuffer);
+
+	FLOAT maxX = 0.0f, maxY = 0.0f, maxZ = 0.0f;
+	FLOAT minX = 0.0f, minY = 0.0f, minZ = 0.0f;
+	BoxVertex* pVertices;
+	pVertexBuffer->Lock(0, 0, (void**)&pVertices, 0);
+	for(DWORD i = 0; i< dwVertexNum; i ++)
+	{
+		if(pVertices[i].p.x > maxX)
+			maxX = pVertices[i].p.x;
+		if(pVertices[i].p.y > maxY)
+			maxY = pVertices[i].p.y;
+		if(pVertices[i].p.z > maxZ)
+			maxZ = pVertices[i].p.z;
+
+		if(pVertices[i].p.x < minX)
+			minX = pVertices[i].p.x;
+		if(pVertices[i].p.y < minY)
+			minY = pVertices[i].p.y;
+		if(pVertices[i].p.z < minZ)
+			minZ = pVertices[i].p.z;
+	}
+	pVertexBuffer->Unlock();
+
+	rect3d.Set(minX, maxX, minY, maxY, minZ, maxZ);
+
+	DEBUG_RELEASE(pVertexBuffer);
+	DEBUG_RELEASE(pTempMesh);
+}
+
+bool CStaticMesh::Create(const PBASICCHAR meshFile)
 {
 	//创建效果
-	if( !m_RenderMethod.LoadEffect( (PBASICCHAR)m_strEffectFile.c_str() ) )
+	if( !m_RenderMethod.LoadEffect( MESH_EFFECT ) )
 		return false;
 
 	//加载网格模型
@@ -31,7 +104,7 @@ bool CStaticMesh::Create()
 
 	HRESULT hr;
 
-	hr = D3DXLoadMeshFromX( m_strMeshFile.c_str(), D3DXMESH_MANAGED, 
+	hr = D3DXLoadMeshFromX( meshFile, D3DXMESH_MANAGED, 
 		&DEVICE, &m_pAdjacencyBuffer, 
 		&pD3DXMtrlBuffer, NULL, &m_dwNumMaterials, 
 		&m_pMesh );
@@ -56,22 +129,18 @@ bool CStaticMesh::Create()
 
 		if( d3dxMaterials[i].pTextureFilename != NULL )
 		{
-			//CTexture* pTex = NULL;
-			//DEBUG_NEW(pTex, CTexture);
 			//创建纹理
-#ifdef _UNICODE
-			WCHAR wszBuf[MAX_PATH];
-			RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, wszBuf);
-
-			//if( !pTex->Load( wszBuf ) )
-				//return false;
+#ifdef _UNICODE	
+			BASICCHAR szFile[MAX_PATH];
+			__RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, szFile);
+			BASICSTRING path;
+			__GetRealPath(meshFile, path, TEXT("/"), szFile);
+			if( !pSurface->LoadTexuture((PBASICCHAR)path.c_str(), 0) )
+				return false;
 #else
-			if( !pTex->Load( d3dxMaterials[i].pTextureFilename ) )
+			if( !pSurface->LoadTexuture(d3dxMaterials[i].pTextureFilename, 0) )
 				return false;
 #endif
-			if( !pSurface->LoadTexuture(wszBuf, 0) )
-				return false;//SetTexture(pTex, 0) )
-
 			m_RenderMethod.SetSurface(pSurface);
 		}
 	}
@@ -131,6 +200,8 @@ bool CStaticMesh::Create()
 	//释放临时网格模型对象
 	DEBUG_RELEASE(pMeshSysMem);
 	DEBUG_RELEASE(pMeshSysMem2);
+
+	__GetBoundBox(m_pMesh, m_LocalRect);
 
 	return true;
 }
