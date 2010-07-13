@@ -15,18 +15,18 @@ namespace zerO
 		CStaticMesh(void);
 		~CStaticMesh(void);
 
+	private:
+		void __RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName);
+		void __GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile);
+		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
+
 	public:
-		bool Create();
+		bool Create(const PBASICCHAR meshFile);
 		bool Destroy();
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
-		void SetMeshFile(const BASICSTRING& file);
-		void SetEffectFile(const BASICSTRING& file);
-
-		const BASICSTRING& GetMeshFile() const;
-		const BASICSTRING& GetEffectFile() const;
 		const CRenderMethod& GetRenderMethod() const;
 
 	private:
@@ -34,37 +34,21 @@ namespace zerO
 		LPD3DXBUFFER            m_pAdjacencyBuffer; // 网格模型面邻接信息
 		DWORD                   m_dwNumMaterials;   // 材质数量	
 		CRenderMethod			m_RenderMethod;		// 渲染方法
-		BASICSTRING				m_strMeshFile;		// 模型文件
-		BASICSTRING				m_strEffectFile;	// shader文件
+
+		struct BoxVertex
+		{
+			D3DXVECTOR3 p;
+
+			enum FVF
+			{
+				FVF_Flags = D3DFVF_XYZ
+			};
+		};
 	};
-
-	//---------------------------------------------------------------------------
-	// 设置函数
-	//---------------------------------------------------------------------------
-
-	inline void CStaticMesh::SetMeshFile(const BASICSTRING &file)
-	{
-		m_strMeshFile = file;
-	}
-
-	inline void CStaticMesh::SetEffectFile(const BASICSTRING &file)
-	{
-		m_strEffectFile = file;
-	}
 
 	//---------------------------------------------------------------------------
 	// 获取函数
 	//---------------------------------------------------------------------------
-
-	inline const BASICSTRING& CStaticMesh::GetMeshFile() const
-	{
-		return m_strMeshFile;
-	}
-
-	inline const BASICSTRING& CStaticMesh::GetEffectFile() const
-	{
-		return m_strEffectFile;
-	}
 
 	inline const CRenderMethod& CStaticMesh::GetRenderMethod() const
 	{
