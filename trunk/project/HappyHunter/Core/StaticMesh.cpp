@@ -247,6 +247,19 @@ bool CStaticMesh::ApplyForRender()
 void CStaticMesh::Update()
 {
 	CSceneNode::Update();
+
+	D3DXMATRIXA16 matView = CAMERA.GetViewMatrix();
+	D3DXMATRIXA16 matProj = CAMERA.GetProjectionMatrix();
+	D3DXMATRIXA16 matWVP = m_WorldMatrix * matView * matProj;
+
+	m_RenderMethod.GetEffect()->GetEffect()->SetMatrix( "matWorldViewProj", &matWVP );
+
+	const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
+
+	D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
+
+	if(pLight)
+		m_RenderMethod.GetEffect()->GetEffect()->SetVector("vecLightDir", &LightDirection);
 }
 
 void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
@@ -267,14 +280,6 @@ void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 
 		m_RenderMethod.GetEffect()->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
 		m_RenderMethod.GetEffect()->SetParameter(CEffect::DIFFUSE_MATERIAL_COLOR, &m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse);
 		m_RenderMethod.GetEffect()->SetParameter(CEffect::AMBIENT_MATERIAL_COLOR, &ambEmm);
-
-		const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
-
-		D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
-
-		if(pLight)
-			m_RenderMethod.GetEffect()->GetEffect()->SetVector("vecLightDir", &LightDirection);
-
 
 		//依照更新标志进行更新
 		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
