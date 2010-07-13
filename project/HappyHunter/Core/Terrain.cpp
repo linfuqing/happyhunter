@@ -169,7 +169,9 @@ void CTerrain::SetQuadTree(CQuadTree* pQuadTree)
 {
 	if(m_pSector)
 	{
-		for(UINT i = 0; i < m_uSectorCountX * m_uSectorCountY; i ++)
+		UINT uTotalSectors = m_uSectorCountX * m_uSectorCountY;
+
+		for(UINT i = 0; i < uTotalSectors; i ++)
 			m_pSector[i].AttachToQuadTree(pQuadTree);
 	}
 }
@@ -181,8 +183,8 @@ bool CTerrain:: Create(
 					   zerO::UINT8 uShift)
 {
 	m_uSectorShift    = uShift;
-	m_uSectorVertices = 1 << uShift;
-	m_uSectorUnits    = m_uSectorVertices - 1; 
+	m_uSectorUnits = 1 << uShift;
+	m_uSectorVertices = m_uSectorUnits + 1; 
 
 	m_pRootNode      = pRootNode;
 	m_WorldExtents   = WorldExtents;
@@ -551,7 +553,7 @@ bool CRoamTerrainSection::Create(
 
 	m_uMaxIndices = VerticesX * VerticesY * 2 * 3;
 
-	m_IndexBuffer.Create(D3DPT_TRIANGLELIST, m_uMaxIndices, D3DUSAGE_DYNAMIC,D3DPOOL_DEFAULT, NULL);
+	m_IndexBuffer.Create(D3DPT_TRIANGLELIST, m_uMaxIndices, D3DUSAGE_DYNAMIC, D3DPOOL_DEFAULT, NULL);
 
 	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
 
@@ -614,7 +616,8 @@ void CRoamTerrainSection::BuildTriangleList()
 
 	__RecursiveBuildTriangleList(&m_RootTriangleB, (17*17)-1, 16*17, 16   );
 
-	m_IndexBuffer.Unlock();
+	if( !m_IndexBuffer.Unlock() )
+		return;
 
 	m_puIndexList = NULL;
 }
@@ -837,6 +840,17 @@ CRoamTerrain::~CRoamTerrain()
 {
 }
 
+void CRoamTerrain::SetQuadTree(CQuadTree* pQuadTree)
+{
+	if(m_pRoamSection)
+	{
+		UINT uTotalSecctors = m_uSectorCountX * m_uSectorCountY;
+
+		for(UINT i = 0; i < uTotalSecctors; i ++)
+			m_pRoamSection[i].AttachToQuadTree(pQuadTree);
+	}
+}
+
 bool CRoamTerrain::Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, zerO::UINT8 uShift)
 {
 	uShift = 4;
@@ -1017,7 +1031,7 @@ CRoamTerrain::LPTRIANGLETREENODE CRoamTerrain::RequestTriangleNode()
 	return pNode;
 }
 
-bool CRoamTerrain::__AllocateSectors()
+bool CRoamTerrain::_AllocateSectors()
 {
 	DEBUG_NEW(m_pRoamSection, CRoamTerrainSection[m_uSectorCountX * m_uSectorCountY]);
 

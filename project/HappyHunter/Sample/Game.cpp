@@ -13,7 +13,7 @@
 //#define TERRAIN//PARTICLESYSTEM
 //#define MISSION
 //#define PRIZE
-#define SKINMESH
+#define ROAMTERRAIN
 
 zerO::CGameHost g_Game;
 
@@ -157,13 +157,20 @@ public:
 CTest g_Test;
 #endif
 
-#ifdef TERRAIN
+#if defined(TERRAIN) || defined(ROAMTERRAIN)
 #define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
 
 zerO::CQuadTree g_QuadTree;
-zerO::CRoamTerrain  g_Terrain;
 zerO::CTexture  g_HeightMap;
 zerO::CSurface  g_Surface;
+#endif
+
+#ifdef ROAMTERRAIN
+zerO::CRoamTerrain  g_Terrain;
+#endif
+
+#ifdef TERRAIN
+zerO::CTerrain g_Terrain;
 #endif
 
 #ifdef PARTICLESYSTEM
@@ -307,9 +314,9 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 500.0f);
+	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 1000.0f);
 
-#ifdef TERRAIN
+#if defined(TERRAIN) || defined(ROAMTERRAIN)
 	D3DXMATRIX Matrix, Rotation;
 
 	D3DXMatrixIdentity(&Matrix);
@@ -511,7 +518,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.Update();
 
-	z -= 1;
+	z -= 10;
+
+#ifdef ROAMTERRAIN
+	g_Terrain.SetTessellationParameters(1.33f, 0.3f);
+#endif
 
 #ifdef PARTICLESYSTEM
 	g_pSprayParticles->SetNumberEmitedPerFrame( (UINT)(1000*ELAPSEDTIME) );
@@ -543,10 +554,10 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 {
     HRESULT hr;
 
-#ifdef TERRAIN
+#if defined(TERRAIN) || defined(ROAMTERRAIN)
 	zerO::CRectangle3D Rect;
 	Rect.Set(- 500.0f, 0.0f, - 500.0f, 0.0f, 0.0f, 500.0f);
-	zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( CAMERA.GetWorldRectangle() );
+	zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( CAMERA.GetWorldRectangle() ), * pCurrentObject;
 #endif
 
     // Clear the render target and the zbuffer 
@@ -558,19 +569,25 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//¿ªÊ¼äÖÈ¾
 		g_Game.BeginRender();
 
-#ifdef TERRAIN
-		while(pObject)
+#ifdef ROAMTERRAIN
+		pCurrentObject = pObject;
+
+		while(pCurrentObject)
 		{
-			pObject->PrepareForRender();
-			pObject = pObject->GetNext();
+			pCurrentObject->PrepareForRender();
+			pCurrentObject = pCurrentObject->GetNext();
 		}
 
 		g_Terrain.ProcessTessellationQueue();
+#endif
 
-		while(pObject)
+#if defined(TERRAIN) || defined(ROAMTERRAIN)
+		pCurrentObject = pObject;
+
+		while(pCurrentObject)
 		{
-			pObject->ApplyForRender();
-			pObject = pObject->GetNext();
+			pCurrentObject->ApplyForRender();
+			pCurrentObject = pCurrentObject->GetNext();
 		}
 
 		//g_Terrain.Render();
