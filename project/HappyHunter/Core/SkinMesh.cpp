@@ -4,6 +4,16 @@
 #include "SkinMesh.h"
 #include "Camera.h"
 
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p)       { if (p) { delete (p);     (p)=NULL; } }
+#endif    
+#ifndef SAFE_DELETE_ARRAY
+#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
+#endif    
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
+#endif
+
 #define SKINMESH_EFFECT TEXT("Shaders/HLSLSkinMesh.fx")
 
 using namespace zerO;
@@ -16,8 +26,9 @@ m_NumBoneMatricesMax(0)
 
 CAllocateHierarchy::~CAllocateHierarchy()
 {
-	DEBUG_DELETE_ARRAY(m_pBoneMatrices);
-	m_pBoneMatrices   = NULL;
+	//DEBUG_DELETE_ARRAY(m_pBoneMatrices);
+	//m_pBoneMatrices   = NULL;
+	SAFE_DELETE_ARRAY(m_pBoneMatrices);
 }
 
 //-----------------------------------------------------------------------------
@@ -30,7 +41,8 @@ HRESULT CAllocateHierarchy::__AllocateName( LPCSTR Name, LPSTR *pNewName )
     if( Name != NULL )
     {
         cbLength = (UINT)strlen(Name) + 1;
-		DEBUG_NEW(*pNewName, CHAR[cbLength]);
+		//DEBUG_NEW(*pNewName, CHAR[cbLength]);
+		*pNewName = new CHAR[cbLength];
         if (*pNewName == NULL)
             return E_OUTOFMEMORY;
         memcpy( *pNewName, Name, cbLength*sizeof(CHAR) );
@@ -52,8 +64,10 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 	if( pMeshContainer->pSkinInfo == NULL )
 		return hr;
 
-	DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
-	DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
+	//DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
+	//DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
+	SAFE_RELEASE(pMeshContainer->MeshData.pMesh);
+	SAFE_RELEASE(pMeshContainer->pBoneCombinationBuf);
 
 	//获取当前设备的能力
 	D3DCAPS9 d3dCaps;
@@ -73,7 +87,8 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 		Flags |= D3DXMESH_SYSTEMMEM;
 	}
 
-	DEBUG_RELEASE(pMeshContainer->MeshData.pMesh);
+	//DEBUG_RELEASE(pMeshContainer->MeshData.pMesh);
+	SAFE_RELEASE(pMeshContainer->MeshData.pMesh);
 
 	hr = pMeshContainer->pSkinInfo->ConvertToIndexedBlendedMesh 
 		                                                      ( pMeshContainer->pOrigMesh,
@@ -145,8 +160,10 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 	}
 
 	//释放临时网格模型对象
-	DEBUG_RELEASE(pMeshSysMem);
-	DEBUG_RELEASE(pMeshSysMem2);
+	//DEBUG_RELEASE(pMeshSysMem);
+	//DEBUG_RELEASE(pMeshSysMem2);
+	SAFE_RELEASE(pMeshSysMem);
+	SAFE_RELEASE(pMeshSysMem2);
 
 	D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
 	LPD3DVERTEXELEMENT9 pDeclCur;
@@ -172,8 +189,11 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 		m_NumBoneMatricesMax = pMeshContainer->pSkinInfo->GetNumBones();
 
 		// Allocate space for blend matrices
-		DEBUG_DELETE_ARRAY(m_pBoneMatrices); 
-		DEBUG_NEW(m_pBoneMatrices, D3DXMATRIXA16[m_NumBoneMatricesMax]);
+		//DEBUG_DELETE_ARRAY(m_pBoneMatrices); 
+		//m_pBoneMatrices = NULL;
+		SAFE_DELETE_ARRAY(m_pBoneMatrices);
+		//DEBUG_NEW(m_pBoneMatrices, D3DXMATRIXA16[m_NumBoneMatricesMax]);
+		m_pBoneMatrices = new D3DXMATRIXA16[m_NumBoneMatricesMax];
 		if( m_pBoneMatrices == NULL )
 		{
 			hr = E_OUTOFMEMORY;
@@ -230,7 +250,8 @@ HRESULT CAllocateHierarchy::CreateFrame(LPCSTR Name, LPD3DXFRAME *ppNewFrame)
     *ppNewFrame = NULL;
 	
     //创建框架结构对象
-	DEBUG_NEW(pFrame, D3DXFRAME_DERIVED);
+	//DEBUG_NEW(pFrame, D3DXFRAME_DERIVED);
+	pFrame = new D3DXFRAME_DERIVED;
     if (pFrame == NULL) 
     {
         return E_OUTOFMEMORY;
@@ -287,7 +308,8 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
     pMesh = pMeshData->pMesh;
 
 	//为网格容器分配内存
-	DEBUG_NEW(pMeshContainer, D3DXMESHCONTAINER_DERIVED);
+	//DEBUG_NEW(pMeshContainer, D3DXMESHCONTAINER_DERIVED);
+	pMeshContainer = new D3DXMESHCONTAINER_DERIVED;
     if (pMeshContainer == NULL)
     {
         return E_OUTOFMEMORY;
@@ -312,9 +334,12 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 	
     //为网格模型准备材质和纹理
     pMeshContainer->NumMaterials = max(1, NumMaterials); 
-	DEBUG_NEW(pMeshContainer->pMaterials, D3DXMATERIAL[pMeshContainer->NumMaterials]);
-	DEBUG_NEW(pMeshContainer->ppTextures, LPDIRECT3DTEXTURE9[pMeshContainer->NumMaterials]);
-	DEBUG_NEW(pMeshContainer->pAdjacency, DWORD[NumFaces*3]);
+	//DEBUG_NEW(pMeshContainer->pMaterials, D3DXMATERIAL[pMeshContainer->NumMaterials]);
+	//DEBUG_NEW(pMeshContainer->ppTextures, LPDIRECT3DTEXTURE9[pMeshContainer->NumMaterials]);
+	//DEBUG_NEW(pMeshContainer->pAdjacency, DWORD[NumFaces*3]);
+	pMeshContainer->pMaterials = new D3DXMATERIAL[pMeshContainer->NumMaterials];
+	pMeshContainer->ppTextures = new LPDIRECT3DTEXTURE9[pMeshContainer->NumMaterials];
+	pMeshContainer->pAdjacency = new DWORD[NumFaces*3];
     if ((pMeshContainer->pAdjacency == NULL) || (pMeshContainer->pMaterials == NULL)
 		|| (pMeshContainer->ppTextures == NULL))
 	{
@@ -381,7 +406,8 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
         cBones = pSkinInfo->GetNumBones();
 
 		//为每块骨骼分配保存初始变换矩阵的内存空间
-		DEBUG_NEW(pMeshContainer->pBoneOffsetMatrices, D3DXMATRIX[cBones]);
+		//DEBUG_NEW(pMeshContainer->pBoneOffsetMatrices, D3DXMATRIX[cBones]);
+		pMeshContainer->pBoneOffsetMatrices = new D3DXMATRIX[cBones];
         if (pMeshContainer->pBoneOffsetMatrices == NULL) 
         {
 			hr = E_OUTOFMEMORY;
@@ -417,11 +443,13 @@ HRESULT CAllocateHierarchy::DestroyFrame(LPD3DXFRAME pFrameToFree)
 {
 	if(pFrameToFree != NULL)
 	{
-		DEBUG_DELETE_ARRAY( pFrameToFree->Name );
-		DEBUG_DELETE( pFrameToFree );
+		//DEBUG_DELETE_ARRAY( pFrameToFree->Name );
+		SAFE_DELETE_ARRAY(pFrameToFree->Name);
+		//DEBUG_DELETE( pFrameToFree );
+		SAFE_DELETE(pFrameToFree);
 
-		pFrameToFree->Name = NULL;
-		pFrameToFree       = NULL;
+		/*pFrameToFree->Name = NULL;
+		pFrameToFree       = NULL;*/
 	}
     return S_OK; 
 }
@@ -439,7 +467,7 @@ HRESULT CAllocateHierarchy::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContai
 	// 先转为扩展型以免内存泄漏
     D3DXMESHCONTAINER_DERIVED *pMeshContainer = (D3DXMESHCONTAINER_DERIVED*)pMeshContainerBase;
 	
-    DEBUG_DELETE_ARRAY( pMeshContainer->Name );
+    /*DEBUG_DELETE_ARRAY( pMeshContainer->Name );
     DEBUG_DELETE_ARRAY( pMeshContainer->pAdjacency );
     DEBUG_DELETE_ARRAY( pMeshContainer->pMaterials );
     DEBUG_DELETE_ARRAY( pMeshContainer->pBoneOffsetMatrices );
@@ -447,35 +475,47 @@ HRESULT CAllocateHierarchy::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContai
 	pMeshContainer->Name                = NULL;
 	pMeshContainer->pAdjacency          = NULL;
 	pMeshContainer->pMaterials          = NULL;
-	pMeshContainer->pBoneOffsetMatrices = NULL;
+	pMeshContainer->pBoneOffsetMatrices = NULL;*/
+	SAFE_DELETE_ARRAY(pMeshContainer->Name);
+	SAFE_DELETE_ARRAY(pMeshContainer->pAdjacency);
+	SAFE_DELETE_ARRAY(pMeshContainer->pMaterials);
+	SAFE_DELETE_ARRAY(pMeshContainer->pBoneOffsetMatrices);
 	
     if (pMeshContainer->ppTextures != NULL)
     {
         for (iMaterial = 0; iMaterial < pMeshContainer->NumMaterials; iMaterial++)
         {
-            DEBUG_RELEASE( pMeshContainer->ppTextures[iMaterial] );
+            //DEBUG_RELEASE( pMeshContainer->ppTextures[iMaterial] );
+			SAFE_RELEASE(pMeshContainer->ppTextures[iMaterial]);
 
 			pMeshContainer->ppTextures[iMaterial] = NULL;
         }
     }
-    DEBUG_DELETE_ARRAY( pMeshContainer->ppTextures );
+   /* DEBUG_DELETE_ARRAY( pMeshContainer->ppTextures );
 
     DEBUG_DELETE_ARRAY( pMeshContainer->ppBoneMatrixPtrs );
 
 	pMeshContainer->ppTextures       = NULL;
-	pMeshContainer->ppBoneMatrixPtrs = NULL;
+	pMeshContainer->ppBoneMatrixPtrs = NULL;*/
+	SAFE_DELETE_ARRAY(pMeshContainer->ppTextures);
+	SAFE_DELETE_ARRAY(pMeshContainer->ppBoneMatrixPtrs);
 
-    DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
-    DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
-    DEBUG_RELEASE( pMeshContainer->pSkinInfo );
+    //DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
+    //DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
+    //DEBUG_RELEASE( pMeshContainer->pSkinInfo );
     //DEBUG_RELEASE( pMeshContainer->pOrigMesh );
-    DEBUG_DELETE( pMeshContainer );
+    //DEBUG_DELETE( pMeshContainer );
+	SAFE_RELEASE(pMeshContainer->pBoneCombinationBuf);
+	SAFE_RELEASE(pMeshContainer->MeshData.pMesh);
+	SAFE_RELEASE(pMeshContainer->pSkinInfo);
+	SAFE_RELEASE(pMeshContainer->pOrigMesh);
+	SAFE_DELETE(pMeshContainer);
 
-	pMeshContainer->pBoneCombinationBuf = NULL;
-	pMeshContainer->MeshData.pMesh      = NULL;
-	pMeshContainer->pSkinInfo           = NULL;
-	pMeshContainer->pOrigMesh           = NULL;
-	pMeshContainerBase                  = NULL;
+	//pMeshContainer->pBoneCombinationBuf = NULL;
+	//pMeshContainer->MeshData.pMesh      = NULL;
+	//pMeshContainer->pSkinInfo           = NULL;
+	//pMeshContainer->pOrigMesh           = NULL;
+	//pMeshContainerBase                  = NULL;
 
     return S_OK;
 }
@@ -529,7 +569,8 @@ HRESULT CSkinMesh::__LoadFromXFile( const PBASICCHAR strFileName )
 	}
 
 	__GetBoundBox(pMesh, m_LocalRect);
-	DEBUG_RELEASE(pMesh);
+	//DEBUG_RELEASE(pMesh);
+	SAFE_RELEASE(pMesh);
 
 	wcscpy(m_Alloc.m_strFilePath, strFileName);
 	//从.X文件加载层次框架和动画数据
@@ -591,8 +632,10 @@ void CSkinMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
 
 	rect3d.Set(minX, maxX, minY, maxY, minZ, maxZ);
 
-	DEBUG_RELEASE(pVertexBuffer);
-	DEBUG_RELEASE(pTempMesh);
+	//DEBUG_RELEASE(pVertexBuffer);
+	//DEBUG_RELEASE(pTempMesh);
+	SAFE_RELEASE(pVertexBuffer);
+	SAFE_RELEASE(pTempMesh);
 }
 
 
@@ -649,7 +692,8 @@ HRESULT CSkinMesh::__SetupBoneMatrixPointersOnMesh(LPD3DXMESHCONTAINER pMeshCont
         cBones = pMeshContainer->pSkinInfo->GetNumBones();
 
 		//申请存储骨骼矩阵的空间
-		DEBUG_NEW(pMeshContainer->ppBoneMatrixPtrs, D3DXMATRIX*[cBones]);
+		//DEBUG_NEW(pMeshContainer->ppBoneMatrixPtrs, D3DXMATRIX*[cBones]);
+		pMeshContainer->ppBoneMatrixPtrs = new D3DXMATRIX*[cBones];
 		if (pMeshContainer->ppBoneMatrixPtrs == NULL)
             return E_OUTOFMEMORY;
 
@@ -873,8 +917,9 @@ bool CSkinMesh::Destroy()
 	if(m_pFrameRoot)
 		D3DXFrameDestroy(m_pFrameRoot, &m_Alloc);
 
-    DEBUG_RELEASE(m_pAnimController);
-	m_pAnimController = NULL;
+    //DEBUG_RELEASE(m_pAnimController);
+	//m_pAnimController = NULL;
+	SAFE_RELEASE(m_pAnimController);
 
 	return true;
 }
@@ -902,7 +947,8 @@ HRESULT CSkinMesh::Restore()
 		LPD3DXANIMATIONSET pAS = NULL;
 		m_pAnimController->GetAnimationSet( dwActiveSet, &pAS );
 		m_pAnimController->SetTrackAnimationSet( m_dwCurrentTrack, pAS );
-		DEBUG_RELEASE( pAS );
+		//DEBUG_RELEASE( pAS );
+		SAFE_RELEASE(pAS);
 	}
 
 	m_pAnimController->SetTrackEnable( m_dwCurrentTrack, TRUE );
@@ -928,7 +974,8 @@ HRESULT CSkinMesh::Lost()
 	m_pAnimController->GetTrackAnimationSet(m_dwCurrentTrack, &pAS);
 	if( pAS->GetName() )
 		strcpy( m_szASName, pAS->GetName() );
-	DEBUG_RELEASE(pAS);
+	//DEBUG_RELEASE(pAS);
+	SAFE_RELEASE(pAS);
 	return hr;
 }
 
