@@ -57,6 +57,9 @@ void CStaticMesh::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCH
 
 void CStaticMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
 {
+	if (pMesh == NULL)
+		return;
+
 	DWORD dwVertexNum = pMesh->GetNumVertices();
 
 	LPD3DXMESH pTempMesh;
