@@ -90,11 +90,11 @@ namespace zerO
 
 		CRenderMethod& GetRenderMethod();
 
-		void SetQuadTree(CQuadTree* pQuadTree);
-
 		void Render();
 
 		bool Destroy();
+
+		virtual void SetQuadTree(CQuadTree* pQuadTree);
 
 		virtual bool Create(CSceneNode* pRootNode, CTexture* pHeightMap, const CRectangle3D& WorldExtents, UINT8 uShift);
 
@@ -314,6 +314,9 @@ namespace zerO
 		CRoamTerrain();
 		~CRoamTerrain();
 
+		void SetTessellationParameters(FLOAT fScale, FLOAT fLimit);
+		void SetQuadTree(CQuadTree* pQuadTree);
+
 		bool Create(
 			CSceneNode* pRootNode, 
 			CTexture* pHeightMap, 
@@ -341,8 +344,14 @@ namespace zerO
 		FLOAT m_fScale;
 		FLOAT m_fLimit;
 
-		bool __AllocateSectors();
+		bool _AllocateSectors();
 	};
+
+	inline void CRoamTerrain::SetTessellationParameters(FLOAT fScale, FLOAT fLimit)
+	{
+		m_fScale = fScale;
+		m_fLimit = fLimit;
+	}
 
 	inline CRoamTerrainSection* CRoamTerrain::GetSection(INT nSectionX, INT nSectionY)
 	{
