@@ -3,6 +3,7 @@
 
 #include "datatype.h"
 #include "debug.h"
+#include "BasicString.h"
 
 ///
 // 附带工具
@@ -151,9 +152,6 @@ namespace zerO
 		return nResult;
 	}
 
-	//-----------------------------------------------------------------------------
-	// Desc: 从绝对路径中提取文件名
-	//-----------------------------------------------------------------------------
 	inline void RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
 	{
 		//先将fullPath的类型变换为LPWSTR
@@ -170,6 +168,47 @@ namespace zerO
 		else
 			lstrcpy(fileName, wszFullPath);
 	}
+
+	inline void GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
+	{
+		PBASICCHAR context;
+		BASICCHAR file[MAX_PATH];
+		wcscpy(file, meshFile);
+		PBASICCHAR temp = wcstok_s(file, token, &context);
+		while (temp != NULL)
+		{
+			if (wcscmp(context, TEXT("")) != 0)
+			{
+				path += temp;
+				path += TEXT("/");
+			}
+			temp = wcstok_s(NULL, token, &context);
+		}
+		path += texFile;
+	}
+
+	inline FLOAT RangedRand(FLOAT range_min, FLOAT range_max)
+	{
+		return (FLOAT)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
+	}
+
+#ifndef CONVERT_TOKEN_STEP1
+#define CONVERT_TOKEN_STEP1(out, token, convertType, params, seps)		\
+	token = wcstok(params, seps);										\
+	if(token != NULL)													\
+	{																	\
+		out = convertType;												\
+	}
+#endif
+
+#ifndef CONVERT_TOKEN_STEP2
+#define CONVERT_TOKEN_STEP2(out, token, convertType, seps)		\
+	if(token != NULL)											\
+	{															\
+		token = wcstok(NULL, seps);								\
+		out = convertType;										\
+	}
+#endif
 }
 
 #endif

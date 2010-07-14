@@ -14,7 +14,7 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
-#define SKINMESH_EFFECT TEXT("HLSLSkinMesh.fx")
+#define SKINMESH_EFFECT TEXT("Shaders/HLSLSkinMesh.fx")
 
 using namespace zerO;
 
@@ -204,41 +204,6 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 	return hr;
 }
 
-void CAllocateHierarchy::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
-{
-	//先将fullPath的类型变换为LPWSTR
-	WCHAR wszBuf[MAX_PATH];
-	MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
-	wszBuf[MAX_PATH-1] = L'\0';
-
-	WCHAR* wszFullPath = wszBuf;
-
-	//从绝对路径中提取文件名
-	LPWSTR pch=wcsrchr(wszFullPath,'\\');
-	if (pch)
-		lstrcpy(fileName, ++pch);
-	else
-		lstrcpy(fileName, wszFullPath);
-}
-
-void CAllocateHierarchy::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
-{
-	PBASICCHAR context;
-	BASICCHAR file[MAX_PATH];
-	wcscpy(file, meshFile);
-	PBASICCHAR temp = wcstok_s(file, token, &context);
-	while (temp != NULL)
-	{
-		if (wcscmp(context, TEXT("")) != 0)
-		{
-			path += temp;
-			path += TEXT("/");
-		}
-		temp = wcstok_s(NULL, token, &context);
-	}
-	path += texFile;
-}
-
 //-----------------------------------------------------------------------------
 // Desc: 创建框架, 仅仅是分配内存和初始化,还没有对其成员赋予合适的值
 //-----------------------------------------------------------------------------
@@ -365,9 +330,9 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 #ifdef _UNICODE
                 WCHAR szFile[MAX_PATH];
 				//从纹理文件路径提取纹理文件名
-				__RemovePathFromFileName(pMeshContainer->pMaterials[iMaterial].pTextureFilename, szFile);
+				RemovePathFromFileName(pMeshContainer->pMaterials[iMaterial].pTextureFilename, szFile);
 				BASICSTRING path;
-				__GetRealPath(m_strFilePath, path, TEXT("/"), szFile);
+				GetRealPath(m_strFilePath, path, TEXT("/"), szFile);
 				if( FAILED( D3DXCreateTextureFromFile( &DEVICE, (PBASICCHAR)path.c_str(),
 					&pMeshContainer->ppTextures[iMaterial] ) ) )
                     pMeshContainer->ppTextures[iMaterial] = NULL;

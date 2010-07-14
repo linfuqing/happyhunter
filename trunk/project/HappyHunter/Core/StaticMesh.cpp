@@ -20,41 +20,6 @@ CStaticMesh::~CStaticMesh()
 	Destroy();
 }
 
-void CStaticMesh::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
-{
-	//先将fullPath的类型变换为LPWSTR
-	WCHAR wszBuf[MAX_PATH];
-	MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
-	wszBuf[MAX_PATH-1] = L'\0';
-
-	WCHAR* wszFullPath = wszBuf;
-
-	//从绝对路径中提取文件名
-	LPWSTR pch=wcsrchr(wszFullPath,'\\');
-	if (pch)
-		lstrcpy(fileName, ++pch);
-	else
-		lstrcpy(fileName, wszFullPath);
-}
-
-void CStaticMesh::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
-{
-	PBASICCHAR context;
-	BASICCHAR file[MAX_PATH];
-	wcscpy(file, meshFile);
-	PBASICCHAR temp = wcstok_s(file, token, &context);
-	while (temp != NULL)
-	{
-		if (wcscmp(context, TEXT("")) != 0)
-		{
-			path += temp;
-			path += TEXT("/");
-		}
-		temp = wcstok_s(NULL, token, &context);
-	}
-	path += texFile;
-}
-
 void CStaticMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
 {
 	if (pMesh == NULL)
@@ -135,9 +100,9 @@ bool CStaticMesh::Create(const PBASICCHAR meshFile)
 			//创建纹理
 #ifdef _UNICODE	
 			BASICCHAR szFile[MAX_PATH];
-			__RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, szFile);
+			RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, szFile);
 			BASICSTRING path;
-			__GetRealPath(meshFile, path, TEXT("/"), szFile);
+			GetRealPath(meshFile, path, TEXT("/"), szFile);
 			if( !pSurface->LoadTexuture((PBASICCHAR)path.c_str(), 0) )
 				return false;
 #else

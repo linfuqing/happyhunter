@@ -16,8 +16,6 @@ namespace zerO
 		~CStaticMesh(void);
 
 	private:
-		void __RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName);
-		void __GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile);
 		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
 
 	public:
