@@ -14,7 +14,7 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
-#define SKINMESH_EFFECT TEXT("Shaders/HLSLSkinMesh.fx")
+#define SKINMESH_EFFECT TEXT("HLSLSkinMesh.fx")
 
 using namespace zerO;
 

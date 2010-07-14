@@ -124,7 +124,7 @@ namespace zerO
 
 	inline void CIndexBuffer::Activate()const
 	{
-		DEBUG_WARNING(m_pBuffer, "Attempting to activate an invalid buffer");
+		DEBUG_WARNING_ASSERT(m_pBuffer, "Attempting to activate an invalid buffer");
 
 		HRESULT hr = DEVICE.SetIndices(m_pBuffer);
 
