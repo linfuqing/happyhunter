@@ -41,8 +41,6 @@ namespace zerO
 	private:
 		HRESULT __AllocateName( LPCSTR Name, LPSTR *pNewName );
 		HRESULT __GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
-		void __RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName);
-		void __GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile);
 
 	public:
 		STDMETHOD(CreateFrame)(THIS_ LPCSTR Name, LPD3DXFRAME *ppNewFrame);
