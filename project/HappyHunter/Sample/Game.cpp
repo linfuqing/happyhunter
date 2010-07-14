@@ -9,11 +9,16 @@
 //#include "Mission.h"
 //#include "Prize.h"
 #include "SkinMesh.h"
+#include "Bullet.h"
 
-//#define TERRAIN//PARTICLESYSTEM
+//#define PARTICLESYSTEM
+//#define TERRAIN
 //#define MISSION
 //#define PRIZE
-#define ROAMTERRAIN//PARTICLESYSTEM
+//#define ROAMTERRAIN
+#define SKINMESH
+
+//#define BULLET
 
 zerO::CGameHost g_Game;
 
@@ -173,6 +178,10 @@ zerO::CRoamTerrain  g_Terrain;
 zerO::CTerrain g_Terrain;
 #endif
 
+#ifdef BULLET
+zerO::CBullet g_Bullet;
+#endif
+
 #ifdef PARTICLESYSTEM
 
 typedef struct
@@ -183,7 +192,7 @@ typedef struct
 	FLOAT       m_fTime0;     //创建时间
 }PARTICLEPARAMETERS;
 
-zerO::CParticleSystem<PARTICLEPARAMETERS>* g_pSprayParticles = NULL;
+zerO::CParticleSystem<PARTICLEPARAMETERS> g_SprayParticles;
 
 #endif
 
@@ -314,7 +323,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 3000.0f);
+	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 1000.0f);
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
 	D3DXMATRIX Matrix, Rotation;
@@ -351,8 +360,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #endif
 
 #ifdef PARTICLESYSTEM
-	DEBUG_NEW(g_pSprayParticles, zerO::CParticleSystem<PARTICLEPARAMETERS>);
-	g_pSprayParticles->Create(
+	g_SprayParticles.Create(
 		1000, 1000, 500, 2000, 0.1f, 100.0f, 0.0f, 0.0f, 0.0f, 1.0f, 
 		InitParticle, UpdateParticle, IsParticleDestroy, GetParticleRenderSteps, SetParticleRenderData);
 
@@ -364,8 +372,8 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
      mtrl.Diffuse.b = mtrl.Ambient.b = 1.0f;
      mtrl.Diffuse.a = mtrl.Ambient.a = 1.0f;
      
-	 g_pSprayParticles->GetSurface().SetMaterial(mtrl);
-	 g_pSprayParticles->GetSurface().LoadTexuture(TEXT("heightmap.jpg"),0);
+	 g_SprayParticles.GetSurface().SetMaterial(mtrl);
+	 g_SprayParticles.GetSurface().LoadTexuture(TEXT("heightmap.jpg"),0);
 
 	 //设置灯光
 	 D3DXVECTOR3 vecDir;
@@ -415,6 +423,49 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	Light.Direction.z = - 1.0f;
 
 	LIGHTMANAGER.SetLight(Light, 0);
+#endif
+
+#ifdef BULLET
+	g_Bullet.Create(100, 500, 2000, 1.0f);
+
+	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 1.0f), Target(0.0f, 0.0f, 1000.0f);
+
+	g_Bullet.SetSource(Source);
+	g_Bullet.SetTarget(Target);
+
+	g_Bullet.SetSpeed(1.0f);
+	g_Bullet.SetGravity(0.01f);
+	g_Bullet.SetStep(100);
+	g_Bullet.SetLength(10);
+	g_Bullet.SetOffsetRadius(2);
+
+	D3DMATERIAL9 Matrial;
+	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
+     Matrial.Diffuse.r = Matrial.Ambient.r = 0.0f;
+     Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
+     Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
+     Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
+     
+	g_Bullet.GetSurface().SetMaterial(Matrial);
+	g_Bullet.GetSurface().LoadTexuture(TEXT("heightmap.jpg"), 0);
+
+	//设置灯光
+	 D3DXVECTOR3 vecDir;
+     D3DLIGHT9 light;
+	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
+     light.Type       = D3DLIGHT_DIRECTIONAL;
+     light.Diffuse.r  = 1.0f;
+     light.Diffuse.g  = 1.0f;
+     light.Diffuse.b  = 1.0f;
+	 vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+	 light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     light.Range       = 1000.0f;
+
+	 LIGHTMANAGER.SetLight(light, 0);
+	 LIGHTMANAGER.SetAmbient(0x00808080);
+
+	 GAMEHOST.SetLightEnable(true);
 #endif
 
     return S_OK;
@@ -485,7 +536,7 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 #endif
 
 #ifdef SKINMESH
-	g_SkinMesh.Reset();
+	g_SkinMesh.Restore();
 #endif
 
     return S_OK;
@@ -518,15 +569,15 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.Update();
 
-	z -= 10;
+	//z -= 1;
 
 #ifdef ROAMTERRAIN
 	g_Terrain.SetTessellationParameters(10.33f, 0.3f);
 #endif
 
 #ifdef PARTICLESYSTEM
-	g_pSprayParticles->SetNumberEmitedPerFrame( (UINT)(1000*ELAPSEDTIME) );
-	g_pSprayParticles->Update();
+	g_SprayParticles.SetNumberEmitedPerFrame( (UINT)(1000 * ELAPSEDTIME) );
+	g_SprayParticles.Update();
 #endif
 
 #ifdef PRIZE
@@ -543,6 +594,14 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 #ifdef SKINMESH
 	g_SkinMesh.Update();
+#endif
+
+#ifdef BULLET
+	//g_Bullet.SetNumberEmitedPerFrame( (UINT)(1000 * ELAPSEDTIME) );
+	if( DXUTIsMouseButtonDown(VK_LBUTTON) )
+		g_Bullet.Shoot();
+
+	g_Bullet.Update();
 #endif
 }
 
@@ -601,7 +660,7 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 #endif
 
 #ifdef PARTICLESYSTEM
-		g_pSprayParticles->ApplyForRender();
+		g_SprayParticles.ApplyForRender();
 #endif
 
 #ifdef PRIZE
@@ -609,12 +668,17 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 #endif
 
 #ifdef MISSION
-	g_Mission.ApplyForRender();
+		g_Mission.ApplyForRender();
 #endif
 
 #ifdef SKINMESH
-	g_SkinMesh.ApplyForRender();
+		g_SkinMesh.ApplyForRender();
 #endif
+
+#ifdef BULLET
+		g_Bullet.ApplyForRender();
+#endif
+
 		//结束渲染
 		g_Game.EndRender();
 

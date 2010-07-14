@@ -50,7 +50,7 @@ CRectangle3D::TESTPLANESTATE CRectangle3D::Test(const D3DXPLANE& Plane)const
 	}
 
 	//////////////////////////////////
-	zerO::FLOAT fMax = D3DXPlaneDotCoord(&Plane, &Max), fMin = D3DXPlaneDotCoord(&Plane, &Min);
+	zerO::FLOAT fMax = D3DXPlaneDotNormal(&Plane, &Max), fMin = D3DXPlaneDotNormal(&Plane, &Min);
 
 	if(fMax * fMin < 0.0f)
 		return PLANE_INTERSECT;

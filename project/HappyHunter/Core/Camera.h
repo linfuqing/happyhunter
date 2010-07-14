@@ -28,7 +28,7 @@ namespace zerO
 		};
 
 		//根据CRectangle3D::TESTPLANESTATE值测试矩形位置
-		bool Test(const CRectangle3D& Rect, UINT32 uTestFlag);
+		bool Test(const CRectangle3D& Rect, UINT32 uTestFlag)const;
 
 		void Transform(const D3DXMATRIX& Matrix);
 
@@ -38,7 +38,7 @@ namespace zerO
 		void Normalize();
 	}FRUSTUM, * LPFRUSTUM;
 
-	inline bool FRUSTUM::Test(const CRectangle3D& Rect, UINT32 uTestFlag)
+	inline bool FRUSTUM::Test(const CRectangle3D& Rect, UINT32 uTestFlag)const
 	{
 		INT32 nFlag = uTestFlag;
 

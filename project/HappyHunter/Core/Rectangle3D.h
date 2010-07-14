@@ -161,7 +161,8 @@ namespace zerO
 		void GetMax(D3DXVECTOR3& Max)const;
 
 		//确认矩形包含一个点,否则扩展矩形知道它包含这个点为止.
-		void Union(const D3DXVECTOR3 Point);
+		void Union(const D3DXVECTOR3& Point);
+		void Extract(const D3DXVECTOR3& Point, FLOAT fSize);
 		void Transform(const D3DXMATRIX& Matrix);
 
 		//测试矩形在平面的什么位置
@@ -199,7 +200,7 @@ namespace zerO
 		Max.z = m_MaxZ;
 	}
 
-	inline void CRectangle3D::Union(const D3DXVECTOR3 Point)
+	inline void CRectangle3D::Union(const D3DXVECTOR3& Point)
 	{
 		m_MaxX = MAX(Point.x, m_MaxX);
 		m_MaxY = MAX(Point.y, m_MaxY);
@@ -208,6 +209,19 @@ namespace zerO
 		m_MinX = MIN(Point.x, m_MinX);
 		m_MinY = MIN(Point.y, m_MinY);
 		m_MinZ = MIN(Point.z, m_MinZ);
+	}
+
+	inline void CRectangle3D::Extract(const D3DXVECTOR3& Point, FLOAT fSize)
+	{
+		FLOAT fHalfSize = fSize * 0.5f;
+
+		m_MaxX = Point.x + fHalfSize;
+		m_MaxY = Point.y + fHalfSize;
+		m_MaxZ = Point.z + fHalfSize;
+
+		m_MinX = Point.x - fHalfSize;
+		m_MinY = Point.y - fHalfSize;
+		m_MinZ = Point.z - fHalfSize;
 	}
 
 	inline bool CRectangle3D::TestHit(const CRectangle3D& Rect)const

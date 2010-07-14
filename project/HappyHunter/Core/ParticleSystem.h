@@ -19,10 +19,16 @@ namespace zerO
 			D3DCOLOR    Color;
 		}PARTICLEVERTEX, * LPPARTICLEVERTEX;
 
-		typedef struct
+		typedef struct PARTICLE
 		{
 			PARTICLEPARAMETERS Parameter;
 			PARTICLEVERTEX     Vertex;
+			CParticleSystem* const pPARENT;
+
+			PARTICLE(CParticleSystem* const pParent) :
+			pPARENT(pParent)
+			{
+			}
 		}PARTICLE, * LPPARTICLE;
 
 		//Update
@@ -31,7 +37,7 @@ namespace zerO
 
 		//Render
 		typedef UINT (*GETPARTICLEDATA)(const PARTICLE&);
-		typedef void (*SETPARTICLEDATA)(const PARTICLE&, PARTICLEVERTEX&);
+		typedef bool (*SETPARTICLEDATA)(const PARTICLE&, PARTICLEVERTEX&);
 
 		CParticleSystem(void);
 
@@ -66,11 +72,16 @@ namespace zerO
 
 		void Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag);
 
-	private:
+	protected:
 		typedef struct PARTICLENODE
 		{
 			PARTICLE      Particle;
 			PARTICLENODE* pNext;
+
+			PARTICLENODE(CParticleSystem* const pParent) :
+			Particle(pParent)
+			{
+			}
 		}PARTICLENODE, * LPPARTICLENODE;
 
 		UINT m_uNumEmitedPerFrame;
@@ -245,7 +256,7 @@ namespace zerO
 
 		//添加新粒子
 		UINT uEmited = 0;
-		while( m_uNumParticles < m_uMaxNumParticles && uEmited <= m_uNumEmitedPerFrame)
+		while( m_uNumParticles < m_uMaxNumParticles && uEmited < m_uNumEmitedPerFrame)
 		{
 			if( m_pParticlesFree )
 			{
@@ -253,7 +264,7 @@ namespace zerO
 				m_pParticlesFree = pParticle->pNext;
 			}
 			else
-				DEBUG_NEW(pParticle, PARTICLENODE);
+				DEBUG_NEW( pParticle, PARTICLENODE(this) );
 
 			pParticle->pNext = m_pParticles;
 			m_pParticles = pParticle;
@@ -345,7 +356,8 @@ namespace zerO
 			//通过对其在不同位置渲染多次来实现模糊效果
 			for( DWORD i = 0; i < uSteps; i++ )
 			{
-				m_pfnSetRenderData(pParticle->Particle, *pVertices);
+				if( !m_pfnSetRenderData(pParticle->Particle, *pVertices) )
+					continue;
 
 				pVertices ++;
 
@@ -394,7 +406,7 @@ namespace zerO
 		//渲染剩余不足一块的粒子
 		if(uNumParticlesToRender)
 		{
-			hr = DEVICE.DrawPrimitive( D3DPT_POINTLIST, m_uBase, uNumParticlesToRender);
+			hr = DEVICE.DrawPrimitive(D3DPT_POINTLIST, m_uBase, uNumParticlesToRender);
 
 			DEBUG_ASSERT(SUCCEEDED(hr), hr);
 		}
