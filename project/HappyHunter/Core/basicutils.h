@@ -169,22 +169,23 @@ namespace zerO
 			lstrcpy(fileName, wszFullPath);
 	}
 
-	inline void GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
+	inline void GetRealPath(const PBASICCHAR fileName, BASICSTRING& path, const PBASICCHAR token, const PBASICCHAR postfix, bool bGetPrefix = false)
 	{
 		PBASICCHAR context;
 		BASICCHAR file[MAX_PATH];
-		wcscpy(file, meshFile);
+		wcscpy(file, fileName);
 		PBASICCHAR temp = wcstok_s(file, token, &context);
 		while (temp != NULL)
 		{
 			if (wcscmp(context, TEXT("")) != 0)
 			{
 				path += temp;
-				path += TEXT("/");
+				if (!bGetPrefix)
+					path += TEXT("/");
 			}
 			temp = wcstok_s(NULL, token, &context);
 		}
-		path += texFile;
+		path += postfix;
 	}
 
 	inline FLOAT RangedRand(FLOAT range_min, FLOAT range_max)

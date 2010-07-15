@@ -23,6 +23,7 @@ namespace zerO
 	struct D3DXMESHCONTAINER_DERIVED: public D3DXMESHCONTAINER
 	{
 		LPDIRECT3DTEXTURE9*  ppTextures;            //纹理数组
+		LPDIRECT3DTEXTURE9*	 ppBumpMaps;            //凹凸纹理数组
 		LPD3DXMESH           pOrigMesh;             //原网格
 		DWORD                NumAttributeGroups;    //骨骼数量
 		DWORD                NumInfl;               //每个顶点最多可以影响多少骨骼
@@ -41,6 +42,7 @@ namespace zerO
 	private:
 		HRESULT __AllocateName( LPCSTR Name, LPSTR *pNewName );
 		HRESULT __GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
+		HRESULT __GenerateDeclMesh(D3DXMESHCONTAINER_DERIVED *pMeshContainer);
 
 	public:
 		STDMETHOD(CreateFrame)(THIS_ LPCSTR Name, LPD3DXFRAME *ppNewFrame);
@@ -96,6 +98,9 @@ namespace zerO
 		HRESULT Restore();
 		HRESULT Lost();
 
+		void SetEffectFile(const BASICSTRING& file);
+
+		const BASICSTRING& GetEffectFile() const;
 		const CEffect& GetEffect() const;
 		
 		// 通过索引设定动作
@@ -127,6 +132,8 @@ namespace zerO
 		DWORD						m_dwControlPlayTime;	// 当前动作设定播放次数(0为重复播放)　
 		char						m_szASName[64];			// 动作名称
 		std::string					m_strNowAnimSetName;	// 当前动作名称
+
+		BASICSTRING					m_strEffectFile;		// 效果文件
 	
 		struct BoxVertex
 		{
@@ -138,6 +145,20 @@ namespace zerO
 			};
 		};
 	};
+
+	//---------------------------------------------------------------------------
+	// 设置函数
+	//---------------------------------------------------------------------------
+
+	inline void CSkinMesh::SetEffectFile(const BASICSTRING& file)
+	{
+		m_strEffectFile = file;
+	}
+		
+	inline const BASICSTRING& CSkinMesh::GetEffectFile() const
+	{
+		return m_strEffectFile;
+	}
 
 	//---------------------------------------------------------------------------
 	// 获取函数

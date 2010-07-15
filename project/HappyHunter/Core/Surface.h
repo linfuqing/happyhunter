@@ -23,7 +23,7 @@ namespace zerO
 
 		bool Destroy();
 
-		void SetMaterial(const D3DMATERIAL9& Material);
+		void SetMaterial(D3DMATERIAL9& Material);
 		void SetTexture(CTexture* pTexture, UINT uIndex);
 
 		CTexture*           GetTexture(UINT uIndex)const;
@@ -43,7 +43,7 @@ namespace zerO
 		TEXITUREFLAGTYPE m_DestroyFlag;
 	};
 
-	inline void CSurface::SetMaterial(const D3DMATERIAL9& Material)
+	inline void CSurface::SetMaterial(D3DMATERIAL9& Material)
 	{
 		memcpy( &m_Material, &Material, sizeof(m_Material) );
 	}
@@ -56,14 +56,6 @@ namespace zerO
 		{
 			m_uNumTextures ++;
 			SET_BIT(m_TextureFlag, uIndex);
-		}
-		else if( TEST_BIT(m_DestroyFlag, uIndex) )
-		{
-			DEBUG_DELETE(m_pTextures[uIndex]);
-
-			m_pTextures[uIndex] = NULL;
-
-			CLEAR_BIT(m_DestroyFlag, uIndex);
 		}
 
 		if(!pTexture)
@@ -83,9 +75,9 @@ namespace zerO
 
 		if( pTexture->Load(pcFileName) )
 		{
-			SetTexture(pTexture, uIndex);
-
 			SET_BIT(m_DestroyFlag, uIndex);
+
+			SetTexture(pTexture, uIndex);
 
 			return true;
 		}
