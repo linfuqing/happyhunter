@@ -16,6 +16,7 @@ namespace zerO
 		~CStaticMesh(void);
 
 	private:
+		HRESULT __GenerateDeclMesh(LPD3DXMESH& pMesh);
 		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
 
 	public:
@@ -25,6 +26,9 @@ namespace zerO
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
+		void SetEffectFile(const BASICSTRING& file);
+
+		const BASICSTRING& GetEffectFile() const;
 		const CRenderMethod& GetRenderMethod() const;
 
 	private:
@@ -32,6 +36,7 @@ namespace zerO
 		LPD3DXBUFFER            m_pAdjacencyBuffer; // 网格模型面邻接信息
 		DWORD                   m_dwNumMaterials;   // 材质数量	
 		CRenderMethod			m_RenderMethod;		// 渲染方法
+		BASICSTRING				m_strEffectFile;	// 效果文件
 
 		struct BoxVertex
 		{
@@ -43,6 +48,20 @@ namespace zerO
 			};
 		};
 	};
+
+	//---------------------------------------------------------------------------
+	// 设置函数
+	//---------------------------------------------------------------------------
+
+	inline void CStaticMesh::SetEffectFile(const BASICSTRING& file)
+	{
+		m_strEffectFile = file;
+	}
+		
+	inline const BASICSTRING& CStaticMesh::GetEffectFile() const
+	{
+		return m_strEffectFile;
+	}
 
 	//---------------------------------------------------------------------------
 	// 获取函数
