@@ -4,19 +4,55 @@
 #include "StaticMesh.h"
 #include "Camera.h"
 
+#define MESH_EFFECT TEXT("Shaders/HLSLMesh.fx")
+
 using namespace zerO;
 
 CStaticMesh::CStaticMesh() :
 m_pMesh(NULL),
 m_pAdjacencyBuffer(NULL),
-m_dwNumMaterials(0),
-m_strEffectFile(TEXT(""))
+m_dwNumMaterials(0)
 {
 }
 
 CStaticMesh::~CStaticMesh()
 {
 	Destroy();
+}
+
+void CStaticMesh::__RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)
+{
+	//先将fullPath的类型变换为LPWSTR
+	WCHAR wszBuf[MAX_PATH];
+	MultiByteToWideChar( CP_ACP, 0, fullPath, -1, wszBuf, MAX_PATH );
+	wszBuf[MAX_PATH-1] = L'\0';
+
+	WCHAR* wszFullPath = wszBuf;
+
+	//从绝对路径中提取文件名
+	LPWSTR pch=wcsrchr(wszFullPath,'\\');
+	if (pch)
+		lstrcpy(fileName, ++pch);
+	else
+		lstrcpy(fileName, wszFullPath);
+}
+
+void CStaticMesh::__GetRealPath(PBASICCHAR meshFile, BASICSTRING& path, PBASICCHAR token, PBASICCHAR texFile)
+{
+	PBASICCHAR context;
+	BASICCHAR file[MAX_PATH];
+	wcscpy(file, meshFile);
+	PBASICCHAR temp = wcstok_s(file, token, &context);
+	while (temp != NULL)
+	{
+		if (wcscmp(context, TEXT("")) != 0)
+		{
+			path += temp;
+			path += TEXT("/");
+		}
+		temp = wcstok_s(NULL, token, &context);
+	}
+	path += texFile;
 }
 
 void CStaticMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
@@ -60,14 +96,61 @@ void CStaticMesh::__GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d)
 	DEBUG_RELEASE(pTempMesh);
 }
 
-HRESULT CStaticMesh::__GenerateDeclMesh(LPD3DXMESH& pMesh)
+bool CStaticMesh::Create(const PBASICCHAR meshFile)
 {
-	if (pMesh == NULL)
-		return S_FALSE;
+	//创建效果
+	if( !m_RenderMethod.LoadEffect( MESH_EFFECT ) )
+		return false;
+
+	//加载网格模型
+	LPD3DXBUFFER pD3DXMtrlBuffer;
 
 	HRESULT hr;
 
-	LPD3DXMESH pMeshSysMem = pMesh;
+	hr = D3DXLoadMeshFromX( meshFile, D3DXMESH_MANAGED, 
+		&DEVICE, &m_pAdjacencyBuffer, 
+		&pD3DXMtrlBuffer, NULL, &m_dwNumMaterials, 
+		&m_pMesh );
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+		return false;
+	}
+
+	//提取材质和纹理文件路径
+	D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
+
+	for( DWORD i = 0; i< m_dwNumMaterials; i ++ )
+	{
+		// MatD3D属性里没有环境光的值设置,当它被加载时,需要设置它
+		d3dxMaterials[i].MatD3D.Ambient = d3dxMaterials[i].MatD3D.Diffuse;
+
+		CSurface* pSurface = NULL;
+		DEBUG_NEW(pSurface, CSurface);
+		pSurface->SetMaterial(d3dxMaterials[i].MatD3D);
+
+		if( d3dxMaterials[i].pTextureFilename != NULL )
+		{
+			//创建纹理
+#ifdef _UNICODE	
+			BASICCHAR szFile[MAX_PATH];
+			__RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, szFile);
+			BASICSTRING path;
+			__GetRealPath(meshFile, path, TEXT("/"), szFile);
+			if( !pSurface->LoadTexture((PBASICCHAR)path.c_str(), 0) )
+				return false;
+#else
+			if( !pSurface->LoadTexuture(d3dxMaterials[i].pTextureFilename, 0) )
+				return false;
+#endif
+			m_RenderMethod.SetSurface(pSurface);
+		}
+	}
+
+	DEBUG_RELEASE( pD3DXMtrlBuffer );
+
+	LPD3DXMESH pMeshSysMem = m_pMesh;
 	D3DVERTEXELEMENT9 decl[]=
 	{
 		{0, 0,  D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
@@ -110,7 +193,7 @@ HRESULT CStaticMesh::__GenerateDeclMesh(LPD3DXMESH& pMesh)
 		D3DDECL_END()
 	};
 
-	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMesh );
+	hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &m_pMesh );
 	if( FAILED(hr) )
 	{
 		DEBUG_WARNING(hr);
@@ -121,69 +204,6 @@ HRESULT CStaticMesh::__GenerateDeclMesh(LPD3DXMESH& pMesh)
 	DEBUG_RELEASE(pMeshSysMem);
 	DEBUG_RELEASE(pMeshSysMem2);
 
-	return hr;
-}
-
-bool CStaticMesh::Create(const PBASICCHAR meshFile)
-{
-	//创建效果
-	if( !m_RenderMethod.LoadEffect( (PBASICCHAR)m_strEffectFile.c_str() ) )
-		return false;
-
-	//加载网格模型
-	LPD3DXBUFFER pD3DXMtrlBuffer;
-
-	HRESULT hr;
-
-	hr = D3DXLoadMeshFromX( meshFile, D3DXMESH_MANAGED, 
-		&DEVICE, &m_pAdjacencyBuffer, 
-		&pD3DXMtrlBuffer, NULL, &m_dwNumMaterials, 
-		&m_pMesh );
-
-	if( FAILED(hr) )
-	{
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
-	//提取材质和纹理文件路径
-	D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
-
-	for( DWORD i = 0; i< m_dwNumMaterials; i ++ )
-	{
-		// MatD3D属性里没有环境光的值设置,当它被加载时,需要设置它
-		d3dxMaterials[i].MatD3D.Ambient = d3dxMaterials[i].MatD3D.Diffuse;
-
-		CSurface* pSurface = NULL;
-		DEBUG_NEW(pSurface, CSurface);
-		pSurface->SetMaterial(d3dxMaterials[i].MatD3D);
-
-		if( d3dxMaterials[i].pTextureFilename != NULL )
-		{
-			//创建纹理
-#ifdef _UNICODE	
-			BASICCHAR szFile[MAX_PATH];
-			RemovePathFromFileName(d3dxMaterials[i].pTextureFilename, szFile);
-			BASICSTRING texFile;
-			GetRealPath(meshFile, texFile, TEXT("/"), szFile);
-			if( !pSurface->LoadTexuture((PBASICCHAR)texFile.c_str(), 0) )
-				return false;
-
-			BASICSTRING normalMapFile;
-			GetRealPath((PBASICCHAR)texFile.c_str(), normalMapFile, TEXT("."), TEXT("-normalmap.tga"), true);
-			if( !pSurface->LoadTexuture((PBASICCHAR)normalMapFile.c_str(), 1) )
-				return false;
-#else
-			if( !pSurface->LoadTexuture(d3dxMaterials[i].pTextureFilename, 0) )
-				return false;
-#endif
-			m_RenderMethod.SetSurface(pSurface);
-		}
-	}
-
-	DEBUG_RELEASE( pD3DXMtrlBuffer );
-
-	__GenerateDeclMesh(m_pMesh);
 	__GetBoundBox(m_pMesh, m_LocalRect);
 
 	return true;
@@ -228,14 +248,10 @@ void CStaticMesh::Update()
 {
 	CSceneNode::Update();
 
-	D3DXVECTOR4 vecEyePos = D3DXVECTOR4(CAMERA.GetPosition(), 0.0f); 
-	m_RenderMethod.GetEffect()->GetEffect()->SetVector("vecEye", &vecEyePos);
-
 	D3DXMATRIXA16 matView = CAMERA.GetViewMatrix();
 	D3DXMATRIXA16 matProj = CAMERA.GetProjectionMatrix();
 	D3DXMATRIXA16 matWVP = m_WorldMatrix * matView * matProj;
 
-	m_RenderMethod.GetEffect()->GetEffect()->SetMatrix( "matWorld", &m_WorldMatrix );
 	m_RenderMethod.GetEffect()->GetEffect()->SetMatrix( "matWorldViewProj", &matWVP );
 
 	const D3DLIGHT9* pLight = LIGHTMANAGER.GetLight(0);
@@ -260,11 +276,10 @@ void CStaticMesh::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 
 		/*m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&(m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse));
 		m_RenderMethod.GetEffect()->GetEffect()->SetVector("MaterialAmbient", (D3DXVECTOR4*)&ambEmm);*/
 		m_RenderMethod.GetEffect()->GetEffect()->SetTexture("ColorMap", m_RenderMethod.GetSurface(i)->GetTexture(0)->GetTexture());
-		m_RenderMethod.GetEffect()->GetEffect()->SetTexture("BumpMap", m_RenderMethod.GetSurface(i)->GetTexture(1)->GetTexture());
 
-		/*m_RenderMethod.GetEffect()->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
+		m_RenderMethod.GetEffect()->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
 		m_RenderMethod.GetEffect()->SetParameter(CEffect::DIFFUSE_MATERIAL_COLOR, &m_RenderMethod.GetSurface(i)->GetMaterial().Diffuse);
-		m_RenderMethod.GetEffect()->SetParameter(CEffect::AMBIENT_MATERIAL_COLOR, &ambEmm);*/
+		m_RenderMethod.GetEffect()->SetParameter(CEffect::AMBIENT_MATERIAL_COLOR, &ambEmm);
 
 		//依照更新标志进行更新
 		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )

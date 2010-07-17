@@ -153,6 +153,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Billboarding.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Camera.cpp"
 				>
 			</File>
@@ -260,6 +264,10 @@
 			</File>
 			<File
 				RelativePath=".\basicutils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Billboarding.h"
 				>
 			</File>
 			<File

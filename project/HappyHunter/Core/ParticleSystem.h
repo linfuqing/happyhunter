@@ -70,7 +70,7 @@ namespace zerO
 
 		bool ApplyForRender();
 
-		void Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag);
+		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag);
 
 	protected:
 		typedef struct PARTICLENODE
@@ -227,10 +227,6 @@ namespace zerO
 	{
 		CSceneNode::Update();
 
-		DEVICE.SetTransform( D3DTS_WORLD,      &m_WorldMatrix); 
-		DEVICE.SetTransform( D3DTS_VIEW,       &CAMERA.GetViewMatrix() );
-		DEVICE.SetTransform( D3DTS_PROJECTION, &CAMERA.GetProjectionMatrix() );
-
 		LPPARTICLENODE pParticle, *ppParticle;
 
 		//更新已存在粒子的属性值
@@ -322,7 +318,11 @@ namespace zerO
 			DEVICE.SetRenderState( D3DRS_POINTSCALE_B,  FtoDW(m_fPointScaleB) );
 			DEVICE.SetRenderState( D3DRS_POINTSCALE_C,  FtoDW(m_fPointScaleC) );
 
-			m_VertexBuffer.Activate(0, 0, false);
+			DEVICE.SetTransform( D3DTS_WORLD,      &m_WorldMatrix); 
+			DEVICE.SetTransform( D3DTS_VIEW,       &CAMERA.GetViewMatrix() );
+			DEVICE.SetTransform( D3DTS_PROJECTION, &CAMERA.GetProjectionMatrix() );
+
+			m_VertexBuffer.Activate(0, 0, true);
 		}
 
 		if( TEST_BIT(uFlag, CRenderQueue::SURFACE) )

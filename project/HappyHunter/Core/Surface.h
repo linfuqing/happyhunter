@@ -23,7 +23,7 @@ namespace zerO
 
 		bool Destroy();
 
-		void SetMaterial(D3DMATERIAL9& Material);
+		void SetMaterial(const D3DMATERIAL9& Material);
 		void SetTexture(CTexture* pTexture, UINT uIndex);
 
 		CTexture*           GetTexture(UINT uIndex)const;
@@ -31,7 +31,7 @@ namespace zerO
 		UINT32              GetTotalTexturesNumber()const;
 		TEXITUREFLAGTYPE    GetTextureFlag()const;
 
-		bool LoadTexuture(const PBASICCHAR pcFileName, UINT uIndex);
+		bool LoadTexture(const PBASICCHAR pcFileName, UINT uIndex);
 
 		void Activate();
 
@@ -43,7 +43,7 @@ namespace zerO
 		TEXITUREFLAGTYPE m_DestroyFlag;
 	};
 
-	inline void CSurface::SetMaterial(D3DMATERIAL9& Material)
+	inline void CSurface::SetMaterial(const D3DMATERIAL9& Material)
 	{
 		memcpy( &m_Material, &Material, sizeof(m_Material) );
 	}
@@ -57,6 +57,14 @@ namespace zerO
 			m_uNumTextures ++;
 			SET_BIT(m_TextureFlag, uIndex);
 		}
+		else if( TEST_BIT(m_DestroyFlag, uIndex) )
+		{
+			DEBUG_DELETE(m_pTextures[uIndex]);
+
+			m_pTextures[uIndex] = NULL;
+
+			CLEAR_BIT(m_DestroyFlag, uIndex);
+		}
 
 		if(!pTexture)
 		{
@@ -67,7 +75,7 @@ namespace zerO
 		m_pTextures[uIndex] = pTexture;
 	}
 
-	inline bool CSurface::LoadTexuture(const PBASICCHAR pcFileName, UINT uIndex)
+	inline bool CSurface::LoadTexture(const PBASICCHAR pcFileName, UINT uIndex)
 	{
 		CTexture* pTexture;
 
@@ -75,9 +83,9 @@ namespace zerO
 
 		if( pTexture->Load(pcFileName) )
 		{
-			SET_BIT(m_DestroyFlag, uIndex);
-
 			SetTexture(pTexture, uIndex);
+
+			SET_BIT(m_DestroyFlag, uIndex);
 
 			return true;
 		}

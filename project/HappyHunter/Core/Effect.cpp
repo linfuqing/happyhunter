@@ -127,7 +127,7 @@ void CEffect::__ParseParameters()
 	D3DXHANDLE         hParameter;
 	D3DXPARAMETER_DESC ParameterDesc;
 	CBasicString       Semantic;
-	UINT32             uNumberPosition, uIndex;
+	UINT32             uNumberPosition, uIndex, uTextures = 0;
 
 	for(UINT32 i = 0; i < m_EffectDesc.Parameters; i ++)
 	{
@@ -199,6 +199,8 @@ void CEffect::__ParseParameters()
 						if(uIndex < MAXINUM_TEXTURE_HANDLES)
 							m_TextureHandles[uIndex] = hParameter;
 					}
+					else
+						m_TextureHandles[uTextures ++] = hParameter;
 				}
 			}
 		}
@@ -262,8 +264,7 @@ bool CEffect::__ApplySurface()
 	for(UINT32 i = 0; i< MAXINUM_TEXTURE_HANDLES; i++)
 	{
 		if( TEST_BIT(m_pSurface->GetTextureFlag(), i) )
-			if( !SetTexture( i, *m_pSurface->GetTexture(i) ) )
-				return false;
+			SetTexture( i, *m_pSurface->GetTexture(i) );
 	}
 
 	return true;

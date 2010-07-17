@@ -233,12 +233,15 @@ void CVertexBuffer::Activate(zerO::UINT uStream, zerO::UINT uIndex, bool bIsSetD
 
 	DEBUG_ASSERT(SUCCEEDED(hr), hr);
 
-	if(m_dwFVF)
-		hr = DEVICE.SetFVF(m_dwFVF);
-	else if(uStream == 0 && bIsSetDeclaration && m_pVertexDeclaration)
-		hr = DEVICE.SetVertexDeclaration(m_pVertexDeclaration);
-	else
-		hr = S_FALSE;
+	if(bIsSetDeclaration)
+	{
+		if(m_dwFVF)
+			hr = DEVICE.SetFVF(m_dwFVF);
+		else if(m_pVertexDeclaration)
+			hr = DEVICE.SetVertexDeclaration(m_pVertexDeclaration);
+		else
+			hr = S_FALSE;
 
-	DEBUG_ASSERT(SUCCEEDED(hr), hr);
+		DEBUG_ASSERT(SUCCEEDED(hr), hr);
+	}
 }

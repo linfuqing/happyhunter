@@ -145,15 +145,18 @@ namespace zerO
 
 		if(m_TextureHandles[uIndex] != NULL)
 		{
-			bool bResult = SUCCEEDED( m_pEffect->SetTexture( m_TextureHandles[uIndex], Texture.GetTexture() ) );
-			DEBUG_ASSERT(bResult, "Effect file error!");
+			HRESULT hr;
+			bool bResult = SUCCEEDED( hr = m_pEffect->SetTexture( m_TextureHandles[uIndex], Texture.GetTexture() ) );
+			DEBUG_WARNING_ASSERT(bResult, hr);
 						
-			if(bResult && m_TextureMatrixHandles[uIndex] != NULL && Texture.GetMatrix() )
+			if(bResult && Texture.GetMatrix() )
 			{
-				bResult = SUCCEEDED( m_pEffect->SetMatrix( m_TextureMatrixHandles[uIndex], Texture.GetMatrix() ) );
-				DEBUG_ASSERT(bResult, "Effect file error!");
+				bResult = SUCCEEDED( hr = m_pEffect->SetMatrix( m_TextureMatrixHandles[uIndex], Texture.GetMatrix() ) );
+				DEBUG_WARNING_ASSERT(bResult, hr);
 				return bResult;
 			}
+
+			return bResult;
 		}
 
 		return false;

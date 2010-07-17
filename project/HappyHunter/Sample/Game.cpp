@@ -15,10 +15,12 @@
 //#define TERRAIN
 //#define MISSION
 //#define PRIZE
-//#define ROAMTERRAIN
-#define SKINMESH
+//#define TERRAIN
+//#define SKINMESH
 
-//#define BULLET
+#define BULLET
+
+//#define BILLBOARDING
 
 zerO::CGameHost g_Game;
 
@@ -163,11 +165,13 @@ CTest g_Test;
 #endif
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
-#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
+#define HEIGHT_MAP_FILE TEXT("terrain_heightmap.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
 zerO::CSurface  g_Surface;
+zerO::CTexture  g_Texture;
+zerO::CTexture  g_Detail;
 #endif
 
 #ifdef ROAMTERRAIN
@@ -180,6 +184,10 @@ zerO::CTerrain g_Terrain;
 
 #ifdef BULLET
 zerO::CBullet g_Bullet;
+#endif
+
+#ifdef BILLBOARDING
+zerO::CBillboarding g_Billboarding;
 #endif
 
 #ifdef PARTICLESYSTEM
@@ -323,7 +331,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 3.0f, 1.0f, 0.1f, 1000.0f);
+	CAMERA.SetProjection(D3DX_PI / 2.0f, 1.0f, 0.5f, 3000.0f);
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
 	D3DXMATRIX Matrix, Rotation;
@@ -337,16 +345,22 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	CAMERA.SetTransform(Matrix);
 
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 1000.0f, 1000.0f, - 1000.0f, 1000.0f, 0.0f, 500.0f);
+	Rect.Set(- 10000.0f, 10000.0f, - 10000.0f, 10000.0f, 0.0f, 3000.0f);
 	g_QuadTree.Create(Rect, 4);
 
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
-	g_Terrain.Create(NULL, &g_HeightMap, Rect, 3);
+	g_Terrain.Create(NULL, &g_HeightMap, Rect, 6);
 
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
-	g_Surface.SetTexture(&g_HeightMap, 0);
+
+	g_Texture.Load( TEXT("4.dds") );
+
+	g_Detail.Load( TEXT("terrain_detail.dds") );
+
+	g_Surface.SetTexture(&g_Texture, 0);
+	g_Surface.SetTexture(&g_Detail, 1);
 
 	g_Terrain.GetRenderMethod().SetSurface(&g_Surface);
 
@@ -428,28 +442,59 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #ifdef BULLET
 	g_Bullet.Create(100, 500, 2000, 1.0f);
 
-	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 1.0f), Target(0.0f, 0.0f, 1000.0f);
+	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Target(0.0f, 0.0f, 1000.0f);
 
 	g_Bullet.SetSource(Source);
 	g_Bullet.SetTarget(Target);
 
-	g_Bullet.SetSpeed(1.0f);
+	g_Bullet.SetSpeed(10.0f);
 	g_Bullet.SetGravity(0.01f);
-	g_Bullet.SetStep(100);
+	g_Bullet.SetStep(1000);
 	g_Bullet.SetLength(10);
-	g_Bullet.SetOffsetRadius(2);
+	//g_Bullet.SetOffsetRadius(2);
 
 	D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
-     Matrial.Diffuse.r = Matrial.Ambient.r = 0.0f;
+     Matrial.Diffuse.r = Matrial.Ambient.r = 1.0f;
      Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
      Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
      Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
      
 	g_Bullet.GetSurface().SetMaterial(Matrial);
-	g_Bullet.GetSurface().LoadTexuture(TEXT("heightmap.jpg"), 0);
+	g_Bullet.GetSurface().LoadTexture(TEXT("DRUIDC03.tga"), 0);
 
 	//设置灯光
+	 D3DXVECTOR3 vecDir;
+     D3DLIGHT9 light;
+	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
+     light.Type       = D3DLIGHT_DIRECTIONAL;
+     light.Diffuse.r  = 1.0f;
+     light.Diffuse.g  = 1.0f;
+     light.Diffuse.b  = 1.0f;
+	 vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+	 light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     light.Range       = 1000.0f;
+
+	 LIGHTMANAGER.SetLight(light, 0);
+	 LIGHTMANAGER.SetAmbient(0x00808080);
+
+	 GAMEHOST.SetLightEnable(true);
+#endif
+
+#ifdef BILLBOARDING
+	 g_Billboarding.Create(800, 600);
+
+	 D3DMATERIAL9 Matrial;
+	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
+     Matrial.Diffuse.r = Matrial.Ambient.r = 0.0f;
+     Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
+     Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
+     Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
+	 g_Billboarding.GetSurface().SetMaterial(Matrial);
+	 g_Billboarding.GetSurface().LoadTexture(TEXT("heightmap.jpg"), 0);
+
+		 //设置灯光
 	 D3DXVECTOR3 vecDir;
      D3DLIGHT9 light;
 	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
@@ -552,16 +597,20 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	static FLOAT z = 0;
 
-	D3DXMATRIX Matrix, Rotation;
+	D3DXMATRIX Matrix, Rotation, Translation;
 
 	D3DXMatrixIdentity(&Matrix);
 
 	//Matrix._41 = 1500;
 	//Matrix._41 = -z;
-	//Matrix._42 = 100;
+	//Matrix._42 = 1000;
 	Matrix._43 = z;
 
 	/*D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
+
+	D3DXMatrixTranslation(&Translation, -z, 2000, 0);
+
+	Matrix *= Translation;
 
 	Matrix *= Rotation;*/
 
@@ -602,6 +651,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		g_Bullet.Shoot();
 
 	g_Bullet.Update();
+#endif
+
+#ifdef BILLBOARDING
+	g_Billboarding.Update();
 #endif
 }
 
@@ -677,6 +730,10 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 
 #ifdef BULLET
 		g_Bullet.ApplyForRender();
+#endif
+
+#ifdef BILLBOARDING
+		g_Billboarding.ApplyForRender();
 #endif
 
 		//结束渲染

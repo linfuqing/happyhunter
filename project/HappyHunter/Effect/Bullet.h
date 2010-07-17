@@ -83,6 +83,8 @@ namespace zerO
 		bool Create(UINT uMaxNum, UINT uFlush, UINT uDiscard, FLOAT fSize);
 
 		void Update();
+
+		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 	private:
 		void __BuildAcceleration();
 
