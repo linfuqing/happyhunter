@@ -135,3 +135,14 @@ void CBullet::Update()
 
 	m_uNumEmitedPerFrame = 0;
 }
+
+void CBullet::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
+{
+	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE,   true       );
+	DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
+	DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+	CParticleSystem::Render(pEntry, uFlag);
+
+	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE,   false      );
+}
