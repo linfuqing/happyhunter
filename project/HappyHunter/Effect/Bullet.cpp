@@ -13,7 +13,7 @@ m_uLength(0),
 
 m_Acceleration(0.0f, 0.0f, 0.0f),
 m_Source(0.0f, 0.0f, 0.0f),
-m_Target(0.0f, 0.0f, 0.0f),
+m_Direction(0.0f, 0.0f, 1.0f),
 
 bIsAccelerationDirty(false)
 {
@@ -82,7 +82,7 @@ zerO::UINT GetParticleRenderSteps(const CParticleSystem<BULLETPARAMETERS>::PARTI
 	CBullet* pParent = (CBullet*)Particle.pPARENT;
 
 	g_Position = Particle.Vertex.Position;
-	g_Velocity = - Particle.Parameter.Velocity / (zerO::FLOAT)pParent->GetStep() * (pParent->GetLength() + 1.0f);
+	g_Velocity = Particle.Parameter.Velocity / (zerO::FLOAT)pParent->GetStep() * (pParent->GetLength() + 1.0f);
 
 	return pParent->GetStep();
 }
@@ -95,7 +95,7 @@ bool SetParticleRenderData(const CParticleSystem<BULLETPARAMETERS>::PARTICLE& Pa
 	Vertex.Position = g_Position;
 	Vertex.Color    = Particle.Vertex.Color;
 
-	g_Position += g_Velocity;
+	g_Position     -= g_Velocity;
 
 	return true;
 }
