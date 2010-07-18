@@ -29,6 +29,9 @@ bool CEffect::Destroy()
 
 bool CEffect::Disable()
 {
+	if (m_pEffect == NULL)
+		return false;
+
 	HRESULT hr = m_pEffect->OnLostDevice();
 
 	if( FAILED(hr) )
@@ -43,6 +46,9 @@ bool CEffect::Disable()
 
 bool CEffect::Restore()
 {
+	if (m_pEffect == NULL)
+		return false;
+
 	HRESULT hr = m_pEffect->OnResetDevice();
 
 	if( FAILED(hr) )
