@@ -442,10 +442,10 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #ifdef BULLET
 	g_Bullet.Create(100, 500, 2000, 1.0f);
 
-	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Target(0.0f, 0.0f, 1000.0f);
+	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Direction(0.0f, 0.0f, 1.0f);;
 
 	g_Bullet.SetSource(Source);
-	g_Bullet.SetTarget(Target);
+	g_Bullet.SetDirection(Direction);
 
 	g_Bullet.SetSpeed(10.0f);
 	g_Bullet.SetGravity(0.01f);

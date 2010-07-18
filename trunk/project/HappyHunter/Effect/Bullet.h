@@ -52,8 +52,8 @@ namespace zerO
 		//子弹出现位置
 		const D3DXVECTOR3& GetSource()const;
 
-		//子弹目标位置
-		const D3DXVECTOR3& GetTarget()const;
+		//子弹方向
+		const D3DXVECTOR3& GetDirection()const;
 
 		void SetSpeed(FLOAT fSpeed);
 		void SetGravity(FLOAT fGravity);
@@ -65,7 +65,7 @@ namespace zerO
 		void SetLength(UINT uLength);
 
 		void SetSource(const D3DXVECTOR3& Source);
-		void SetTarget(const D3DXVECTOR3& Target);
+		void SetDirection(const D3DXVECTOR3& Direction);
 
 		///
 		// 射击
@@ -97,7 +97,7 @@ namespace zerO
 
 		D3DXVECTOR3 m_Acceleration;
 		D3DXVECTOR3 m_Source;
-		D3DXVECTOR3 m_Target;
+		D3DXVECTOR3 m_Direction;
 
 		bool bIsAccelerationDirty;
 	};
@@ -147,9 +147,9 @@ namespace zerO
 		return m_Source;
 	}
 
-	inline const D3DXVECTOR3& CBullet::GetTarget()const
+	inline const D3DXVECTOR3& CBullet::GetDirection()const
 	{
-		return m_Target;
+		return m_Direction;
 	}
 
 	inline void CBullet::SetSpeed(FLOAT fSpeed)
@@ -192,13 +192,11 @@ namespace zerO
 	inline void CBullet::SetSource(const D3DXVECTOR3& Source)
 	{
 		m_Source = Source;
-
-		bIsAccelerationDirty = true;
 	}
 
-	inline void CBullet::SetTarget(const D3DXVECTOR3& Target)
+	inline void CBullet::SetDirection(const D3DXVECTOR3& Direction)
 	{
-		m_Target = Target;
+		m_Direction = Direction;
 
 		bIsAccelerationDirty = true;
 	}
@@ -210,9 +208,9 @@ namespace zerO
 
 	inline void CBullet::__BuildAcceleration()
 	{
-		m_Acceleration = m_Target - m_Source;
+		D3DXVec3Normalize(&m_Direction, &m_Direction);
 
-		D3DXVec3Normalize(&m_Acceleration, &m_Acceleration);
+		m_Acceleration = m_Direction;
 
 		m_Acceleration *= m_fSpeed;
 	}
