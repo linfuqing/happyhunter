@@ -6,15 +6,15 @@
 
 namespace zerO
 {
-	inline UINT32 GetMaskZ(UINT8 uMinZ, UINT8 uMaxZ)
+	inline UINT32 GetMaskY(UINT8 uMinY, UINT8 uMaxY)
 	{
-		UINT32 uHigh     = FLAG(uMaxZ),
-			uLow         = FLAG(uMinZ),
+		UINT32 uHigh     = FLAG(uMaxY),
+			uLow         = FLAG(uMinY),
 			uSetMask     = uHigh - 1,
 			uClearMask   = uLow  - 1,
 			uResult      = uSetMask;
 
-		if (uMinZ)
+		if (uMinY)
 			uResult &= ~uClearMask;
 
 		uResult |= uHigh;
@@ -78,7 +78,7 @@ namespace zerO
 
 		CQuadTree*     m_pParentQuadTree;
 		CQuadTreeNode* m_pParentQuadTreeNode;
-		UINT32 m_uMaskZ;
+		UINT32 m_uMaskY;
 	};
 
 	/*inline CQuadTreeObject* CQuadTreeObject::GetTreeForward()const
@@ -174,29 +174,29 @@ namespace zerO
 		void AddMemberToSearchList(
 			CQuadTreeObject** ppListHead,
 			CQuadTreeObject** ppListTail,
-			UINT32 uMaskZ,
+			UINT32 uMaskY,
 			const LPFRUSTUM pFrustum);
 
 		void AddMemberToSearchList(
 			CQuadTreeObject** ppListHead,
 			CQuadTreeObject** ppListTail,
-			UINT32 uMaskZ,
+			UINT32 uMaskY,
 			const CRectangle3D& WorldRect,
 			const LPFRUSTUM pFrustum); 
 
 		void Setup(CQuadTreeNode* pParent, CQuadTreeNode* pChild1, CQuadTreeNode* pChild2, CQuadTreeNode* pChild3, CQuadTreeNode* pChild4);
 
-		UINT32 GetLocalMaskZ()const;
-		UINT32 GetWorldMaskZ()const;
+		UINT32 GetLocalMaskY()const;
+		UINT32 GetWorldMaskY()const;
 	private:
-		void __DescendantMemberAdded(UINT32 uMaskZ);
+		void __DescendantMemberAdded(UINT32 uMaskY);
 		void __DescendantMemberRemoved();
 
-		void __RebuildLocalMaskZ();
-		void __RebuildWorldMaskZ();
+		void __RebuildLocalMaskY();
+		void __RebuildWorldMaskY();
 
-		UINT32 m_uLocalMaskZ;
-		UINT32 m_uWorldMaskZ;
+		UINT32 m_uLocalMaskY;
+		UINT32 m_uWorldMaskY;
 
 		CQuadTreeObject* m_pMembers;
 
@@ -215,14 +215,14 @@ namespace zerO
 		m_pChildren[3] = pChild4;
 	}
 
-	inline UINT32 CQuadTreeNode::GetLocalMaskZ()const
+	inline UINT32 CQuadTreeNode::GetLocalMaskY()const
 	{
-		return m_uLocalMaskZ;
+		return m_uLocalMaskY;
 	}
 
-	inline UINT32 CQuadTreeNode::GetWorldMaskZ()const
+	inline UINT32 CQuadTreeNode::GetWorldMaskY()const
 	{
-		return m_uWorldMaskZ;
+		return m_uWorldMaskY;
 	}
 
 	class CQuadTree
@@ -249,24 +249,24 @@ namespace zerO
 
 		UINT m_uDepth;
 
-		void __FindTreeNodeInfo(const CQuadTreeRectangle& WorldByteRect, UINT& uLevel, UINT& uLevelX, UINT& uLevelY);
+		void __FindTreeNodeInfo(const CQuadTreeRectangle& WorldByteRect, UINT& uLevel, UINT& uLevelX, UINT& uLevelZ);
 		CQuadTreeNode* __FindTreeNode(const CQuadTreeRectangle& WorldByteRect);
-		CQuadTreeNode* __GetNodeFromLevelXY(INT nLevel, UINT x, UINT y);
+		CQuadTreeNode* __GetNodeFromLevelXZ(INT nLevel, UINT x, UINT z);
 	};
 
-	inline CQuadTreeNode* CQuadTree::__GetNodeFromLevelXY(INT nLevel, UINT x, UINT y)
+	inline CQuadTreeNode* CQuadTree::__GetNodeFromLevelXZ(INT nLevel, UINT x, UINT z)
 	{
 		if(nLevel >= 0 && nLevel < (INT)m_uDepth)
-			return &m_pLevelNodes[nLevel][(y << nLevel) + x];
+			return &m_pLevelNodes[nLevel][(z << nLevel) + x];
 
 		return NULL;
 	}
 
-	inline void CQuadTree::__FindTreeNodeInfo(const CQuadTreeRectangle& WorldByteRect, UINT& uLevel, UINT& uLevelX, UINT& uLevelY)
+	inline void CQuadTree::__FindTreeNodeInfo(const CQuadTreeRectangle& WorldByteRect, UINT& uLevel, UINT& uLevelX, UINT& uLevelZ)
 	{
 		UINT8 uPatternX   = WorldByteRect.GetMinX() ^ WorldByteRect.GetMaxX(),
-			  uPatternY   = WorldByteRect.GetMinY() ^ WorldByteRect.GetMaxY(),
-			  uBitPattern = MAX(uPatternX, uPatternY);
+			  uPatternZ   = WorldByteRect.GetMinZ() ^ WorldByteRect.GetMaxZ(),
+			  uBitPattern = MAX(uPatternX, uPatternZ);
 
 		INT nHighBit      = uBitPattern ? (HighestBitSet(uBitPattern) + 1) : 0;
 
@@ -279,16 +279,16 @@ namespace zerO
 		uShift = MAXINUM_TREE_DEPTH - uLevel - MININUM_TREE_DEPTH;
 
 		uLevelX = WorldByteRect.GetMaxX() >> uShift;
-		uLevelY = WorldByteRect.GetMaxY() >> uShift;
+		uLevelZ = WorldByteRect.GetMaxZ() >> uShift;
 	}
 
 	inline CQuadTreeNode* CQuadTree::__FindTreeNode(const CQuadTreeRectangle& WorldByteRect)
 	{
-		UINT uLevel, uLevelX, uLevelY;
+		UINT uLevel, uLevelX, uLevelZ;
 
-		__FindTreeNodeInfo(WorldByteRect, uLevel, uLevelX, uLevelY);
+		__FindTreeNodeInfo(WorldByteRect, uLevel, uLevelX, uLevelZ);
 
-		return __GetNodeFromLevelXY(uLevel, uLevelX, uLevelY);
+		return __GetNodeFromLevelXZ(uLevel, uLevelX, uLevelZ);
 	}
 
 	

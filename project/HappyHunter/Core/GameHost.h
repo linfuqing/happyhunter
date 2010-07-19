@@ -32,6 +32,7 @@ namespace zerO
 
 	class CResource;
 	class CRenderQueue;
+	class CSceneNode;
 	class CCamera;
 
 	///
@@ -61,6 +62,7 @@ namespace zerO
 		FLOAT GetElapsedTime()const;
 		FLOAT64 GetTime()const;
 
+		CSceneNode* GetScene();
 		CCamera& GetCamera();
 
 		CLightManager& GetLightManager();
@@ -95,6 +97,8 @@ namespace zerO
 
 		CRenderQueue* m_pRenderQueue;
 
+		CSceneNode* m_pScene;
+
 		CCamera* m_pCamera;
 
 		CLightManager m_LightManager;
@@ -124,6 +128,11 @@ namespace zerO
 	inline CCamera& CGameHost::GetCamera()
 	{
 		return *m_pCamera;
+	}
+
+	inline CSceneNode* CGameHost::GetScene()
+	{
+		return m_pScene;
 	}
 
 	inline const CGameHost::DEVICESETTINGS& CGameHost::GetDeviceSettings()const

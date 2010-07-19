@@ -72,7 +72,7 @@ namespace zerO
 	{
 		typedef struct
 		{
-			D3DXVECTOR2 Position;
+			FLOAT x, z;
 			D3DXVECTOR2 UV;
 		}VERTEX, * LPVERTEX;
 	public:

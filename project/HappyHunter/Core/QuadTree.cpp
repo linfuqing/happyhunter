@@ -29,10 +29,10 @@ void CQuadTreeRectangle::Convert(const CRectangle3D& Rect, const D3DXVECTOR3& Of
 
 	IntRect.GetMinX() = CLAMP(IntRect.GetMinX(), 0                    , 254);
 	IntRect.GetMaxX() = CLAMP(IntRect.GetMaxX(), IntRect.GetMinX() + 1, 255);
-	IntRect.GetMinY() = CLAMP(IntRect.GetMinY(), 0                    , 254);
-	IntRect.GetMaxY() = CLAMP(IntRect.GetMaxY(), IntRect.GetMinY() + 1, 255);
-	IntRect.GetMinZ() = CLAMP(IntRect.GetMinZ(), 0                    , 30 );
-	IntRect.GetMaxZ() = CLAMP(IntRect.GetMaxZ(), IntRect.GetMinZ() + 1, 31 );
+	IntRect.GetMinY() = CLAMP(IntRect.GetMinY(), 0                    , 30 );
+	IntRect.GetMaxY() = CLAMP(IntRect.GetMaxY(), IntRect.GetMinY() + 1, 31 );
+	IntRect.GetMinZ() = CLAMP(IntRect.GetMinZ(), 0                    , 254);
+	IntRect.GetMaxZ() = CLAMP(IntRect.GetMaxZ(), IntRect.GetMinZ() + 1, 255);
 
 	m_MaxX = IntRect.GetMaxX();
 	m_MinX = IntRect.GetMinX();
@@ -48,7 +48,7 @@ m_pTreeForward(NULL),
 m_pTreeRear(NULL),
 m_pSearchForward(NULL),
 m_pSearchRear(NULL),
-m_uMaskZ(0)
+m_uMaskY(0)
 {
 }
 
@@ -85,8 +85,8 @@ void CQuadTreeObject::DetachFromQuadTree()
 CQuadTreeNode::CQuadTreeNode() :
 m_pMembers(NULL),
 m_pParent(NULL),
-m_uLocalMaskZ(0),
-m_uWorldMaskZ(0)
+m_uLocalMaskY(0),
+m_uWorldMaskY(0)
 {
 	m_pChildren[0] = m_pChildren[1] = m_pChildren[2] = m_pChildren[3] = NULL;
 }
@@ -97,7 +97,7 @@ CQuadTreeNode::~CQuadTreeNode()
 
 zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeRectangle& Rect)
 {
-	UINT32 uMaskZ = GetMaskZ( Rect.GetMinZ(), Rect.GetMaxZ() );
+	UINT32 uMaskY = GetMaskY( Rect.GetMinY(), Rect.GetMaxY() );
 
 	if(pObject->m_pParentQuadTreeNode != this)
 	{
@@ -114,19 +114,19 @@ zerO::UINT32 CQuadTreeNode::AddMember(CQuadTreeObject* pObject, const CQuadTreeR
 		
 		m_pMembers = pObject;
 
-		SET_FLAG(m_uWorldMaskZ, uMaskZ);
-		SET_FLAG(m_uLocalMaskZ, uMaskZ);
+		SET_FLAG(m_uWorldMaskY, uMaskY);
+		SET_FLAG(m_uLocalMaskY, uMaskY);
 
 		if(m_pParent)
-			m_pParent->__DescendantMemberAdded(uMaskZ);
+			m_pParent->__DescendantMemberAdded(uMaskY);
 	}
 	else
-		__RebuildLocalMaskZ();
+		__RebuildLocalMaskY();
 
 	pObject->m_pParentQuadTreeNode = this;
-	pObject->m_uMaskZ              = uMaskZ;
+	pObject->m_uMaskY              = uMaskY;
 
-	return uMaskZ;
+	return uMaskY;
 }
 
 void CQuadTreeNode::RemoveMember(CQuadTreeObject* pObject)
@@ -152,50 +152,50 @@ void CQuadTreeNode::RemoveMember(CQuadTreeObject* pObject)
 		m_pParent->__DescendantMemberRemoved();
 }
 
-void CQuadTreeNode::__RebuildLocalMaskZ()
+void CQuadTreeNode::__RebuildLocalMaskY()
 {
-	m_uLocalMaskZ = 0;
+	m_uLocalMaskY = 0;
 
 	CQuadTreeObject* pObject = m_pMembers;
 
 	while(pObject)
 	{
-		SET_FLAG(m_uLocalMaskZ, pObject->m_uMaskZ);
+		SET_FLAG(m_uLocalMaskY, pObject->m_uMaskY);
 
 		pObject = pObject->m_pTreeForward;
 	}
 
-	__RebuildWorldMaskZ();
+	__RebuildWorldMaskY();
 }
 
-void CQuadTreeNode::__RebuildWorldMaskZ()
+void CQuadTreeNode::__RebuildWorldMaskY()
 {
-	m_uWorldMaskZ = m_uLocalMaskZ;
+	m_uWorldMaskY = m_uLocalMaskY;
 
 	if (m_pChildren[0])
-		SET_FLAG( m_uWorldMaskZ, m_pChildren[0]->m_uWorldMaskZ);
+		SET_FLAG( m_uWorldMaskY, m_pChildren[0]->m_uWorldMaskY);
 
 	if (m_pChildren[1])
-		SET_FLAG( m_uWorldMaskZ, m_pChildren[1]->m_uWorldMaskZ );
+		SET_FLAG( m_uWorldMaskY, m_pChildren[1]->m_uWorldMaskY);
 
 	if (m_pChildren[2])
-		SET_FLAG( m_uWorldMaskZ, m_pChildren[2]->m_uWorldMaskZ );
+		SET_FLAG( m_uWorldMaskY, m_pChildren[2]->m_uWorldMaskY);
 
 	if (m_pChildren[3])
-		SET_FLAG( m_uWorldMaskZ, m_pChildren[3]->m_uWorldMaskZ );
+		SET_FLAG( m_uWorldMaskY, m_pChildren[3]->m_uWorldMaskY);
 }
 
-void CQuadTreeNode::__DescendantMemberAdded(zerO::UINT32 uMaskZ)
+void CQuadTreeNode::__DescendantMemberAdded(zerO::UINT32 uMaskY)
 {
-	SET_FLAG(m_uWorldMaskZ, uMaskZ);
+	SET_FLAG(m_uWorldMaskY, uMaskY);
 
 	if(m_pParent)
-		m_pParent->__DescendantMemberAdded(uMaskZ);
+		m_pParent->__DescendantMemberAdded(uMaskY);
 }
 
 void CQuadTreeNode::__DescendantMemberRemoved()
 {
-	__RebuildWorldMaskZ();
+	__RebuildWorldMaskY();
 
 	if(m_pParent)
 		m_pParent->__DescendantMemberRemoved();
@@ -204,17 +204,17 @@ void CQuadTreeNode::__DescendantMemberRemoved()
 void CQuadTreeNode::AddMemberToSearchList(
 			CQuadTreeObject** ppListHead,
 			CQuadTreeObject** ppListTail,
-			zerO::UINT32 uMaskZ,
+			zerO::UINT32 uMaskY,
 			const LPFRUSTUM pFrustum)
 {
 	static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
 
 	CQuadTreeObject* pObject;
-	if( TEST_ANY(m_uLocalMaskZ, uMaskZ) )
+	if( TEST_ANY(m_uLocalMaskY, uMaskY) )
 	{
 		for(pObject = m_pMembers; pObject; pObject = pObject->m_pTreeForward)
 		{
-			if( TEST_ANY(pObject->m_uMaskZ, uMaskZ) 
+			if( TEST_ANY(pObject->m_uMaskY, uMaskY) 
 				&& ( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(), s_uTESTFLAG) ) )
 			{
 				if(*ppListTail)
@@ -239,18 +239,18 @@ void CQuadTreeNode::AddMemberToSearchList(
 void CQuadTreeNode::AddMemberToSearchList(
 	CQuadTreeObject** ppListHead,
 	CQuadTreeObject** ppListTail,
-	zerO::UINT32 uMaskZ,
+	zerO::UINT32 uMaskY,
 	const CRectangle3D& WorldRect,
 	const LPFRUSTUM pFrustum)
 {
 	const static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
 
 	CQuadTreeObject* pObject;
-	if( TEST_ANY(m_uLocalMaskZ, uMaskZ) )
+	if( TEST_ANY(m_uLocalMaskY, uMaskY) )
 	{
 		for(pObject = m_pMembers; pObject; pObject = pObject->m_pTreeForward)
 		{
-			if( TEST_ANY(pObject->m_uMaskZ, uMaskZ) 
+			if( TEST_ANY(pObject->m_uMaskY, uMaskY) 
 				&& WorldRect.TestHit( pObject->GetWorldRectangle() ) 
 				&&( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(),s_uTESTFLAG) ) )
 			{
@@ -300,10 +300,10 @@ void CQuadTree::Create(const CRectangle3D& Boundary, zerO::UINT uDepth)
 	Boundary.GetSize(m_Scale);
 
 	m_Scale.x = 256.0f / m_Scale.x;
-	m_Scale.y = 256.0f / m_Scale.y;
-	m_Scale.z = 32.0f  / m_Scale.z;
+	m_Scale.y = 32.0f  / m_Scale.y;
+	m_Scale.z = 256.0f / m_Scale.z;
 
-	UINT x, y, uNodeCount, uLevelDimension, uLevelIndex;
+	UINT x, z, uNodeCount, uLevelDimension, uLevelIndex;
 
 	UINT i;
 
@@ -320,16 +320,16 @@ void CQuadTree::Create(const CRectangle3D& Boundary, zerO::UINT uDepth)
 		uLevelDimension = FLAG(i);
 		uLevelIndex     = 0;
 
-		for(y = 0; y < uLevelDimension; y ++)
+		for(z = 0; z < uLevelDimension; z ++)
 		{
 			for(x = 0; x < uLevelDimension; x ++)
 			{
 				m_pLevelNodes[i][uLevelIndex].Setup(
-					__GetNodeFromLevelXY(i - 1, (x >> 1),    (y >> 1)    ),
-					__GetNodeFromLevelXY(i + 1, (x << 1),    (y << 1)    ),
-					__GetNodeFromLevelXY(i + 1, (x << 1) + 1,(y << 1)    ),
-					__GetNodeFromLevelXY(i + 1, (x << 1),    (y << 1) + 1),
-					__GetNodeFromLevelXY(i + 1, (x << 1) + 1,(y << 1) + 1) );
+					__GetNodeFromLevelXZ(i - 1, (x >> 1),    (z >> 1)    ),
+					__GetNodeFromLevelXZ(i + 1, (x << 1),    (z << 1)    ),
+					__GetNodeFromLevelXZ(i + 1, (x << 1) + 1,(z << 1)    ),
+					__GetNodeFromLevelXZ(i + 1, (x << 1),    (z << 1) + 1),
+					__GetNodeFromLevelXZ(i + 1, (x << 1) + 1,(z << 1) + 1) );
 
 				uLevelIndex ++;
 			}
@@ -361,9 +361,9 @@ CQuadTreeObject* CQuadTree::SearchObject(const CRectangle3D& WorldRectangle, con
 	CQuadTreeRectangle ByteRect, LockRect;
 	ByteRect.Convert(WorldRectangle, m_Offset, m_Scale);
 	
-	UINT32 uMaskZ = GetMaskZ( ByteRect.GetMinZ(), ByteRect.GetMaxZ() );
+	UINT32 uMaskY = GetMaskY( ByteRect.GetMinY(), ByteRect.GetMaxY() );
 
-	UINT uShift, x, y, uLevel = 0;
+	UINT uShift, x, z, uLevel = 0;
 
 	bool bIsSearch = true;
 
@@ -374,31 +374,32 @@ CQuadTreeObject* CQuadTree::SearchObject(const CRectangle3D& WorldRectangle, con
 		LockRect.Set(
 			ByteRect.GetMinX() >> uShift,
 			ByteRect.GetMaxX() >> uShift,
-			ByteRect.GetMinY() >> uShift,
-			ByteRect.GetMaxY() >> uShift,
-			0,0);
+			0,
+			0,
+			ByteRect.GetMinZ() >> uShift,
+			ByteRect.GetMaxZ() >> uShift);
 
 		bIsSearch = false;
 
-		for(y = LockRect.GetMinY(); y <= LockRect.GetMaxY(); y ++)
+		for(z = LockRect.GetMinZ(); z <= LockRect.GetMaxZ(); z ++)
 		{
 			for(x = LockRect.GetMinX(); x <= LockRect.GetMaxX(); x ++)
 			{
-				pNode = __GetNodeFromLevelXY(uLevel, x, y);
+				pNode = __GetNodeFromLevelXZ(uLevel, x, z);
 				
-				if (pNode->GetWorldMaskZ() & uMaskZ)
+				if (pNode->GetWorldMaskY() & uMaskY)
 				{
 					bIsSearch = true;
 
-					if (y == LockRect.GetMinY() 
-						|| y == LockRect.GetMaxY()
+					if (z == LockRect.GetMinZ() 
+						|| z == LockRect.GetMaxZ()
 						|| x == LockRect.GetMinX()
 						|| x == LockRect.GetMaxX() )
 					{
 						pNode->AddMemberToSearchList(
 							&pListHead, 
 							&pListTail, 
-							uMaskZ, 
+							uMaskY, 
 							WorldRectangle, 
 							pFrustum);
 					}
@@ -407,7 +408,7 @@ CQuadTreeObject* CQuadTree::SearchObject(const CRectangle3D& WorldRectangle, con
 						pNode->AddMemberToSearchList(
 							&pListHead, 
 							&pListTail, 
-							uMaskZ, 
+							uMaskY, 
 							pFrustum);
 					}
 				}

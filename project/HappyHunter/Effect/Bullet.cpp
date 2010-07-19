@@ -30,6 +30,8 @@ void InitParticle(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 {
 	CBullet* pParent = (CBullet*)pParticle->pPARENT;
 
+	pParticle->Parameter.bIsFree = false;
+
 	pParticle->Parameter.Velocity = pParent->GetAcceleration();
 
 	pParticle->Vertex.Color       = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
@@ -67,7 +69,7 @@ void UpdateParticle(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 ///
 bool IsParticleDestroy(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 {
-	return !pParticle->Parameter.Rectangle.TestHit( CAMERA.GetWorldRectangle() );//pParticle->Vertex.Position.y < - 100.0f;
+	return !pParticle->Parameter.Rectangle.TestHit( CAMERA.GetWorldRectangle() ) || pParticle->Parameter.bIsFree;//pParticle->Vertex.Position.y < - 100.0f;
 }
 
 D3DXVECTOR3 g_Position;
@@ -104,7 +106,7 @@ CParticleSystem<BULLETPARAMETERS>::LPPARTICLE CBullet::FindHitParticle(const CRe
 {
 	PARTICLENODE* pParticle = m_pParticles;
 
-	while(m_pParticles)
+	while(pParticle)
 	{
 		if( pParticle->Particle.Parameter.Rectangle.TestHit(Rect) )
 			return &pParticle->Particle;

@@ -5,5 +5,6 @@
 #include "Terrain.h"
 #include "ParticleSystem.h"
 #include "Billboarding.h"
+#include "SkyBox.h"
 
 #endif
