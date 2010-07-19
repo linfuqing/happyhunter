@@ -15,7 +15,7 @@
 //#define TERRAIN
 //#define MISSION
 //#define PRIZE
-//#define TERRAIN
+//#define ROAMTERRAIN
 //#define SKINMESH
 
 #define BULLET
@@ -165,14 +165,16 @@ CTest g_Test;
 #endif
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
-#define HEIGHT_MAP_FILE TEXT("terrain_heightmap.jpg")
+#define HEIGHT_MAP_FILE TEXT("高度图.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
-zerO::CSurface  g_Surface;
 zerO::CTexture  g_Texture;
 zerO::CTexture  g_Detail;
+zerO::CSceneNode g_NootNode;
 #endif
+
+zerO::CSurface  g_Surface;
 
 #ifdef ROAMTERRAIN
 zerO::CRoamTerrain  g_Terrain;
@@ -331,33 +333,33 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 2.0f, 1.0f, 0.5f, 3000.0f);
+	CAMERA.SetProjection(D3DX_PI / 4.0f, 1.0f, 0.5f, 3000.0f);
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
 	D3DXMATRIX Matrix, Rotation;
 
 	D3DXMatrixIdentity(&Matrix);
 
-	D3DXMatrixRotationX(&Rotation, 90);
+	D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
 
 	Matrix *= Rotation;
 
-	CAMERA.SetTransform(Matrix);
+	g_NootNode.SetTransform(Matrix);
 
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 10000.0f, 10000.0f, - 10000.0f, 10000.0f, 0.0f, 3000.0f);
+	Rect.Set(- 3000.0f, 3000.0f, - 3000.0f, 3000.0f, 0.0f, 500.0f);
 	g_QuadTree.Create(Rect, 4);
 
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
-	g_Terrain.Create(NULL, &g_HeightMap, Rect, 6);
+	g_Terrain.Create(&g_NootNode, &g_HeightMap, Rect, 6);
 
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
 
-	g_Texture.Load( TEXT("4.dds") );
+	g_Texture.Load( TEXT("纹理.dds") );
 
-	g_Detail.Load( TEXT("terrain_detail.dds") );
+	g_Detail.Load( TEXT("dirt_grass.jpg") );
 
 	g_Surface.SetTexture(&g_Texture, 0);
 	g_Surface.SetTexture(&g_Detail, 1);
@@ -449,9 +451,9 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	g_Bullet.SetSpeed(10.0f);
 	g_Bullet.SetGravity(0.01f);
-	g_Bullet.SetStep(1000);
+	g_Bullet.SetStep(100);
 	g_Bullet.SetLength(10);
-	//g_Bullet.SetOffsetRadius(2);
+	g_Bullet.SetOffsetRadius(2);
 
 	D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
@@ -491,8 +493,11 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
      Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
      Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
      Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
-	 g_Billboarding.GetSurface().SetMaterial(Matrial);
-	 g_Billboarding.GetSurface().LoadTexture(TEXT("heightmap.jpg"), 0);
+
+	 g_Surface.SetMaterial(Matrial);
+	 g_Surface.LoadTexture(TEXT("heightmap.jpg"), 0);
+	 g_Billboarding.GetRenderMethod().SetSurface(&g_Surface);
+	 g_Billboarding.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 
 		 //设置灯光
 	 D3DXVECTOR3 vecDir;
@@ -595,30 +600,58 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 {
 	GAMEHOST.Update(fElapsedTime);
 
-	static FLOAT z = 0;
+	static FLOAT x = 0, y = 0, z = 0, RotationY = 0;
 
 	D3DXMATRIX Matrix, Rotation, Translation;
 
 	D3DXMatrixIdentity(&Matrix);
 
 	//Matrix._41 = 1500;
-	//Matrix._41 = -z;
-	//Matrix._42 = 1000;
-	Matrix._43 = z;
+	/*Matrix._41 = x;
+	Matrix._42 = y;
+	Matrix._43 = z;*/
 
-	/*D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
+	D3DXMatrixRotationY(&Rotation, RotationY / 180 * D3DX_PI);
+	//D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
 
-	D3DXMatrixTranslation(&Translation, -z, 2000, 0);
+	D3DXMatrixTranslation(&Translation, x, y, z);
+
+	Matrix *= Rotation;
 
 	Matrix *= Translation;
-
-	Matrix *= Rotation;*/
 
 	CAMERA.SetTransform(Matrix);
 
 	CAMERA.Update();
 
+	if( DXUTIsKeyDown(VK_UP) )
+		y += 10.0f;
+	
+	if( DXUTIsKeyDown(VK_DOWN) )
+		y -= 10.0f;
+
+	if( DXUTIsKeyDown(VK_LEFT) )
+		x -= 10.0f;
+
+	if( DXUTIsKeyDown(VK_RIGHT) )
+		x += 10.0f;
+
+	if( DXUTIsKeyDown('W') )
+		z += 10.0f;
+
+	if( DXUTIsKeyDown('S') )
+		z -= 10.0f;
+
+	if( DXUTIsKeyDown('A') )
+		RotationY -= 1.0f;
+
+	if( DXUTIsKeyDown('D') )
+		RotationY += 1.0f;
+
 	//z -= 1;
+
+	/*g_NootNode.Update();
+	g_Terrain.Update();*/
 
 #ifdef ROAMTERRAIN
 	g_Terrain.SetTessellationParameters(10.33f, 0.3f);

@@ -1,5 +1,5 @@
 // transformations
-float4x4 mViewProj: VIEWPROJECTION;
+float4x4 mViewProj: WORLDVIEWPROJECTION;
 
 float4 posOffset : POSITION = {1.0, 1.0, 0.0f, 0.0f};
 float4 texOffset : UV = {1.0, 1.0, 0.0f, 0.0f};
@@ -75,7 +75,7 @@ sampler LinearSamp1 = sampler_state
 float4 PS(VS_OUTPUT In) : COLOR
 {   
 	// sample the texture
-	float4 Color = tex2D(LinearSamp0, In.vTex0 ) * tex2D(LinearSamp1, In.vTex1 );
+	float4 Color = tex2D(LinearSamp0, In.vTex0 );// * tex2D(LinearSamp1, In.vTex1 );
 
 	// multiply by the diffuse 
 	// vertex color 
@@ -88,7 +88,7 @@ technique SinglePassTerrain
     pass P0
     {
 			//FILLMODE = WIREFRAME;
-			CULLMODE = CW;
+			CULLMODE = NONE;
 			//ZENABLE = TRUE;
 			//ZWRITEENABLE = TRUE;
 			//ZFUNC = LESSEQUAL;

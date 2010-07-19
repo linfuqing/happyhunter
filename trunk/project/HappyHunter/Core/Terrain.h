@@ -323,6 +323,8 @@ namespace zerO
 			const CRectangle3D& WorldExtents, 
 			UINT8 uShift);
 
+		void Update();
+
 		bool Destroy();
 
 		bool SubmitSection(CTerrainSection* pSection)const;

@@ -1,7 +1,8 @@
 #include "StdAfx.h"
 #include "Effect.h"
-#include "BasicString.h"
 #include "Camera.h"
+#include "safefunction.h"
+#include <string>
 
 using namespace zerO;
 
@@ -29,9 +30,6 @@ bool CEffect::Destroy()
 
 bool CEffect::Disable()
 {
-	if (m_pEffect == NULL)
-		return false;
-
 	HRESULT hr = m_pEffect->OnLostDevice();
 
 	if( FAILED(hr) )
@@ -46,9 +44,6 @@ bool CEffect::Disable()
 
 bool CEffect::Restore()
 {
-	if (m_pEffect == NULL)
-		return false;
-
 	HRESULT hr = m_pEffect->OnResetDevice();
 
 	if( FAILED(hr) )
@@ -128,12 +123,12 @@ void CEffect::__ParseParameters()
 	memset( m_TextureMatrixHandles, 0, sizeof(m_TextureMatrixHandles) );
 	memset( m_ParameterHandles,     0, sizeof(m_ParameterHandles) );
 
-	static BASICCHAR s_Numerals[] = TEXT("0123456789");
+	static CHAR s_Numerals[] = "0123456789";
 
-	D3DXHANDLE         hParameter;
-	D3DXPARAMETER_DESC ParameterDesc;
-	CBasicString       Semantic;
-	UINT32             uNumberPosition, uIndex, uTextures = 0;
+	D3DXHANDLE                                        hParameter;
+	D3DXPARAMETER_DESC                                ParameterDesc;
+	std::basic_string< CHAR, std::char_traits<CHAR> > Semantic;
+	UINT32                                            uNumberPosition, uIndex;
 
 	for(UINT32 i = 0; i < m_EffectDesc.Parameters; i ++)
 	{
@@ -158,10 +153,10 @@ void CEffect::__ParseParameters()
 					m_MatrixHandles[PROJECTION] = hParameter;
 				else if(STRNICMP(ParameterDesc.Semantic, "TEXTURE", 3) == 0)
 				{
-					Semantic = (PBASICCHAR)ParameterDesc.Semantic;
+					Semantic.assign(ParameterDesc.Semantic);
 					uNumberPosition = Semantic.find_first_of(s_Numerals);
 
-					if(uNumberPosition != CBasicString::npos)
+					if(uNumberPosition != std::basic_string<CHAR, std::char_traits<CHAR> >::npos)
 					{
 						uIndex = atoi(&ParameterDesc.Semantic[uNumberPosition]);
 						if(uIndex < MAXINUM_TEXTURE_HANDLES)
@@ -196,17 +191,15 @@ void CEffect::__ParseParameters()
 				|| ParameterDesc.Type == D3DXPT_TEXTURE3D
 				|| ParameterDesc.Type == D3DXPT_TEXTURECUBE)
 				{
-					Semantic        = (PBASICCHAR)ParameterDesc.Semantic;
+					Semantic.assign(ParameterDesc.Semantic);
 					uNumberPosition = Semantic.find_first_of(s_Numerals);
 
-					if(uNumberPosition != CBasicString::npos)
+					if(uNumberPosition != std::basic_string<CHAR, std::char_traits<CHAR> >::npos)
 					{
 						uIndex = atoi(&ParameterDesc.Semantic[uNumberPosition]);
 						if(uIndex < MAXINUM_TEXTURE_HANDLES)
 							m_TextureHandles[uIndex] = hParameter;
 					}
-					else
-						m_TextureHandles[uTextures ++] = hParameter;
 				}
 			}
 		}

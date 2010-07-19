@@ -770,16 +770,32 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Shader"
+			>
+			<File
+				RelativePath=".\EffectTexture.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSLPMesh.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSLSkinMesh.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\TerrainShader.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\Test.fx"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\Game.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\HLSLPMesh.fx"
-			>
-		</File>
-		<File
-			RelativePath=".\HLSLSkinMesh.fx"
 			>
 		</File>
 		<File
@@ -793,14 +809,6 @@
 					Name="VCCLCompilerTool"
 				/>
 			</FileConfiguration>
-		</File>
-		<File
-			RelativePath=".\TerrainShader.fx"
-			>
-		</File>
-		<File
-			RelativePath=".\Test.fx"
-			>
 		</File>
 	</Files>
 	<Globals>

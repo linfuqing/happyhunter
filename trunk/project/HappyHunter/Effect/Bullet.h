@@ -67,6 +67,8 @@ namespace zerO
 		void SetSource(const D3DXVECTOR3& Source);
 		void SetDirection(const D3DXVECTOR3& Direction);
 
+		LPPARTICLE FindHitParticle(const CRectangle3D Rect)const;
+
 		///
 		// Éä»÷
 		///
