@@ -100,6 +100,21 @@ bool SetParticleRenderData(const CParticleSystem<BULLETPARAMETERS>::PARTICLE& Pa
 	return true;
 }
 
+CParticleSystem<BULLETPARAMETERS>::LPPARTICLE CBullet::FindHitParticle(const CRectangle3D Rect)const
+{
+	PARTICLENODE* pParticle = m_pParticles;
+
+	while(m_pParticles)
+	{
+		if( pParticle->Particle.Parameter.Rectangle.TestHit(Rect) )
+			return &pParticle->Particle;
+
+		pParticle = pParticle->pNext;
+	}
+
+	return NULL;
+}
+
 ///
 // 构建函数
 // uMaxNum  弹夹的大小,每次最大能发射多少子弹
@@ -138,11 +153,13 @@ void CBullet::Update()
 
 void CBullet::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 {
-	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE,   true       );
+	DEVICE.SetRenderState(D3DRS_ZWRITEENABLE, false            );
+	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, true         );
 	DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
 	DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
 	CParticleSystem::Render(pEntry, uFlag);
 
-	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE,   false      );
+	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, false        );
+	DEVICE.SetRenderState(D3DRS_ZWRITEENABLE    , true         );
 }

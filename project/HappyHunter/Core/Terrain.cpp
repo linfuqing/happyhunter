@@ -470,7 +470,16 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 	if (pEffect)
 	{	
 		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
+		{
 			pEffect->Begin();
+
+			D3DXMATRIX Matrix;
+
+			if(m_pRootNode)
+				pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_pRootNode->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
+			else
+				pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
+		}
 
 		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
 
@@ -840,6 +849,17 @@ CRoamTerrain::~CRoamTerrain()
 {
 }
 
+void CRoamTerrain::Update()
+{
+	if(m_pRoamSection)
+	{
+		UINT uTotalSecctors = m_uSectorCountX * m_uSectorCountY;
+
+		for(UINT i = 0; i < uTotalSecctors; i ++)
+			m_pRoamSection[i].Update();
+	}
+}
+
 void CRoamTerrain::SetQuadTree(CQuadTree* pQuadTree)
 {
 	if(m_pRoamSection)
@@ -927,7 +947,11 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 		CRoamTerrainSection* pRoamSection=(CRoamTerrainSection*)pSection;
 
 		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
+		{
 			pEffect->Begin();
+
+			pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, pSection->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
+		}
 
 		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
 
