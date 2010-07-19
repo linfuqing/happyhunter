@@ -1,5 +1,5 @@
 // transformations
-float4x4 mViewProj: WORLDVIEWPROJECTION;
+float4x4 mViewProj: VIEWPROJECTION;
 
 float4 posOffset : POSITION = {1.0, 1.0, 0.0f, 0.0f};
 float4 texOffset : UV = {1.0, 1.0, 0.0f, 0.0f};
@@ -11,9 +11,10 @@ texture tex1 : TEXTURE1;
 
 struct VS_INPUT
 {
-  float2	Pos		: POSITION0;
-  float2	UV		: TEXCOORD0;
-	float	  ZPos	: POSITION1;
+    float 	x		: POSITION0;
+    float   z       : POSITION1;
+    float2	UV		: TEXCOORD0;
+	float	y	    : POSITION2;
 	float3	Norm	: NORMAL;
 };
 
@@ -30,13 +31,13 @@ VS_OUTPUT VS(const VS_INPUT v)
 	VS_OUTPUT Out = (VS_OUTPUT)0;
 
 	float4 combinedPos = float4(
-		v.Pos.x,
-		v.Pos.y,
-		v.ZPos,
+		v.x,
+		v.y,
+		v.z,
 		1);
 
 	combinedPos.x += posOffset.z;	
-	combinedPos.y += posOffset.w;
+	combinedPos.z += posOffset.w;
 
 	Out.Pos = mul(combinedPos, mViewProj);  // position (view space)
 
@@ -88,7 +89,7 @@ technique SinglePassTerrain
     pass P0
     {
 			//FILLMODE = WIREFRAME;
-			CULLMODE = NONE;
+			//CULLMODE = NONE;
 			//ZENABLE = TRUE;
 			//ZWRITEENABLE = TRUE;
 			//ZFUNC = LESSEQUAL;

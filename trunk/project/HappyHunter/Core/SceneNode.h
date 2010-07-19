@@ -36,6 +36,9 @@ namespace zerO
 
 		// 加入子集.
 		void AddChild(CSceneNode* pChild);
+		void RemoveChild(CSceneNode* pChild);
+
+		void UpdateChildren();
 
 		//构建渲染块并加入到渲染队列中,由渲染队列自动调用本身渲染机制.
 		virtual bool ApplyForRender();

@@ -14,6 +14,9 @@ m_Forward(0.0f, 0.0f, 1.0f)
 	D3DXMatrixIdentity(&m_LocalMatrix);
 	D3DXMatrixIdentity(&m_WorldMatrix);
 	D3DXMatrixIdentity(&m_InverseWorldMatrix);
+
+	if( GAMEHOST.GetScene() )
+		GAMEHOST.GetScene()->AddChild(this);
 }
 
 CSceneNode::~CSceneNode(void)
@@ -31,11 +34,35 @@ bool CSceneNode::Destroy()
 
 void CSceneNode::AddChild(CSceneNode* pChild)
 {
+	if(pChild == this)
+		return;
+
+	if(pChild->m_pParent)
+		pChild->m_pParent->RemoveChild(pChild);
+
 	m_Children.push_back(pChild);
 
 	pChild->m_pParent = this;
 
 	pChild->_SetTransformDirty();
+}
+
+void CSceneNode::RemoveChild(CSceneNode* pChild)
+{
+	m_Children.remove(pChild);
+
+	pChild->m_pParent = NULL;
+
+	pChild->_SetTransformDirty();
+}
+
+void CSceneNode::UpdateChildren()
+{
+	for(std::list<CSceneNode*>::const_iterator i = m_Children.begin(); i != m_Children.end(); i ++)
+	{
+		(*i)->Update();
+		(*i)->UpdateChildren();
+	}
 }
 
 void CSceneNode::_SetTransformDirty()

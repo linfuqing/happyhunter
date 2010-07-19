@@ -12,6 +12,7 @@ namespace zerO
 	{
 		D3DXVECTOR3 Velocity;
 		CRectangle3D Rectangle;
+		bool bIsFree;
 	}BULLETPARAMETERS;
 
 

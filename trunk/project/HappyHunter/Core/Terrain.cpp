@@ -5,16 +5,22 @@ using namespace zerO;
 
 const D3DVERTEXELEMENT9 g_TERRAIN_VERTEX_DESCRIPTION[] =
 {
-	{ 0, 0, D3DDECLTYPE_FLOAT2, 
+	{ 0, 0, D3DDECLTYPE_FLOAT1, 
 		D3DDECLMETHOD_DEFAULT, 
 		D3DDECLUSAGE_POSITION, 0 },
+
+	{ 0, 4, D3DDECLTYPE_FLOAT1, 
+		D3DDECLMETHOD_DEFAULT, 
+		D3DDECLUSAGE_POSITION, 1 },
+
 	{ 0, 8, D3DDECLTYPE_FLOAT2, 
 		D3DDECLMETHOD_DEFAULT, 
 		D3DDECLUSAGE_TEXCOORD, 0 },
 
 	{ 1, 0, D3DDECLTYPE_FLOAT1, 
 		D3DDECLMETHOD_DEFAULT, 
-		D3DDECLUSAGE_POSITION, 1 },
+		D3DDECLUSAGE_POSITION, 2 },
+
 	{ 1, 4, D3DDECLTYPE_FLOAT3, 
 		D3DDECLMETHOD_DEFAULT, 
 		D3DDECLUSAGE_NORMAL,   0 },
@@ -66,8 +72,8 @@ bool CTerrainSection::Create(
 
 	m_WorldRect.GetMaxX() = WorldRect.GetMaxX();
 	m_WorldRect.GetMinX() = WorldRect.GetMinX();
-	m_WorldRect.GetMaxY() = WorldRect.GetMaxY();
-	m_WorldRect.GetMinY() = WorldRect.GetMinY();
+	m_WorldRect.GetMaxZ() = WorldRect.GetMaxY();
+	m_WorldRect.GetMinZ() = WorldRect.GetMinY();
 
 	bool bResult  = __BuildVertexBuffer();
 
@@ -83,22 +89,22 @@ bool CTerrainSection::__BuildVertexBuffer()
 
 	FLOAT fHeight = m_pTerrain->GetHeight(m_uHeightMapX, m_uHeightMapY);
 
-	m_WorldRect.GetMinZ() = fHeight;
-	m_WorldRect.GetMaxZ() = fHeight;
+	m_WorldRect.GetMinY() = fHeight;
+	m_WorldRect.GetMaxY() = fHeight;
 
 	UINT x, y;
 
-	for (y = 0; y < m_VerticesY; ++y)
+	for (y = 0; y < m_VerticesY; y ++)
 	{
-		for (x = 0; x < m_VerticesX; ++x)
+		for (x = 0; x < m_VerticesX; x ++)
 		{
 			fHeight =  m_pTerrain->GetHeight(m_uHeightMapX + x, m_uHeightMapY + y);
 
 			pVertices[y * m_VerticesX + x].fHeight = fHeight;
 			pVertices[y * m_VerticesX + x].Normal  = m_pTerrain->GetNormal(m_uHeightMapX + x, m_uHeightMapY + y);
 
-			m_WorldRect.GetMinZ() = MIN(m_WorldRect.GetMinZ(), fHeight);
-			m_WorldRect.GetMaxZ() = MAX(m_WorldRect.GetMaxZ(), fHeight);
+			m_WorldRect.GetMinY() = MIN(m_WorldRect.GetMinY(), fHeight);
+			m_WorldRect.GetMaxY() = MAX(m_WorldRect.GetMaxY(), fHeight);
 		}
 	}
 
@@ -195,8 +201,8 @@ bool CTerrain:: Create(
 	m_uTableHeight   = pHeightMap->GetHeight();
 
 	m_MapScale.x     = m_WorldSize.x / m_uTableWidth;
-	m_MapScale.y     = m_WorldSize.y / m_uTableHeight;
-	m_MapScale.z     = m_WorldSize.z / 0xff;
+	m_MapScale.y     = m_WorldSize.y / 0xff;
+	m_MapScale.z     = m_WorldSize.z / m_uTableHeight;
 
 	_BuildHeightAndNormalTables( pHeightMap->GetTexture() );
 
@@ -204,7 +210,7 @@ bool CTerrain:: Create(
 	m_uSectorCountY = m_uTableHeight >> uShift;
 
 	m_SectorSize.x = m_WorldSize.x / m_uSectorCountX;
-	m_SectorSize.y = m_WorldSize.y / m_uSectorCountY;
+	m_SectorSize.y = m_WorldSize.z / m_uSectorCountY;
 
 	if( _BuildVertexBuffer() && _SetVertexDescription() && _BuildIndexBuffer() && _AllocateSectors() )
 		return true;
@@ -244,7 +250,7 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 	for(y = 0; y < m_uTableHeight; y ++)
 	{
 		for(x = 0; x < m_uTableWidth; x ++)
-			m_pfHeightTable[uTableIndex ++] = pMap[(uMapIndex ++) << 2] * m_MapScale.z + m_WorldExtents.GetMinZ();
+			m_pfHeightTable[uTableIndex ++] = pMap[(uMapIndex ++) << 2] * m_MapScale.y + m_WorldExtents.GetMinY();
 
 		uMapIndex += uPitch;
 	}
@@ -268,7 +274,7 @@ void CTerrain::_BuildHeightAndNormalTables(LPDIRECT3DTEXTURE9 pTexture)
 
 	DEBUG_ASSERT(SUCCEEDED(hr), hr);
 
-	hr = D3DXComputeNormalMap(pTemp, pTexture, NULL, 0, D3DX_CHANNEL_RED, m_uTableWidth * m_WorldSize.z / m_WorldSize.x);
+	hr = D3DXComputeNormalMap(pTemp, pTexture, NULL, 0, D3DX_CHANNEL_RED, m_uTableWidth * m_WorldSize.y / m_WorldSize.x);
 
 	DEBUG_ASSERT(SUCCEEDED(hr), hr);
 
@@ -329,7 +335,8 @@ bool CTerrain::_BuildVertexBuffer()
 
 		for(x = 0; x < m_uSectorVertices; x ++)
 		{
-			pVertices[uIndex].Position = Vertex;
+			pVertices[uIndex].x = Vertex.x;
+			pVertices[uIndex].z = Vertex.y;
 			pVertices[uIndex].UV.x = (float)x / (m_uSectorVertices - 1);
 			pVertices[uIndex].UV.y = (float)y / (m_uSectorVertices - 1);
 
@@ -389,7 +396,7 @@ bool CTerrain::_AllocateSectors()
 		for(x = 0; x < m_uSectorCountX; x ++)
 		{
 			SectorPosition.x = m_WorldExtents.GetMinX() + x * m_SectorSize.x;
-			SectorPosition.y = m_WorldExtents.GetMinY() + y * m_SectorSize.y;
+			SectorPosition.y = m_WorldExtents.GetMinZ() + y * m_SectorSize.y;
 
 			SectorRectangle.Set(
 				SectorPosition.x, 
@@ -470,16 +477,7 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 	if (pEffect)
 	{	
 		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
-		{
 			pEffect->Begin();
-
-			D3DXMATRIX Matrix;
-
-			if(m_pRootNode)
-				pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_pRootNode->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
-			else
-				pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
-		}
 
 		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
 
@@ -499,7 +497,7 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 			1.0f,
 			1.0f,
 			m_WorldExtents.GetMinX() + ( m_SectorSize.x * pSection->GetSectorX() ),
-			m_WorldExtents.GetMinY() + ( m_SectorSize.y * pSection->GetSectorY() ) );
+			m_WorldExtents.GetMinZ() + ( m_SectorSize.y * pSection->GetSectorY() ) );
 
 
 
@@ -633,14 +631,14 @@ void CRoamTerrainSection::BuildTriangleList()
 
 void CRoamTerrainSection::PrepareForRender()
 {
-	D3DXVECTOR2 Corner0( m_WorldRect.GetMinX(), m_WorldRect.GetMinY() );
-	D3DXVECTOR2 Corner1( m_WorldRect.GetMinX(), m_WorldRect.GetMaxY() );
-	D3DXVECTOR2 Corner2( m_WorldRect.GetMaxX(), m_WorldRect.GetMaxY() );
-	D3DXVECTOR2 Corner3( m_WorldRect.GetMaxX(), m_WorldRect.GetMinY() );
+	D3DXVECTOR2 Corner0( m_WorldRect.GetMinX(), m_WorldRect.GetMinZ() );
+	D3DXVECTOR2 Corner1( m_WorldRect.GetMinX(), m_WorldRect.GetMaxZ() );
+	D3DXVECTOR2 Corner2( m_WorldRect.GetMaxX(), m_WorldRect.GetMaxZ() );
+	D3DXVECTOR2 Corner3( m_WorldRect.GetMaxX(), m_WorldRect.GetMinZ() );
 
 	const D3DXVECTOR3 CameraPosition = CAMERA.GetPosition();
 
-	D3DXVECTOR2 ViewPoint(CameraPosition.x, CameraPosition.y);
+	D3DXVECTOR2 ViewPoint(CameraPosition.x, CameraPosition.z);
 
 	Corner0 -= ViewPoint;
 	Corner1 -= ViewPoint;
@@ -849,17 +847,6 @@ CRoamTerrain::~CRoamTerrain()
 {
 }
 
-void CRoamTerrain::Update()
-{
-	if(m_pRoamSection)
-	{
-		UINT uTotalSecctors = m_uSectorCountX * m_uSectorCountY;
-
-		for(UINT i = 0; i < uTotalSecctors; i ++)
-			m_pRoamSection[i].Update();
-	}
-}
-
 void CRoamTerrain::SetQuadTree(CQuadTree* pQuadTree)
 {
 	if(m_pRoamSection)
@@ -950,7 +937,7 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 		{
 			pEffect->Begin();
 
-			pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, pSection->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
+			//pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, pSection->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
 		}
 
 		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
@@ -971,7 +958,7 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 			1.0f,
 			1.0f,
 			m_WorldExtents.GetMinX() + ( m_SectorSize.x * pSection->GetSectorX() ),
-			m_WorldExtents.GetMinY() + ( m_SectorSize.y * pSection->GetSectorY() ) );
+			m_WorldExtents.GetMinZ() + ( m_SectorSize.y * pSection->GetSectorY() ) );
 
 
 
@@ -1085,7 +1072,7 @@ bool CRoamTerrain::_AllocateSectors()
 		for(x = 0; x < m_uSectorCountX; x ++)
 		{
 			SectorPosition.x = m_WorldExtents.GetMinX() + x * m_SectorSize.x;
-			SectorPosition.y = m_WorldExtents.GetMinY() + y * m_SectorSize.y;
+			SectorPosition.y = m_WorldExtents.GetMinZ() + y * m_SectorSize.y;
 
 			SectorRectangle.Set(
 				SectorPosition.x, 

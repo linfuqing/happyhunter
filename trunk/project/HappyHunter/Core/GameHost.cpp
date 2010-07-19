@@ -11,6 +11,7 @@ CGameHost* CGameHost::sm_pInstance = NULL;
 CGameHost::CGameHost(void) :
 m_pDevice(NULL),
 m_bLightEnable(false),
+m_pScene(NULL),
 m_fTime(0)
 {
 	DEBUG_ASSERT(!sm_pInstance, "Only one instance of CGameHost is permitted.");
@@ -65,9 +66,11 @@ bool CGameHost::Destroy()
 
 	DEBUG_DELETE(m_pRenderQueue);
 	DEBUG_DELETE(m_pCamera);
+	DEBUG_DELETE(m_pScene);
 
 	m_pRenderQueue = NULL;
 	m_pCamera      = NULL;
+	m_pScene       = NULL;
 
 	for(INT i = 0; i < TOTAL_RESOURCE_TYPES; i ++)
 		m_ResourceList[i].clear();
@@ -114,6 +117,7 @@ bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSe
 
 	memcpy( &m_DeviceSettings, &DeviceSettings, sizeof(DeviceSettings) );
 	DEBUG_NEW( m_pRenderQueue, CRenderQueue(uMaxQueue) );
+	DEBUG_NEW( m_pScene, CSceneNode );
 	DEBUG_NEW(m_pCamera, CCamera);
 
 	return true;

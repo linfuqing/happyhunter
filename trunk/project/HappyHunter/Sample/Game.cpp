@@ -21,6 +21,7 @@
 #define BULLET
 
 //#define BILLBOARDING
+//#define SKYBOX
 
 zerO::CGameHost g_Game;
 
@@ -165,13 +166,12 @@ CTest g_Test;
 #endif
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
-#define HEIGHT_MAP_FILE TEXT("∏ﬂ∂»Õº.jpg")
+#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
 zerO::CTexture  g_Texture;
 zerO::CTexture  g_Detail;
-zerO::CSceneNode g_NootNode;
 #endif
 
 zerO::CSurface  g_Surface;
@@ -190,6 +190,10 @@ zerO::CBullet g_Bullet;
 
 #ifdef BILLBOARDING
 zerO::CBillboarding g_Billboarding;
+#endif
+
+#ifdef SKYBOX
+zerO::CSkyBox g_SkyBox;
 #endif
 
 #ifdef PARTICLESYSTEM
@@ -336,23 +340,14 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	CAMERA.SetProjection(D3DX_PI / 4.0f, 1.0f, 0.5f, 3000.0f);
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
-	D3DXMATRIX Matrix, Rotation;
-
-	D3DXMatrixIdentity(&Matrix);
-
-	D3DXMatrixRotationX(&Rotation, D3DX_PI / 2);
-
-	Matrix *= Rotation;
-
-	g_NootNode.SetTransform(Matrix);
-
+	
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 3000.0f, 3000.0f, - 3000.0f, 3000.0f, 0.0f, 500.0f);
+	Rect.Set(- 3000.0f, 3000.0f, 0.0f, 500.0f, - 3000.0f, 3000.0f);
 	g_QuadTree.Create(Rect, 4);
 
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
-	g_Terrain.Create(&g_NootNode, &g_HeightMap, Rect, 6);
+	g_Terrain.Create(NULL, &g_HeightMap, Rect, 6);
 
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
@@ -518,6 +513,22 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	 GAMEHOST.SetLightEnable(true);
 #endif
 
+#ifdef SKYBOX
+	 g_SkyBox.Create(500.0f);
+
+	 D3DMATERIAL9 Matrial;
+	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
+     Matrial.Diffuse.r = Matrial.Ambient.r = 0.0f;
+     Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
+     Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
+     Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
+
+	 g_Surface.SetMaterial(Matrial);
+	 g_Surface.LoadTexture(TEXT("heightmap.jpg"), 0);
+
+	 g_SkyBox.GetRenderMethod().SetSurface(&g_Surface);
+#endif
+
     return S_OK;
 }
 
@@ -650,9 +661,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	//z -= 1;
 
-	/*g_NootNode.Update();
-	g_Terrain.Update();*/
-
 #ifdef ROAMTERRAIN
 	g_Terrain.SetTessellationParameters(10.33f, 0.3f);
 #endif
@@ -688,6 +696,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 #ifdef BILLBOARDING
 	g_Billboarding.Update();
+#endif
+
+#ifdef SKYBOX
+	g_SkyBox.Update();
 #endif
 }
 
@@ -767,6 +779,10 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 
 #ifdef BILLBOARDING
 		g_Billboarding.ApplyForRender();
+#endif
+
+#ifdef SKYBOX
+		g_SkyBox.ApplyForRender();
 #endif
 
 		//Ω· ¯‰÷»æ
