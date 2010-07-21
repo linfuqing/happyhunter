@@ -34,6 +34,7 @@ namespace zerO
 	class CRenderQueue;
 	class CSceneNode;
 	class CCamera;
+	class CBackground;
 
 	///
 	// 主渲染框架类，单件模式，包含资源池，帧渲染调用，
@@ -62,14 +63,19 @@ namespace zerO
 		FLOAT GetElapsedTime()const;
 		FLOAT64 GetTime()const;
 
-		CSceneNode* GetScene();
 		CCamera& GetCamera();
+
+		CSceneNode* GetScene()const;
+
+		CBackground* GetBackground()const;
 
 		CLightManager& GetLightManager();
 
 		const DEVICESETTINGS& GetDeviceSettings()const;
 
 		void SetLightEnable(bool bValue);
+
+		void SetBackground(CBackground* pBackground);
 
 		RESOURCEHANDLE AddResource(CResource* const pResource, RESOURCETYPE Type);
 		CResource* GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type);
@@ -101,6 +107,8 @@ namespace zerO
 
 		CCamera* m_pCamera;
 
+		CBackground* m_pBackground;
+
 		CLightManager m_LightManager;
 
 		bool m_bLightEnable;
@@ -130,9 +138,14 @@ namespace zerO
 		return *m_pCamera;
 	}
 
-	inline CSceneNode* CGameHost::GetScene()
+	inline CSceneNode* CGameHost::GetScene()const
 	{
 		return m_pScene;
+	}
+
+	inline CBackground* CGameHost::GetBackground()const
+	{
+		return m_pBackground;
 	}
 
 	inline const CGameHost::DEVICESETTINGS& CGameHost::GetDeviceSettings()const
@@ -153,6 +166,11 @@ namespace zerO
 	inline CLightManager& CGameHost::GetLightManager()
 	{
 		return m_LightManager;
+	}
+
+	inline void CGameHost::SetBackground(CBackground* pBackground)
+	{
+		m_pBackground = pBackground;
 	}
 
 	inline void CGameHost::SetLightEnable(bool bValue)

@@ -42,9 +42,20 @@ void InitParticle(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 
 	if(fOffsetRadius)
 	{
-		pParticle->Vertex.Position.x += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
-		pParticle->Vertex.Position.y += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
-		pParticle->Vertex.Position.z += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+		switch( pParent->GetOffsetType() )
+		{
+		case CBullet::RANDOM_CUBE:
+			pParticle->Vertex.Position.x += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.y += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.z += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+			break;
+
+		case CBullet::RANDOM_CIRCLE:
+			zerO::FLOAT fRandom = (zerO::FLOAT)rand() / RAND_MAX, fSin = sin(fRandom), fCos = cos(fRandom);
+			pParticle->Vertex.Position.x += fOffsetRadius * fCos - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.y += fOffsetRadius * fSin - fOffsetRadius * 0.5f;
+			break;
+		}
 	}
 
 	pParticle->Parameter.Rectangle.Extract( pParticle->Vertex.Position, pParent->GetSize() );
@@ -115,6 +126,27 @@ CParticleSystem<BULLETPARAMETERS>::LPPARTICLE CBullet::FindHitParticle(const CRe
 	}
 
 	return NULL;
+}
+
+bool CBullet::FreeHitParticle(const CRectangle3D Rect)const
+{
+	bool bResult = false;
+
+	PARTICLENODE* pParticle = m_pParticles;
+
+	while(pParticle)
+	{
+		if( pParticle->Particle.Parameter.Rectangle.TestHit(Rect) )
+		{
+			pParticle->Particle.Parameter.bIsFree = true;
+
+			bResult = true;
+		}
+
+		pParticle = pParticle->pNext;
+	}
+
+	return bResult;
 }
 
 ///

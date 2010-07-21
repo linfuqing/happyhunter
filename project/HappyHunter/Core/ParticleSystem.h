@@ -354,7 +354,7 @@ namespace zerO
 			UINT uSteps = m_pfnGetSteps(pParticle->Particle);
 
 			//通过对其在不同位置渲染多次来实现模糊效果
-			for( DWORD i = 0; i < uSteps; i++ )
+			for( UINT i = 0; i < uSteps; i++ )
 			{
 				if( !m_pfnSetRenderData(pParticle->Particle, *pVertices) )
 					continue;

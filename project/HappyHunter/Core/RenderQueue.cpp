@@ -124,9 +124,9 @@ void CRenderQueue::Render()
 			pCurrentEntry->pParent->Render(pCurrentEntry, uFlags);
 		}
 
-		if(pCurrentEntry->hEffect)
+		if(m_ppEntryList[m_uActiveEntries - 1]->hEffect)
 		{
-			pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pCurrentEntry->hEffect, RESOURCE_EFFECT) );
+			pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(m_ppEntryList[m_uActiveEntries - 1]->hEffect, RESOURCE_EFFECT) );
 
 			pEffect->End();
 		}
