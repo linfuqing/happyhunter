@@ -3,6 +3,7 @@
 #include "Resource.h"
 #include "Camera.h"
 #include "RenderQueue.h"
+#include "Background.h"
 
 using namespace zerO;
 
@@ -10,8 +11,9 @@ CGameHost* CGameHost::sm_pInstance = NULL;
 
 CGameHost::CGameHost(void) :
 m_pDevice(NULL),
-m_bLightEnable(false),
 m_pScene(NULL),
+m_pBackground(NULL),
+m_bLightEnable(false),
 m_fTime(0)
 {
 	DEBUG_ASSERT(!sm_pInstance, "Only one instance of CGameHost is permitted.");
@@ -129,14 +131,26 @@ bool CGameHost::Update(zerO::FLOAT fElapsedTime)
 
 	m_fTime += fElapsedTime;
 
+	m_pCamera->Update();
+
 	if(m_bLightEnable)
 		m_LightManager.Activate();
+
+	if(m_pBackground)
+		m_pBackground->Update();
 
 	return true;
 }
 
 bool CGameHost::BeginRender()
 {
+	if(m_pBackground)
+	{
+		m_pDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+		m_pBackground->Render();
+		m_pDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+	}
+
 	return true;
 }
 

@@ -156,6 +156,8 @@ void CBillboarding::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT3
 		if ( TEST_BIT(uFlag, CRenderQueue::SURFACE) )
 			pEffect->SetSurface( m_RenderMethod.GetSurface() );
 
+		pEffect->GetEffect()->CommitChanges();
+
 		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 
 		pEffect->GetEffect()->EndPass();

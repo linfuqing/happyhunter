@@ -3,19 +3,26 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
+
 #include "DXUT.h"
 #include "resource.h"
+
+#include "SDKmisc.h"
+
 #include "core.h"
 //#include "Mission.h"
 //#include "Prize.h"
 #include "SkinMesh.h"
 #include "Bullet.h"
 
+ID3DXFont*                 g_pFont = NULL;          //ID3DXFont字体对象
+ID3DXSprite*               g_pTextSprite = NULL;    //ID3DXSprite文本精灵对象
+
 //#define PARTICLESYSTEM
 //#define TERRAIN
 //#define MISSION
 //#define PRIZE
-//#define ROAMTERRAIN
+//#define TERRAIN
 //#define SKINMESH
 
 #define BULLET
@@ -24,6 +31,7 @@
 //#define SKYBOX
 
 zerO::CGameHost g_Game;
+
 
 #ifdef TEST
 //顶点描述：位置和纹理坐标
@@ -166,7 +174,7 @@ CTest g_Test;
 #endif
 
 #if defined(TERRAIN) || defined(ROAMTERRAIN)
-#define HEIGHT_MAP_FILE TEXT("heightmap.jpg")
+#define HEIGHT_MAP_FILE TEXT("最终高度图.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
@@ -175,6 +183,7 @@ zerO::CTexture  g_Detail;
 #endif
 
 zerO::CSurface  g_Surface;
+zerO::CSurface  g_Surface1;
 
 #ifdef ROAMTERRAIN
 zerO::CRoamTerrain  g_Terrain;
@@ -330,6 +339,13 @@ void SetParticleRenderData(const zerO::CParticleSystem<PARTICLEPARAMETERS>::PART
 HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc,
                                      void* pUserContext )
 {
+	HRESULT hr;
+
+	//创建字体
+    V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
+                         OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+                         L"Arial", &g_pFont ) );
+
 	//单件模式：首先需要构建一个GameHost
 	zerO::CGameHost::DEVICESETTINGS DeviceSettings;
 	memcpy( &DeviceSettings, &DXUTGetDeviceSettings(), sizeof(zerO::CGameHost::DEVICESETTINGS) );
@@ -352,7 +368,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
 
-	g_Texture.Load( TEXT("纹理.dds") );
+	g_Texture.Load( TEXT("最终纹理.dds") );
 
 	g_Detail.Load( TEXT("dirt_grass.jpg") );
 
@@ -424,31 +440,51 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #endif
 
 #ifdef SKINMESH
+
+	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinMesh.fx") );
 	if ( !g_SkinMesh.Create(TEXT("player.X")) )
 		return S_FALSE;
 
-	D3DLIGHT9 Light;
+	/*D3DLIGHT9 Light;
 
 	Light.Direction.x = 0.0f;
 	Light.Direction.y = 1.0f;
 	Light.Direction.z = - 1.0f;
 
-	LIGHTMANAGER.SetLight(Light, 0);
+	LIGHTMANAGER.SetLight(Light, 0);*/
+
+	D3DXVECTOR3 vecDir;
+     D3DLIGHT9 light;
+	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
+     light.Type       = D3DLIGHT_DIRECTIONAL;
+     light.Diffuse.r  = 1.0f;
+     light.Diffuse.g  = 1.0f;
+     light.Diffuse.b  = 1.0f;
+	 vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+	 light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+     light.Range       = 1000.0f;
+
+	 LIGHTMANAGER.SetLight(light, 0);
+	 LIGHTMANAGER.SetAmbient(0x00808080);
+
+	 GAMEHOST.SetLightEnable(true);
 #endif
 
 #ifdef BULLET
-	g_Bullet.Create(100, 500, 2000, 1.0f);
+	g_Bullet.Create(6, 500, 2000, 1.0f);
 
-	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Direction(0.0f, 0.0f, 1.0f);;
+	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Direction(0.0f, 0.0f, 1.0f);
 
 	g_Bullet.SetSource(Source);
 	g_Bullet.SetDirection(Direction);
 
 	g_Bullet.SetSpeed(10.0f);
-	g_Bullet.SetGravity(0.01f);
+	g_Bullet.SetGravity(0.00f);
 	g_Bullet.SetStep(100);
 	g_Bullet.SetLength(10);
 	g_Bullet.SetOffsetRadius(2);
+	g_Bullet.SetOffsetType(zerO::CBullet::RANDOM_CIRCLE);
 
 	D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
@@ -514,19 +550,24 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #endif
 
 #ifdef SKYBOX
-	 g_SkyBox.Create(500.0f);
+	 g_SkyBox.Create(1000.0f);
 
-	 D3DMATERIAL9 Matrial;
+	 //D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
      Matrial.Diffuse.r = Matrial.Ambient.r = 0.0f;
      Matrial.Diffuse.g = Matrial.Ambient.g = 1.0f;
      Matrial.Diffuse.b = Matrial.Ambient.b = 1.0f;
      Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
 
-	 g_Surface.SetMaterial(Matrial);
-	 g_Surface.LoadTexture(TEXT("heightmap.jpg"), 0);
+	 g_Surface1.SetMaterial(Matrial);
+	 g_Surface1.LoadTexture(TEXT("blue_0005.png"), 0);
+	 //g_Surface.LoadTexture(TEXT("blue_0005.png"), 1);
+	 g_Surface1.LoadTexture(TEXT("blue_0001.png"), 2);
+	 g_Surface1.LoadTexture(TEXT("blue_0003.png"), 3);
+	 g_Surface1.LoadTexture(TEXT("blue_0002.png"), 4);
+	 g_Surface1.LoadTexture(TEXT("blue_0004.png"), 5);
 
-	 g_SkyBox.GetRenderMethod().SetSurface(&g_Surface);
+	 g_SkyBox.GetRenderMethod().SetSurface(&g_Surface1);
 #endif
 
     return S_OK;
@@ -540,6 +581,14 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc,
                                     void* pUserContext )
 {
+	HRESULT hr;
+
+		//恢复字体
+    if( g_pFont )
+        V_RETURN( g_pFont->OnResetDevice() );
+   
+	//创建ID3DXSprite接口对象
+    V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
 	//自动化重建（未完全）
 	if( !GAMEHOST.Restore(*pBackBufferSurfaceDesc) )
@@ -633,7 +682,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.SetTransform(Matrix);
 
-	CAMERA.Update();
+	//CAMERA.Update();
 
 	if( DXUTIsKeyDown(VK_UP) )
 		y += 10.0f;
@@ -691,6 +740,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if( DXUTIsMouseButtonDown(VK_LBUTTON) )
 		g_Bullet.Shoot();
 
+	zerO::CRectangle3D Rect;
+
+	Rect.Set(- 1000000, 10000000, - 10000000, 10000000, 100, 1000000);
+
+	//g_Bullet.FreeHitParticle(Rect);
+
 	g_Bullet.Update();
 #endif
 
@@ -699,10 +754,26 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 #endif
 
 #ifdef SKYBOX
-	g_SkyBox.Update();
+	//g_SkyBox.Update();
 #endif
 }
 
+//-----------------------------------------------------------------------------
+// Desc: 渲染文本
+//-----------------------------------------------------------------------------
+void RenderText()
+{
+    CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, 15 );
+
+    //显示当前Direct3D设备状态和渲染帧速率
+    txtHelper.Begin();
+    txtHelper.SetInsertionPos( 5, 5 );
+    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
+    txtHelper.DrawTextLine( DXUTGetFrameStats(true) );
+    txtHelper.DrawTextLine( DXUTGetDeviceStats() );
+
+    txtHelper.End();
+}
 
 //--------------------------------------------------------------------------------------
 // Render the scene using the D3D9 device
@@ -782,11 +853,16 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 #endif
 
 #ifdef SKYBOX
-		g_SkyBox.ApplyForRender();
+		//g_SkyBox.ApplyForRender();
 #endif
 
 		//结束渲染
 		g_Game.EndRender();
+
+		//渲染文本和控件
+        DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"HUD / Stats" ); 
+        RenderText();
+        DXUT_EndPerfEvent();
 
         V( pd3dDevice->EndScene() );
     }
@@ -808,6 +884,10 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 //--------------------------------------------------------------------------------------
 void CALLBACK OnD3D9LostDevice( void* pUserContext )
 {
+	if( g_pFont )
+        g_pFont->OnLostDevice();
+    SAFE_RELEASE( g_pTextSprite );
+
 	//自动化释放
 	DEBUG_ASSERT(GAMEHOST.Disable(), "Disable error.");
 #ifdef SKINMESH
@@ -821,6 +901,8 @@ void CALLBACK OnD3D9LostDevice( void* pUserContext )
 //--------------------------------------------------------------------------------------
 void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 {
+	SAFE_RELEASE( g_pFont );
+
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
 

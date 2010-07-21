@@ -23,6 +23,12 @@ namespace zerO
 		public CParticleSystem<BULLETPARAMETERS>
 	{
 	public:
+		typedef enum
+		{
+			RANDOM_CUBE,
+			RANDOM_CIRCLE
+		}OFFSETTYPE;
+
 		CBullet(void);
 		~CBullet(void);
 
@@ -37,6 +43,8 @@ namespace zerO
 
 		//子弹的大小
 		FLOAT GetSize()const;
+
+		OFFSETTYPE GetOffsetType()const;
 
 		//弹夹的容量(最大冷却数量),最大一次性发射多少子弹
 		UINT  GetMaxinumNumber()const;
@@ -61,6 +69,8 @@ namespace zerO
 		void SetOffsetRadius(FLOAT fOffsetRadius);
 		void SetSize(FLOAT fSize);
 
+		void SetOffsetType(OFFSETTYPE Type);
+
 		void SetMaxinumNumber(UINT uMaxNum);
 		void SetStep(UINT uStep);
 		void SetLength(UINT uLength);
@@ -69,6 +79,8 @@ namespace zerO
 		void SetDirection(const D3DXVECTOR3& Direction);
 
 		LPPARTICLE FindHitParticle(const CRectangle3D Rect)const;
+
+		bool FreeHitParticle(const CRectangle3D Rect)const;
 
 		///
 		// 射击
@@ -94,6 +106,8 @@ namespace zerO
 		FLOAT m_fSpeed;
 		FLOAT m_fGravity;
 		FLOAT m_fOffsetRadius;
+
+		OFFSETTYPE m_OffsetType;
 
 		UINT  m_uStep;
 		UINT  m_uLength;
@@ -123,6 +137,11 @@ namespace zerO
 	inline FLOAT CBullet::GetSize()const
 	{
 		return m_fPointSize;
+	}
+
+	inline CBullet::OFFSETTYPE CBullet::GetOffsetType()const
+	{
+		return m_OffsetType;
 	}
 
 	inline UINT CBullet::GetMaxinumNumber()const
@@ -175,6 +194,11 @@ namespace zerO
 	inline void CBullet::SetSize(FLOAT fSize)
 	{
 		m_fPointSize = fSize;
+	}
+
+	inline void CBullet::SetOffsetType(OFFSETTYPE Type)
+	{
+		m_OffsetType = Type;
 	}
 
 	inline void CBullet::SetMaxinumNumber(UINT uMaxNum)
