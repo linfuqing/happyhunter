@@ -217,7 +217,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..\Core"
+				AdditionalIncludeDirectories="..\Effect;..\Core;DXUT\Optional"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -242,7 +242,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/IGNORE:4089"
+				AdditionalOptions="/IGNORE:4089 d3dx10.lib"
 				AdditionalDependencies="dxerr.lib dxguid.lib d3dx9.lib d3d9.lib winmm.lib comctl32.lib"
 				OutputFile="$(OutDir)/Sample.exe"
 				LinkIncremental="1"
@@ -797,12 +797,27 @@
 		<File
 			RelativePath=".\Game.cpp"
 			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="Sample.cpp"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
 				ExcludedFromBuild="true"
 				>
 				<Tool

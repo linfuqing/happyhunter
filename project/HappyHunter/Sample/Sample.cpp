@@ -87,7 +87,9 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Terrain.SetQuadTree(&g_QuadTree);
 
 
-	g_SkyBox.Create(1000.0f);
+	g_SkyBox.Create(10.0f);
+
+	g_SkyBox.SetCloudSpeed(0.01f, 0.01f);
 
 	D3DMATERIAL9 Matrial;
 	memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
@@ -97,14 +99,32 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
 
 	g_SkyBoxSurface.SetMaterial(Matrial);
-	g_SkyBoxSurface.LoadTexture(TEXT("blue_0005.png"), 0);
-	//g_Surface.LoadTexture(TEXT("blue_0005.png"), 1);
-	g_SkyBoxSurface.LoadTexture(TEXT("blue_0001.png"), 2);
-	g_SkyBoxSurface.LoadTexture(TEXT("blue_0003.png"), 3);
-	g_SkyBoxSurface.LoadTexture(TEXT("blue_0002.png"), 4);
-	g_SkyBoxSurface.LoadTexture(TEXT("blue_0004.png"), 5);
+	//g_SkyBoxSurface.LoadTexture(TEXT("blue_0005.png"), 0);
+	////g_Surface.LoadTexture(TEXT("blue_0005.png"), 1);
+	//g_SkyBoxSurface.LoadTexture(TEXT("blue_0001.png"), 2);
+	//g_SkyBoxSurface.LoadTexture(TEXT("blue_0003.png"), 3);
+	//g_SkyBoxSurface.LoadTexture(TEXT("blue_0002.png"), 4);
+	//g_SkyBoxSurface.LoadTexture(TEXT("blue_0004.png"), 5);
+	//g_SkyBoxSurface.LoadTexture(TEXT("Cloud1.png"), 6);
+
+	/*g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_UP.jpg"), 0);
+	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_DN.jpg"), 1);
+	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_LF.jpg"), 2);
+	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_RT.jpg"), 3);
+	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_FR.jpg"), 4);
+	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_BK.jpg"), 5);*/
+	//g_SkyBoxSurface.LoadTexture(TEXT("night/Cloud.tga"), 6);
+
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_UP.dds"), 0);
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_DN.dds"), 1);
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_LF.dds"), 2);
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_RT.dds"), 3);
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_FR.dds"), 5);
+	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_BK.dds"), 4);
+	//g_SkyBoxSurface.LoadTexture(TEXT("Cloud1.png"), 6);
 
 	g_SkyBox.GetRenderMethod().SetSurface(&g_SkyBoxSurface);
+	g_SkyBox.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 
 		 //…Ë÷√µ∆π‚
 	 D3DXVECTOR3 vecDir;
@@ -151,17 +171,17 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 {
 	GAMEHOST.Update(fElapsedTime);
 
-	static FLOAT x = 0, y = 0, z = 0, RotationY = 0;
+	static FLOAT x = 0, y = 0, z = 0, RotationY = 0, RotationX = 0;
 
 	D3DXMATRIX Matrix, Rotation, Translation;
 
 	D3DXMatrixIdentity(&Matrix);
 
-	D3DXMatrixRotationY(&Rotation, RotationY / 180 * D3DX_PI);
-
-	D3DXMatrixTranslation(&Translation, x, y, z);
+	D3DXMatrixRotationYawPitchRoll(&Rotation, RotationY / 180 * D3DX_PI, RotationX / 180 * D3DX_PI, 0.0f);
 
 	Matrix *= Rotation;
+
+	D3DXMatrixTranslation(&Translation, x, y, z);
 
 	Matrix *= Translation;
 
@@ -190,6 +210,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	if( DXUTIsKeyDown('D') )
 		RotationY += 1.0f;
+
+	if( DXUTIsKeyDown('Q') )
+		RotationX -= 1.0f;
+
+	if( DXUTIsKeyDown('E') )
+		RotationX += 1.0f;
 }
 
 
