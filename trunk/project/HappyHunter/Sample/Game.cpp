@@ -472,19 +472,19 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 #endif
 
 #ifdef BULLET
-	g_Bullet.Create(6, 500, 2000, 1.0f);
+	g_Bullet.Create(100, 500, 500, 1.0f);
 
-	D3DXVECTOR3 Source(- 1.0f, - 1.0f, 0.0f), Direction(0.0f, 0.0f, 1.0f);
+	D3DXVECTOR3 Source(- 1.0f, 0.0f, 1.0f), Direction(0.0f, 0.0f, 1.0f);
 
 	g_Bullet.SetSource(Source);
 	g_Bullet.SetDirection(Direction);
 
-	g_Bullet.SetSpeed(10.0f);
-	g_Bullet.SetGravity(0.00f);
-	g_Bullet.SetStep(100);
-	g_Bullet.SetLength(10);
+	g_Bullet.SetSpeed(1.0f);
+	g_Bullet.SetGravity(0.01f);
+	g_Bullet.SetStep(10);
+	g_Bullet.SetLength(100);
 	g_Bullet.SetOffsetRadius(2);
-	g_Bullet.SetOffsetType(zerO::CBullet::RANDOM_CIRCLE);
+	g_Bullet.SetOffsetType(zerO::CBullet::RANDOM_CUBE);
 
 	D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
@@ -512,7 +512,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	 LIGHTMANAGER.SetLight(light, 0);
 	 LIGHTMANAGER.SetAmbient(0x00808080);
 
-	 GAMEHOST.SetLightEnable(true);
+	// GAMEHOST.SetLightEnable(true);
 #endif
 
 #ifdef BILLBOARDING
@@ -740,12 +740,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if( DXUTIsMouseButtonDown(VK_LBUTTON) )
 		g_Bullet.Shoot();
 
-	zerO::CRectangle3D Rect;
-
-	Rect.Set(- 1000000, 10000000, - 10000000, 10000000, 100, 1000000);
-
-	//g_Bullet.FreeHitParticle(Rect);
-
 	g_Bullet.Update();
 #endif
 
@@ -903,6 +897,7 @@ void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 {
 	SAFE_RELEASE( g_pFont );
 
+	GAMEHOST.Destroy();
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
 

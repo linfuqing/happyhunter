@@ -3,7 +3,9 @@
 #include "Camera.h"
 
 using namespace zerO;
-CSkyBox::CSkyBox(void)
+CSkyBox::CSkyBox(void) :
+m_fCloudSpeedX(0.0f),
+m_fCloudSpeedY(0.0f)
 {
 }
 
@@ -211,44 +213,89 @@ void CSkyBox::Update()
 
 void CSkyBox::Render()
 {
-	static CSurface::TEXITUREFLAGTYPE TextureFlag = 0;
-
-	m_VertexBuffer.Activate(0, 0, true);
-
-	TextureFlag = m_RenderMethod.GetSurface()->GetTextureFlag();
-
-	DEVICE.SetTransform( D3DTS_WORLD,      &GetMatrix() ); 
-	DEVICE.SetTransform( D3DTS_VIEW,       &CAMERA.GetViewMatrix() );
-	DEVICE.SetTransform( D3DTS_PROJECTION, &CAMERA.GetProjectionMatrix() );
-
-	DEVICE.SetVertexShader(NULL);
-	DEVICE.SetPixelShader(NULL);
-
-	DEVICE.SetMaterial( &m_RenderMethod.GetSurface()->GetMaterial() );
-
-	DEVICE.SetRenderState(D3DRS_LIGHTING, FALSE);
-
 #define SET_TEXTURE(i) \
-	if( TEST_BIT(TextureFlag, i) ) \
-		DEVICE.SetTexture( 0, m_RenderMethod.GetSurface()->GetTexture(i)->GetTexture() )
+	if( TEST_BIT(m_RenderMethod.GetSurface()->GetTextureFlag(), i) ) \
+	{\
+		pEffect->SetTexture( 0, *m_RenderMethod.GetSurface()->GetTexture(i) );\
+		pEffect->GetEffect()->CommitChanges();\
+	}
 
-	SET_TEXTURE(0);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0 , 2);
+	CEffect* pEffect = m_RenderMethod.GetEffect();
 
-	SET_TEXTURE(1);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 4 , 2);
+	if(pEffect)
+	{
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, true         );
+		DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
+		DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
-	SET_TEXTURE(2);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 8 , 2);
+		pEffect->Begin();
 
-	SET_TEXTURE(3);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 12, 2);
+		pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, GetMatrix() * CAMERA.GetViewProjectionMatrix() );
 
-	SET_TEXTURE(4);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 16, 2);
+		m_VertexBuffer.Activate(0, 0, true);
 
-	SET_TEXTURE(5);
-	DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 20, 2);
+		const D3DMATERIAL9& MATERIAL = m_RenderMethod.GetSurface()->GetMaterial();
+		pEffect->SetParameter(CEffect::AMBIENT_MATERIAL_COLOR, &MATERIAL.Ambient);
+		pEffect->SetParameter(CEffect::DIFFUSE_MATERIAL_COLOR, &MATERIAL.Diffuse);
+		pEffect->SetParameter(CEffect::EMISSIVE_MATERIAL_COLOR, &MATERIAL.Emissive);
+		pEffect->SetParameter(CEffect::SPECULAR_MATERIAL_COLOR, &MATERIAL.Specular);
+		pEffect->SetParameter(CEffect::SPECULAR_MATERIAL_POWER, &MATERIAL.Power);
+
+		UINT uTotalPass = pEffect->GetTechniqueDesc().Passes, i;
+
+		D3DXVECTOR2 UVOffset(0.0f, 0.0f);
+
+		static FLOAT fUVOffsetX = 0.0f, fUVOffsetY = 0.0f;
+
+		pEffect->SetParameter(CEffect::UV, &UVOffset);
+
+		for (i = 0; i < uTotalPass; i ++)
+		{
+			pEffect->GetEffect()->BeginPass(i);
+
+			SET_TEXTURE(0);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0 , 2);
+
+			SET_TEXTURE(1);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 4 , 2);
+
+			SET_TEXTURE(2);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 8 , 2);
+
+			SET_TEXTURE(3);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 12, 2);
+
+			SET_TEXTURE(4);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 16, 2);
+
+			SET_TEXTURE(5);
+			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 20, 2);
+
+			if( TEST_BIT(m_RenderMethod.GetSurface()->GetTextureFlag(), 6) ) 
+			{
+				fUVOffsetX += m_fCloudSpeedX;
+				fUVOffsetY += m_fCloudSpeedY;
+
+				UVOffset.x = fUVOffsetX;
+				UVOffset.y = fUVOffsetY;
+				pEffect->SetParameter(CEffect::UV, &UVOffset);
+
+				pEffect->SetTexture( 0, *m_RenderMethod.GetSurface()->GetTexture(6) );
+				pEffect->GetEffect()->CommitChanges();
+				DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0 , 2);
+
+				UVOffset.x = 0.0f;
+				UVOffset.y = 0.0f;
+				pEffect->SetParameter(CEffect::UV, &UVOffset);
+			}
+
+			pEffect->GetEffect()->EndPass();
+		}
+
+		pEffect->End();
+
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, false        );
+	}
 
 #undef SET_TEXTURE
 }

@@ -8,11 +8,25 @@ namespace zerO
 	// Velocity: 加速度
 	// Rectangle: 包围盒
 	///
-	typedef struct
+	typedef struct BULLETPARAMETERS
 	{
 		D3DXVECTOR3 Velocity;
 		CRectangle3D Rectangle;
+		D3DXVECTOR3* pOldData;
+		UINT uOldDataLength;
+		UINT uOldDataIndex;
 		bool bIsFree;
+
+		BULLETPARAMETERS() :
+		pOldData(NULL),
+			uOldDataLength(0)
+		{
+		}
+
+		~BULLETPARAMETERS()
+		{
+			DEBUG_DELETE_ARRAY(pOldData);
+		}
 	}BULLETPARAMETERS;
 
 
