@@ -49,8 +49,8 @@ namespace zerO
 		UINT m_uHeightMapY;
 		UINT m_uSectorX; 
 		UINT m_uSectorY; 
-		UINT m_VerticesX; 
-		UINT m_VerticesY; 
+		UINT m_uVerticesX; 
+		UINT m_uVerticesY; 
 	};
 
 	inline CVertexBuffer& CTerrainSection::GetVertexBuffer()
@@ -84,7 +84,9 @@ namespace zerO
 
 		UINT GetTableIndex(UINT uMapX, UINT uMapY)const;
 
-		FLOAT GetHeight(UINT x, UINT y)const;
+		FLOAT CalculateHeight(FLOAT u, FLOAT v)const;
+		FLOAT GetHeight(FLOAT x, FLOAT z)const;
+		FLOAT GetHeight(INT x, INT y)const;
 		FLOAT GetHeight(UINT uIndex)const;
 		const D3DXVECTOR3& GetNormal(UINT x, UINT y)const;
 
@@ -157,13 +159,19 @@ namespace zerO
 		return uMapY * m_uTableWidth + uMapX;
 	}
 
-	inline FLOAT CTerrain::GetHeight(UINT x, UINT y)const
+	inline FLOAT CTerrain::GetHeight(FLOAT x, FLOAT z)const
 	{
-		if (x >= m_uTableWidth) 
-			x = m_uTableWidth - 1;
+		return CalculateHeight( 
+			( x - m_WorldExtents.GetMinX() ) / m_WorldSize.x,
+			( z - m_WorldExtents.GetMinZ() ) / m_WorldSize.z );
+	}
 
-		if (y >= m_uTableHeight) 
-			y = m_uTableHeight - 1;
+	inline FLOAT CTerrain::GetHeight(INT x, INT y)const
+	{
+		INT nTableWidth = m_uTableWidth, nTableHeight = m_uTableHeight;
+
+		x = x < nTableWidth  ? (x < 0 ? 0 : x) : nTableWidth  - 1;
+		y = y < nTableHeight ? (y < 0 ? 0 : y) : nTableHeight - 1;
 
 		return m_pfHeightTable[y * m_uTableWidth + x];
 	}
