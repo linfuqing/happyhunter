@@ -181,17 +181,17 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	Matrix *= Rotation;
 
-	D3DXMatrixTranslation(&Translation, x, y, z);
+	D3DXMatrixTranslation( &Translation, x, g_Terrain.GetHeight(CAMERA.GetPosition().x, CAMERA.GetPosition().z) + 100.0f, z );
 
 	Matrix *= Translation;
 
 	CAMERA.SetTransform(Matrix);
 
-	if( DXUTIsKeyDown(VK_UP) )
+	/*if( DXUTIsKeyDown(VK_UP) )
 		y += 10.0f;
 	
 	if( DXUTIsKeyDown(VK_DOWN) )
-		y -= 10.0f;
+		y -= 10.0f;*/
 
 	if( DXUTIsKeyDown(VK_LEFT) )
 		x -= 10.0f;

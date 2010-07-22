@@ -33,8 +33,8 @@ CTerrainSection::CTerrainSection(void) :
 		m_uHeightMapY(0),
 		m_uSectorX(0),
 		m_uSectorY(0), 
-		m_VerticesX(0),
-		m_VerticesY(0)
+		m_uVerticesX(0),
+		m_uVerticesY(0)
 {
 }
 
@@ -63,8 +63,8 @@ bool CTerrainSection::Create(
 		pRootNode->AddChild(this);
 
 	m_pTerrain    = pParent;
-	m_VerticesX    = VerticesX;
-	m_VerticesY    = VerticesY;
+	m_uVerticesX    = VerticesX;
+	m_uVerticesY    = VerticesY;
 	m_uSectorX    = uSectorX;
 	m_uSectorY    = uSectorY;
 	m_uHeightMapX = uHeightMapX;
@@ -85,23 +85,23 @@ bool CTerrainSection::Create(
 bool CTerrainSection::__BuildVertexBuffer()
 {
 	LPVERTEX pVertices;
-	DEBUG_NEW(pVertices, VERTEX[m_VerticesX * m_VerticesY]);
+	DEBUG_NEW(pVertices, VERTEX[m_uVerticesX * m_uVerticesY]);
 
-	FLOAT fHeight = m_pTerrain->GetHeight(m_uHeightMapX, m_uHeightMapY);
+	FLOAT fHeight = m_pTerrain->GetHeight( (INT)m_uHeightMapX, (INT)m_uHeightMapY );
 
 	m_WorldRect.GetMinY() = fHeight;
 	m_WorldRect.GetMaxY() = fHeight;
 
-	UINT x, y;
+	INT x, y, nHeightMapX = m_uHeightMapX, nHeightMapY = m_uHeightMapY, nVerticesY = m_uVerticesY, nVerticesX = m_uVerticesX;
 
-	for (y = 0; y < m_VerticesY; y ++)
+	for (y = 0; y < nVerticesY; y ++)
 	{
-		for (x = 0; x < m_VerticesX; x ++)
+		for (x = 0; x < nVerticesX; x ++)
 		{
-			fHeight =  m_pTerrain->GetHeight(m_uHeightMapX + x, m_uHeightMapY + y);
+			fHeight =  m_pTerrain->GetHeight(nHeightMapX + x, nHeightMapY + y);
 
-			pVertices[y * m_VerticesX + x].fHeight = fHeight;
-			pVertices[y * m_VerticesX + x].Normal  = m_pTerrain->GetNormal(m_uHeightMapX + x, m_uHeightMapY + y);
+			pVertices[y * m_uVerticesX + x].fHeight = fHeight;
+			pVertices[y * m_uVerticesX + x].Normal  = m_pTerrain->GetNormal(m_uHeightMapX + x, m_uHeightMapY + y);
 
 			m_WorldRect.GetMinY() = MIN(m_WorldRect.GetMinY(), fHeight);
 			m_WorldRect.GetMaxY() = MAX(m_WorldRect.GetMaxY(), fHeight);
@@ -109,7 +109,7 @@ bool CTerrainSection::__BuildVertexBuffer()
 	}
 
 	HRESULT hr = m_VertexBuffer.Create(
-		m_VerticesX * m_VerticesY, 
+		m_uVerticesX * m_uVerticesY, 
 		sizeof(VERTEX), 
 		D3DUSAGE_WRITEONLY,
 		D3DPOOL_MANAGED,
@@ -158,6 +158,34 @@ m_pNormalTable(NULL)
 CTerrain::~CTerrain(void)
 {
 	Destroy();
+}
+
+zerO::FLOAT CTerrain::CalculateHeight(zerO::FLOAT u, zerO::FLOAT v)const
+{
+	INT nTableWidth  = m_uTableWidth  - 1;
+	INT nTableHeight = m_uTableHeight - 1;
+
+	FLOAT fMapX = u * nTableWidth;
+	FLOAT fMapY = v * nTableHeight;
+
+	INT nMapX0 = (INT)(fMapX);
+	INT nMapY0 = (INT)(fMapY);
+
+	fMapX -= nMapX0;
+	fMapY -= nMapY0;
+
+	nMapX0 = CLAMP(nMapX0, 0, nTableWidth );
+	nMapY0 = CLAMP(nMapY0, 0, nTableHeight);
+
+	INT nMapX1 = CLAMP(nMapX0 + 1, 0, nTableWidth );
+	INT nMapY1 = CLAMP(nMapY0 + 1, 0, nTableHeight);
+
+	FLOAT h0 = GetHeight(nMapX0, nMapY0);
+	FLOAT h1 = GetHeight(nMapX1, nMapY0);
+	FLOAT h2 = GetHeight(nMapX0, nMapY1);
+	FLOAT h3 = GetHeight(nMapX1, nMapY1);
+
+	return ( h3 * fMapX + h2 * (1.0f - fMapX) ) * fMapY + ( h3 * fMapX + h2 * (1.0f - fMapX) ) * (1.0f - fMapY);
 }
 
 void CTerrain::Render()
@@ -661,10 +689,10 @@ void CRoamTerrainSection::__ComputeVariance()
 {
 	CRoamTerrain* pTerrain = (CRoamTerrain*)m_pTerrain;
 
-	UINT uIndex0 = pTerrain->GetTableIndex(m_uHeightMapX                  , m_uHeightMapY                  );
-	UINT uIndex1 = pTerrain->GetTableIndex(m_uHeightMapX                  , m_uHeightMapY + m_VerticesY - 1);
-	UINT uIndex2 = pTerrain->GetTableIndex(m_uHeightMapX + m_VerticesX - 1, m_uHeightMapY + m_VerticesY - 1);
-	UINT uIndex3 = pTerrain->GetTableIndex(m_uHeightMapX + m_VerticesX - 1, m_uHeightMapY                  );
+	UINT uIndex0 = pTerrain->GetTableIndex(m_uHeightMapX                   , m_uHeightMapY                   );
+	UINT uIndex1 = pTerrain->GetTableIndex(m_uHeightMapX                   , m_uHeightMapY + m_uVerticesY - 1);
+	UINT uIndex2 = pTerrain->GetTableIndex(m_uHeightMapX + m_uVerticesX - 1, m_uHeightMapY + m_uVerticesY - 1);
+	UINT uIndex3 = pTerrain->GetTableIndex(m_uHeightMapX + m_uVerticesX - 1, m_uHeightMapY                   );
 
 	FLOAT fHeight0 = pTerrain->GetHeight(uIndex0);
 	FLOAT fHeight1 = pTerrain->GetHeight(uIndex1);

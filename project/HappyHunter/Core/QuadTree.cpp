@@ -20,12 +20,12 @@ void CQuadTreeRectangle::Convert(const CRectangle3D& Rect, const D3DXVECTOR3& Of
 
 	CBasicRectangle3D<INT> IntRect;
 
-	IntRect.GetMaxX() = realToInt32_floor( ConvertRect.GetMaxX() );
-	IntRect.GetMinX() = realToInt32_floor( ConvertRect.GetMinX() );
-	IntRect.GetMaxY() = realToInt32_floor( ConvertRect.GetMaxY() );
-	IntRect.GetMinY() = realToInt32_floor( ConvertRect.GetMinY() );
-	IntRect.GetMaxZ() = realToInt32_floor( ConvertRect.GetMaxZ() );
-	IntRect.GetMinZ() = realToInt32_floor( ConvertRect.GetMinZ() );
+	IntRect.GetMaxX() = FLOOR( ConvertRect.GetMaxX() );
+	IntRect.GetMinX() = FLOOR( ConvertRect.GetMinX() );
+	IntRect.GetMaxY() = FLOOR( ConvertRect.GetMaxY() );
+	IntRect.GetMinY() = FLOOR( ConvertRect.GetMinY() );
+	IntRect.GetMaxZ() = FLOOR( ConvertRect.GetMaxZ() );
+	IntRect.GetMinZ() = FLOOR( ConvertRect.GetMinZ() );
 
 	IntRect.GetMinX() = CLAMP(IntRect.GetMinX(), 0                    , 254);
 	IntRect.GetMaxX() = CLAMP(IntRect.GetMaxX(), IntRect.GetMinX() + 1, 255);
