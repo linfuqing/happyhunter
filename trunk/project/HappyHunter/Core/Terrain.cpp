@@ -185,7 +185,7 @@ zerO::FLOAT CTerrain::CalculateHeight(zerO::FLOAT u, zerO::FLOAT v)const
 	FLOAT h2 = GetHeight(nMapX0, nMapY1);
 	FLOAT h3 = GetHeight(nMapX1, nMapY1);
 
-	return ( h3 * fMapX + h2 * (1.0f - fMapX) ) * fMapY + ( h3 * fMapX + h2 * (1.0f - fMapX) ) * (1.0f - fMapY);
+	return ( h3 * fMapX + h2 * (1.0f - fMapX) ) * fMapY + ( h1 * fMapX + h0 * (1.0f - fMapX) ) * (1.0f - fMapY);
 }
 
 void CTerrain::Render()
