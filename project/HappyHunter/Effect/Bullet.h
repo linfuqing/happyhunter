@@ -8,25 +8,11 @@ namespace zerO
 	// Velocity: 加速度
 	// Rectangle: 包围盒
 	///
-	typedef struct BULLETPARAMETERS
+	typedef struct
 	{
 		D3DXVECTOR3 Velocity;
 		CRectangle3D Rectangle;
-		D3DXVECTOR3* pOldData;
-		UINT uOldDataLength;
-		UINT uOldDataIndex;
 		bool bIsFree;
-
-		BULLETPARAMETERS() :
-		pOldData(NULL),
-			uOldDataLength(0)
-		{
-		}
-
-		~BULLETPARAMETERS()
-		{
-			DEBUG_DELETE_ARRAY(pOldData);
-		}
 	}BULLETPARAMETERS;
 
 
@@ -39,6 +25,7 @@ namespace zerO
 	public:
 		typedef enum
 		{
+			RANDOM_NONE,
 			RANDOM_CUBE,
 			RANDOM_CIRCLE
 		}OFFSETTYPE;
@@ -58,6 +45,8 @@ namespace zerO
 		//子弹的大小
 		FLOAT GetSize()const;
 
+		FLOAT GetAngle() const;
+
 		OFFSETTYPE GetOffsetType()const;
 
 		//弹夹的容量(最大冷却数量),最大一次性发射多少子弹
@@ -68,6 +57,8 @@ namespace zerO
 
 		//尾巴的段数,段数越高,尾巴越长.
 		UINT  GetLength()const;
+
+		UINT  GetNumParticles() const;
 
 		//从初始位置飞出去时给子弹的加速度
 		const D3DXVECTOR3& GetAcceleration()const;
@@ -82,6 +73,7 @@ namespace zerO
 		void SetGravity(FLOAT fGravity);
 		void SetOffsetRadius(FLOAT fOffsetRadius);
 		void SetSize(FLOAT fSize);
+		void SetAngle(FLOAT fAngle);
 
 		void SetOffsetType(OFFSETTYPE Type);
 
@@ -120,6 +112,7 @@ namespace zerO
 		FLOAT m_fSpeed;
 		FLOAT m_fGravity;
 		FLOAT m_fOffsetRadius;
+		FLOAT m_fAngle;
 
 		OFFSETTYPE m_OffsetType;
 
@@ -153,6 +146,11 @@ namespace zerO
 		return m_fPointSize;
 	}
 
+	inline FLOAT CBullet::GetAngle()const
+	{
+		return m_fAngle;
+	}
+
 	inline CBullet::OFFSETTYPE CBullet::GetOffsetType()const
 	{
 		return m_OffsetType;
@@ -171,6 +169,11 @@ namespace zerO
 	inline UINT CBullet::GetLength()const
 	{
 		return m_uLength;
+	}
+
+	inline UINT CBullet::GetNumParticles() const
+	{
+		return m_uNumParticles;
 	}
 
 	inline const D3DXVECTOR3& CBullet::GetAcceleration()const
@@ -208,6 +211,11 @@ namespace zerO
 	inline void CBullet::SetSize(FLOAT fSize)
 	{
 		m_fPointSize = fSize;
+	}
+
+	inline void CBullet::SetAngle(FLOAT fAngle)
+	{
+		m_fAngle = fAngle;
 	}
 
 	inline void CBullet::SetOffsetType(OFFSETTYPE Type)

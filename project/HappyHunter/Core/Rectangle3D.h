@@ -34,7 +34,7 @@ namespace zerO
 		//判定矩形是否有价值的,即最大值大于最小值返回true,否则false.
 		bool IsValuable()const;
 
-	protected:
+	public:
 		T m_MaxZ;
 		T m_MinZ;
 	};

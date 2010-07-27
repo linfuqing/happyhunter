@@ -64,6 +64,7 @@ namespace zerO
 		BASICCHAR					m_strFilePath[MAX_PATH];
 		D3DXMATRIXA16*              m_pBoneMatrices;
 		UINT                        m_NumBoneMatricesMax;
+		LPD3DXMESH					m_pMesh;
 
 		friend class CSkinMesh;
 	};
@@ -102,6 +103,7 @@ namespace zerO
 
 		const BASICSTRING& GetEffectFile() const;
 		const CEffect& GetEffect() const;
+		const LPD3DXMESH GetMesh() const;
 		
 		// 通过索引设定动作
 		void SetAnimation( UINT index, DWORD dwControlPlayTime = 0, bool bSmooth = true );
@@ -167,5 +169,10 @@ namespace zerO
 	inline const CEffect& CSkinMesh::GetEffect() const
 	{ 
 		return m_Effect;
+	}
+
+	inline const LPD3DXMESH CSkinMesh::GetMesh() const
+	{ 
+		return m_Alloc.m_pMesh;
 	}
 }
