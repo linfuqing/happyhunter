@@ -197,7 +197,7 @@ namespace zerO
 #ifndef CONVERT_TOKEN_STEP1
 #define CONVERT_TOKEN_STEP1(out, token, convertType, params, seps)		\
 	token = wcstok(params, seps);										\
-	if(token != NULL)													\
+	if(token != NULL && wcscmp(token, TEXT("")) != 0)					\
 	{																	\
 		out = convertType;												\
 	}
@@ -205,11 +205,15 @@ namespace zerO
 
 #ifndef CONVERT_TOKEN_STEP2
 #define CONVERT_TOKEN_STEP2(out, token, convertType, seps)		\
-	if(token != NULL)											\
+	if(token != NULL && wcscmp(token, TEXT("")) != 0)			\
 	{															\
 		token = wcstok(NULL, seps);								\
 		out = convertType;										\
 	}
+#endif
+
+#ifndef USER_PI
+#define USER_PI    ((zerO::FLOAT)  3.141592654f)
 #endif
 }
 

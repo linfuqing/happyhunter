@@ -18,7 +18,8 @@ using namespace zerO;
 
 CAllocateHierarchy::CAllocateHierarchy() :
 m_pBoneMatrices(NULL), 
-m_NumBoneMatricesMax(0)
+m_NumBoneMatricesMax(0),
+m_pMesh(NULL)
 {
 }
 
@@ -27,6 +28,7 @@ CAllocateHierarchy::~CAllocateHierarchy()
 	//DEBUG_DELETE_ARRAY(m_pBoneMatrices);
 	//m_pBoneMatrices   = NULL;
 	SAFE_DELETE_ARRAY(m_pBoneMatrices);
+	SAFE_RELEASE(m_pMesh);
 }
 
 //-----------------------------------------------------------------------------
@@ -143,6 +145,8 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(D3DXMESHCONTAINER_DERIVED *pMe
 			return hr;
 		}
 	}
+
+	m_pMesh = pMeshContainer->MeshData.pMesh;
 
 	return hr;
 }
