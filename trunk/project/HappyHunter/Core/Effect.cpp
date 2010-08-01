@@ -9,7 +9,9 @@ using namespace zerO;
 CEffect::CEffect(void) :
 CResource(RESOURCE_EFFECT),
 m_pEffect(NULL), 
-m_pSurface(NULL)
+m_pSurface(NULL),
+m_bIsBegin(false),
+m_bIsBeginPass(false)
 {
 }
 
@@ -18,6 +20,24 @@ CEffect::~CEffect(void)
 	Destroy();
 }
 
+void CEffect::Clone(CEffect& Effect)const
+{
+	Effect.m_pSurface   = m_pSurface;
+	Effect.m_pEffect    = m_pEffect;
+	Effect.m_hTechnique = m_hTechnique;
+
+	memcpy( &Effect.m_EffectDesc         , &m_EffectDesc         , sizeof(Effect.m_EffectDesc          ) );
+	memcpy( &Effect.m_TechniqueDesc      , &m_TechniqueDesc      , sizeof(Effect.m_TechniqueDesc       ) );
+
+	memcpy( Effect.m_MatrixHandles       , m_MatrixHandles       , sizeof(Effect.m_MatrixHandles       ) );
+	memcpy( Effect.m_MatrixArrayHandles  , m_MatrixArrayHandles  , sizeof(Effect.m_MatrixArrayHandles  ) );
+	memcpy( Effect.m_TextureHandles      , m_TextureHandles      , sizeof(Effect.m_TextureHandles      ) );
+	memcpy( Effect.m_TextureMatrixHandles, m_TextureMatrixHandles, sizeof(Effect.m_TextureMatrixHandles) );
+	memcpy( Effect.m_ParameterHandles    , m_ParameterHandles    , sizeof(Effect.m_ParameterHandles    ) );
+
+	Effect.m_bIsBegin     = m_bIsBegin;
+	Effect.m_bIsBeginPass = m_bIsBeginPass;
+}
 
 bool CEffect::Destroy()
 {
@@ -119,6 +139,7 @@ bool CEffect::Load(const PBASICCHAR pcFileName)
 void CEffect::__ParseParameters()
 {
 	memset( m_MatrixHandles,        0, sizeof(m_MatrixHandles) );
+	memset( m_MatrixArrayHandles,   0, sizeof(m_MatrixArrayHandles) );
 	memset( m_TextureHandles,       0, sizeof(m_TextureHandles) );
 	memset( m_TextureMatrixHandles, 0, sizeof(m_TextureMatrixHandles) );
 	memset( m_ParameterHandles,     0, sizeof(m_ParameterHandles) );
@@ -139,7 +160,9 @@ void CEffect::__ParseParameters()
 		{
 			if(ParameterDesc.Class == D3DXPC_MATRIX_ROWS || ParameterDesc.Class == D3DXPC_MATRIX_COLUMNS)
 			{
-				if( STRCMP(ParameterDesc.Semantic, "WORLDVIEWPROJECTION") == 0)
+				if(STRCMP(ParameterDesc.Semantic, "WORLDMATRIXARRAY") == 0)
+					m_MatrixArrayHandles[WORLD_MATRIX_ARRAY] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "WORLDVIEWPROJECTION") == 0)
 					m_MatrixHandles[WORLD_VIEW_PROJECTION] = hParameter;
 				else if(STRCMP(ParameterDesc.Semantic, "VIEWPROJECTION") == 0)
 					m_MatrixHandles[VIEW_PROJECTION] = hParameter;
@@ -174,15 +197,19 @@ void CEffect::__ParseParameters()
 					m_ParameterHandles[EMISSIVE_MATERIAL_COLOR] = hParameter;
 				else if(STRCMP(ParameterDesc.Semantic, "MATERIALSPECULAR") == 0)
 					m_ParameterHandles[SPECULAR_MATERIAL_COLOR] = hParameter;
-				else if(STRCMP(ParameterDesc.Semantic, "POSITION") == 0)
-					m_ParameterHandles[POSITION] = hParameter;
-				else if(STRCMP(ParameterDesc.Semantic, "UV") == 0 || STRCMP(ParameterDesc.Semantic, "TextureUV") == 0)
-					m_ParameterHandles[UV] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "POSITIONOFFSET") == 0)
+					m_ParameterHandles[POSITION_OFFSET] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "UVOFFSET") == 0)
+					m_ParameterHandles[UV_OFFSET] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "EYEPOSITION") == 0 || STRCMP(ParameterDesc.Semantic, "CAMERAPOSITION") == 0)
+					m_ParameterHandles[EYE_POSITION] = hParameter;
 			}
 			else if(ParameterDesc.Class == D3DXPC_SCALAR)
 			{
 				if( STRCMP(ParameterDesc.Semantic, "MATERIALPOWER") == 0 )
 					m_ParameterHandles[SPECULAR_MATERIAL_POWER] = hParameter;
+				else if( STRCMP(ParameterDesc.Semantic, "BONEINFLUENCESNUMBER") == 0 )
+					m_ParameterHandles[BONE_INFLUENCES_NUMBER] = hParameter;
 			}
 			else if(ParameterDesc.Class == D3DXPC_OBJECT)
 			{
@@ -206,10 +233,50 @@ void CEffect::__ParseParameters()
 	}
 }
 
+bool CEffect::BeginPass(zerO::UINT uPass)
+{
+	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	if(m_bIsBeginPass)
+		EndPass();
+
+	m_bIsBeginPass = true;
+
+	HRESULT hr = m_pEffect->BeginPass(uPass);
+
+    if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool CEffect::EndPass()
+{
+	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	m_bIsBeginPass = false;
+
+	HRESULT hr = m_pEffect->EndPass();
+
+	if( FAILED(hr) )
+	{
+		DEBUG_WARNING(hr);
+        return false;
+	}
+
+	return true;
+}
 
 bool CEffect::Begin()
 {
 	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	if(m_bIsBegin)
+		End();
 
 	HRESULT hr = m_pEffect->Begin(NULL, D3DXFX_DONOTSAVESTATE|D3DXFX_DONOTSAVESHADERSTATE);
 
@@ -223,12 +290,21 @@ bool CEffect::Begin()
 	SetMatrix(PROJECTION, CAMERA.GetProjectionMatrix() );
 	SetMatrix(VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
 
+	SetParameter( EYE_POSITION, &CAMERA.GetWorldPosition() );
+
+	m_bIsBegin = true;
+
 	return true;
 }
 
 bool CEffect::End()
 {
 	DEBUG_ASSERT(m_pEffect, "This Effect is not valid");
+
+	if(!m_bIsBeginPass)
+		EndPass();
+
+	m_bIsBegin = false;
 
 	HRESULT hr = m_pEffect->End();
 
@@ -239,7 +315,15 @@ bool CEffect::End()
 		return false;
 	}
 
+	DEVICE.SetVertexShader(NULL);
+	DEVICE.SetPixelShader(NULL);
+
 	return true;
+}
+
+bool CEffect::Active(zerO::UINT uPass)
+{
+	return Begin() && BeginPass(uPass);
 }
 
 bool CEffect::SetSurface(CSurface* const pSurface)

@@ -4,8 +4,12 @@
 namespace zerO
 {
 #ifdef _UNICODE
+#define STRCPY(pDest, pSource) wcscpy_s(pDest, pSource) 
+#define STRTOK(pStr, pDelim, ppContext) wcstok_s(pStr, pDelim, ppContext)
 #define VSPRINTF(pBuffer, uCount, pText, pArgList) vswprintf_s(pBuffer, uCount, pText, pArgList)
 #else
+#define STRCPY(pDest, pSource) strcpy_s(pDest, pSource) 
+#define STRTOK(pStr, pDelim, ppContext) strtok_s(pStr, pDelim, ppContext)
 #define VSPRINTF(pBuffer, uCount, pText, pArgList) vsprintf_s(pBuffer, uCount, pText, pArgList)
 #endif
 

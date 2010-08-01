@@ -3,7 +3,6 @@
 #include "Surface.h"
 #include "VertexBuffer.h"
 #include "SceneNode.h"
-#include "Camera.h"
 
 namespace zerO
 {
@@ -78,9 +77,12 @@ namespace zerO
 		{
 			PARTICLE      Particle;
 			PARTICLENODE* pNext;
+			PARTICLENODE* pRear;
 
 			PARTICLENODE(CParticleSystem* const pParent) :
-			Particle(pParent)
+			Particle(pParent),
+				pNext(NULL),
+				pRear(NULL)
 			{
 			}
 		}PARTICLENODE, * LPPARTICLENODE;
@@ -98,6 +100,7 @@ namespace zerO
 		FLOAT m_fPointScaleC;
 
 		LPPARTICLENODE m_pParticles;    //当前粒子链表
+		LPPARTICLENODE m_pTail;
 		LPPARTICLENODE m_pParticlesFree;
 
 		CVertexBuffer m_VertexBuffer;
@@ -149,6 +152,7 @@ namespace zerO
 	m_pfnGetSteps(NULL),
 	m_pfnSetRenderData(NULL),
 	m_pParticles(NULL),
+	m_pTail(NULL),
 	m_pParticlesFree(NULL)
 	{
 	}
@@ -263,8 +267,18 @@ namespace zerO
 			else
 				DEBUG_NEW( pParticle, PARTICLENODE(this) );
 
-			pParticle->pNext = m_pParticles;
-			m_pParticles = pParticle;
+			if(!m_pParticles)
+				m_pParticles = pParticle;
+
+			pParticle->pRear = m_pTail;
+			
+			if(m_pTail)
+				m_pTail->pNext = pParticle;
+
+			m_pTail = pParticle;
+
+			/*pParticle->pNext = m_pParticles;
+			m_pParticles = pParticle;*/
 			m_uNumParticles++;
 			uEmited++;
 
@@ -300,7 +314,6 @@ namespace zerO
 		DEBUG_ASSERT(m_pfnInit && m_pfnUpdate && m_pfnIsDestroy && m_pfnGetSteps && m_pfnSetRenderData, "Particle System had be created.");
 
 		HRESULT hr;
-
 		DEVICE.SetVertexShader(NULL);
 		DEVICE.SetPixelShader(NULL);
 

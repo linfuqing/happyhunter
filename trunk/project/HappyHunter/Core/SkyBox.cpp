@@ -247,7 +247,7 @@ void CSkyBox::Render()
 
 		static FLOAT fUVOffsetX = 0.0f, fUVOffsetY = 0.0f;
 
-		pEffect->SetParameter(CEffect::UV, &UVOffset);
+		pEffect->SetParameter(CEffect::UV_OFFSET, &UVOffset);
 
 		for (i = 0; i < uTotalPass; i ++)
 		{
@@ -278,7 +278,7 @@ void CSkyBox::Render()
 
 				UVOffset.x = fUVOffsetX;
 				UVOffset.y = fUVOffsetY;
-				pEffect->SetParameter(CEffect::UV, &UVOffset);
+				pEffect->SetParameter(CEffect::UV_OFFSET, &UVOffset);
 
 				pEffect->SetTexture( 0, *m_RenderMethod.GetSurface()->GetTexture(6) );
 				pEffect->GetEffect()->CommitChanges();
@@ -286,7 +286,7 @@ void CSkyBox::Render()
 
 				UVOffset.x = 0.0f;
 				UVOffset.y = 0.0f;
-				pEffect->SetParameter(CEffect::UV, &UVOffset);
+				pEffect->SetParameter(CEffect::UV_OFFSET, &UVOffset);
 			}
 
 			pEffect->GetEffect()->EndPass();

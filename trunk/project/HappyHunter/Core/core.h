@@ -4,7 +4,11 @@
 #include "QuadTree.h"
 #include "Terrain.h"
 #include "ParticleSystem.h"
-#include "Billboarding.h"
+#include "Billboard.h"
 #include "SkyBox.h"
+#include "SkyDome.h"
+#include "StaticMesh.h"
+#include "SkinMesh.h"
+#include "CrossPlane.h"
 
 #endif

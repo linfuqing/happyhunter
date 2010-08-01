@@ -19,20 +19,16 @@ namespace zerO
 
 		CSceneNode* GetParent()const;
 
-		const D3DXVECTOR3& GetPosition()const;
-
 		//本地矩阵
 		const D3DXMATRIX& GetLocalMatrix()const;
 		//世界矩阵
 		const D3DXMATRIX& GetWorldMatrix()const;
-		//世界逆矩阵
-		const D3DXMATRIX& GetInverseWorldMatrix()const;
 		//本地边界盒
 		const CRectangle3D& GetLocalRectangle()const;
 		//世界边界盒
 		const CRectangle3D& GetWorldRectangle()const;
 
-		void SetTransform(const D3DXMATRIX& Matrix);
+		void Clone(CSceneNode& Node)const;
 
 		// 加入子集.
 		void AddChild(CSceneNode* pChild);
@@ -58,12 +54,6 @@ namespace zerO
 
 		D3DXMATRIX m_LocalMatrix;
 		D3DXMATRIX m_WorldMatrix;
-		D3DXMATRIX m_InverseWorldMatrix;
-
-		D3DXVECTOR3	m_Position;
-		D3DXVECTOR3	m_Right;
-		D3DXVECTOR3	m_Up;
-		D3DXVECTOR3	m_Forward;
 
 		CSceneNode* m_pParent;
 
@@ -78,11 +68,6 @@ namespace zerO
 		return m_pParent;
 	}
 
-	inline const D3DXVECTOR3& CSceneNode::GetPosition()const
-	{
-		return m_Position;
-	}
-
 	inline const D3DXMATRIX& CSceneNode::GetLocalMatrix()const
 	{
 		return m_LocalMatrix;
@@ -93,11 +78,6 @@ namespace zerO
 		return m_WorldMatrix;
 	}
 
-	inline const D3DXMATRIX& CSceneNode::GetInverseWorldMatrix()const
-	{
-		return m_InverseWorldMatrix;
-	}
-
 	inline const CRectangle3D& CSceneNode::GetLocalRectangle()const
 	{
 		return m_LocalRect;
@@ -106,12 +86,5 @@ namespace zerO
 	inline const CRectangle3D& CSceneNode::GetWorldRectangle()const
 	{
 		return m_WorldRect;
-	}
-
-	inline void CSceneNode::SetTransform(const D3DXMATRIX& Matrix)
-	{
-		m_LocalMatrix = Matrix;
-
-		m_bIsTransformDirty = true;
 	}
 }

@@ -17,7 +17,7 @@ CBackground::~CBackground(void)
 
 void CBackground::Update()
 {
-	D3DXVECTOR3 Position = CAMERA.GetPosition();
+	D3DXVECTOR3 Position = CAMERA.GetWorldPosition();
 
 	m_Matrix._41 = Position.x;
 	m_Matrix._42 = Position.y;

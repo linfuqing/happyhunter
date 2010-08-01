@@ -2,26 +2,24 @@
 
 #include "debug.h"
 #include "BasicString.h"
-#include "Effect.h"
-#include "Texture.h"
-#include "SceneNode.h"
+#include "Sprite.h"
 #include "RenderMethod.h"
+#include "Mesh.h"
+//#include "ShadowVolume.h"
 
 namespace zerO
 {
-	class CStaticMesh : public CSceneNode
+	class CStaticMesh : public CSprite
 	{
 	public:
 		CStaticMesh(void);
 		~CStaticMesh(void);
 
-	private:
-		HRESULT __GenerateDeclMesh(LPD3DXMESH& pMesh);
-		void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);
-
 	public:
+		CMesh& GetMesh();
+
 		bool Create(const PBASICCHAR meshFile);
-		bool Destroy();
+
 		virtual bool ApplyForRender();
 		virtual void Update();
 		virtual void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
@@ -32,21 +30,10 @@ namespace zerO
 		const CRenderMethod& GetRenderMethod() const;
 
 	private:
-		LPD3DXMESH              m_pMesh;			// 原网格模型
-		LPD3DXBUFFER            m_pAdjacencyBuffer; // 网格模型面邻接信息
-		DWORD                   m_dwNumMaterials;   // 材质数量	
 		CRenderMethod			m_RenderMethod;		// 渲染方法
 		BASICSTRING				m_strEffectFile;	// 效果文件
-
-		struct BoxVertex
-		{
-			D3DXVECTOR3 p;
-
-			enum FVF
-			{
-				FVF_Flags = D3DFVF_XYZ
-			};
-		};
+		CMesh                   m_Mesh;
+		//CShadowVolume           m_Shadow;
 	};
 
 	//---------------------------------------------------------------------------
@@ -66,6 +53,11 @@ namespace zerO
 	//---------------------------------------------------------------------------
 	// 获取函数
 	//---------------------------------------------------------------------------
+
+	inline CMesh& CStaticMesh::GetMesh()
+	{
+		return m_Mesh;
+	}
 
 	inline const CRenderMethod& CStaticMesh::GetRenderMethod() const
 	{

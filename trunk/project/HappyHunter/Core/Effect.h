@@ -35,10 +35,20 @@ namespace zerO
 			SPECULAR_MATERIAL_COLOR,
 			SPECULAR_MATERIAL_POWER,
 
-			POSITION,
-			UV,
+			POSITION_OFFSET,
+			UV_OFFSET,
+
+			BONE_INFLUENCES_NUMBER,
+
+			EYE_POSITION,
 
 			MAXINUM_PARAMETER_HANDLES
+		};
+
+		enum MATRIXARRAYHANDLE
+		{
+			WORLD_MATRIX_ARRAY = 0,
+			MAXINUM_MATRIX_ARRAY_HANDLES
 		};
 		
 		//纹理最大句柄数
@@ -49,6 +59,8 @@ namespace zerO
 
 		CEffect(void);
 		~CEffect();
+
+		void Clone(CEffect& CEffect)const;
 
 		bool Destroy(); 
 		bool Disable(); 
@@ -63,14 +75,20 @@ namespace zerO
 
 		//各种设置
 		bool SetParameter(PARAMETERHANDLE Index, const void* pData, INT uSize= D3DX_DEFAULT);
+		bool SetMatrixArray(MATRIXARRAYHANDLE Index, const LPD3DXMATRIX pMatrix, UINT uCount);
 		bool SetMatrix(MATRIXHANDLE Index, const D3DXMATRIX& Matrix);
 		bool SetTexture(UINT uIndex, const CTexture& Texture);
 		bool SetTextureMatrix(UINT uIndex, const D3DXMATRIX& Matrix);
 
 		bool SetSurface(CSurface* const pSurface);
 
+		bool BeginPass(UINT uPass);
+		bool EndPass();
+
 		bool Begin();
 		bool End();
+
+		bool Active(UINT uPass);
 
 		LPD3DXEFFECT GetEffect()const;
 		CSurface* GetSurface()const;
@@ -89,9 +107,13 @@ namespace zerO
 		D3DXHANDLE                m_hTechnique;
 		D3DXTECHNIQUE_DESC        m_TechniqueDesc;
 		D3DXHANDLE                m_MatrixHandles[MAXINUM_MATRIX_HANDLES];
+		D3DXHANDLE                m_MatrixArrayHandles[MAXINUM_MATRIX_ARRAY_HANDLES];
 		D3DXHANDLE                m_TextureHandles[MAXINUM_TEXTURE_HANDLES];
 		D3DXHANDLE                m_TextureMatrixHandles[MAXINUM_TEXTURE_HANDLES];
 		D3DXHANDLE                m_ParameterHandles[MAXINUM_PARAMETER_HANDLES];
+
+		bool                      m_bIsBegin;
+		bool                      m_bIsBeginPass;
 	};
 
 	inline bool CEffect::IsMatrixUsed(MATRIXHANDLE Index)
@@ -131,6 +153,19 @@ namespace zerO
 		if(m_MatrixHandles[Index] != NULL)
 		{
 			bool bResult = SUCCEEDED( m_pEffect->SetMatrix(m_MatrixHandles[Index], &Matrix) );
+			DEBUG_ASSERT(bResult, "effect file error!");
+			return bResult;
+		}
+
+		return false;
+	}
+
+	inline bool CEffect::SetMatrixArray(MATRIXARRAYHANDLE Index, const LPD3DXMATRIX pMatrix, UINT uCount)
+	{
+		DEBUG_ASSERT(m_pEffect, "Effect is null!");
+		if(m_MatrixArrayHandles[Index] != NULL)
+		{
+			bool bResult = SUCCEEDED( m_pEffect->SetMatrixArray(m_MatrixArrayHandles[Index], pMatrix, uCount) );
 			DEBUG_ASSERT(bResult, "effect file error!");
 			return bResult;
 		}

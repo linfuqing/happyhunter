@@ -7,7 +7,7 @@
 // 全局变量
 //--------------------------------------------------------------
 float4x4  matWorldViewProj : WORLDVIEWPROJECTION;	  //组合变换矩阵
-float2    vUVOffset:UV;
+float2    vUVOffset:UVOFFSET;
 
 
 //--------------------------------------------------------------

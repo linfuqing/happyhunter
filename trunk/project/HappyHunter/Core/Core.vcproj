@@ -149,6 +149,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\AnimationController.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Background.cpp"
 				>
 			</File>
@@ -157,11 +161,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Billboarding.cpp"
+				RelativePath=".\Billboard.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\Camera.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CrossPlane.cpp"
 				>
 			</File>
 			<File
@@ -178,6 +186,10 @@
 			</File>
 			<File
 				RelativePath=".\LightManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.cpp"
 				>
 			</File>
 			<File
@@ -209,11 +221,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ShadowVolume.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SkinMesh.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\SkyBox.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SkyDome.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Sprite.cpp"
 				>
 			</File>
 			<File
@@ -263,6 +287,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\AnimationController.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Background.h"
 				>
 			</File>
@@ -279,7 +307,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Billboarding.h"
+				RelativePath=".\Billboard.h"
 				>
 			</File>
 			<File
@@ -296,6 +324,10 @@
 			</File>
 			<File
 				RelativePath=".\core.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CrossPlane.h"
 				>
 			</File>
 			<File
@@ -324,6 +356,10 @@
 			</File>
 			<File
 				RelativePath=".\LightManager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.h"
 				>
 			</File>
 			<File
@@ -367,11 +403,27 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Shadow.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ShadowVolume.h"
+				>
+			</File>
+			<File
 				RelativePath=".\SkinMesh.h"
 				>
 			</File>
 			<File
 				RelativePath=".\SkyBox.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SkyDome.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Sprite.h"
 				>
 			</File>
 			<File

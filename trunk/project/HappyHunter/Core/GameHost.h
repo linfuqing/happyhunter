@@ -4,6 +4,7 @@
 #include "datatype.h"
 #include "LightManager.h"
 #include <vector>
+#include <list>
 
 namespace zerO
 {
@@ -23,7 +24,9 @@ namespace zerO
 		RESOURCE_TEXTURE,
 		RESOURCE_SURFACE,
 		RESOURCE_EFFECT,
+		RESOURCE_MESH,
 		RESOURCE_MODEL,
+		RESOURCE_ANIMATIONCONTROLLER,
 
 		TOTAL_RESOURCE_TYPES
 	}RESOURCETYPE;
@@ -35,6 +38,8 @@ namespace zerO
 	class CSceneNode;
 	class CCamera;
 	class CBackground;
+	class CShadow;
+	class CVertexBuffer;
 
 	///
 	// 主渲染框架类，单件模式，包含资源池，帧渲染调用，
@@ -43,6 +48,11 @@ namespace zerO
 	///
 	class CGameHost
 	{
+		typedef struct
+		{
+			D3DXVECTOR4 Position;
+			D3DCOLOR    Color;
+		}VERTEX, * LPVERTEX;
 	public:
 		typedef struct
 		{
@@ -81,6 +91,9 @@ namespace zerO
 		CResource* GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type);
 		void RemoveResource(const CResource* pResource, RESOURCETYPE Type);
 
+		void AddShadow(CShadow* const pShadow);
+		void RemoveShadow(CShadow* const pShadow);
+
 		virtual bool Destroy(); 
 		virtual bool Disable(); 
 		virtual bool Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc); 
@@ -100,6 +113,7 @@ namespace zerO
 		static CGameHost* sm_pInstance;
 
 		std::vector<CResource*> m_ResourceList[TOTAL_RESOURCE_TYPES];
+		std::list<CShadow*>     m_ShadowList;
 
 		CRenderQueue* m_pRenderQueue;
 
@@ -110,6 +124,8 @@ namespace zerO
 		CBackground* m_pBackground;
 
 		CLightManager m_LightManager;
+
+		CVertexBuffer* m_pVertexBuffer;
 
 		bool m_bLightEnable;
 	};

@@ -4,6 +4,8 @@
 #include "Camera.h"
 #include "RenderQueue.h"
 #include "Background.h"
+#include "Shadow.h"
+#include "VertexBuffer.h"
 
 using namespace zerO;
 
@@ -13,6 +15,7 @@ CGameHost::CGameHost(void) :
 m_pDevice(NULL),
 m_pScene(NULL),
 m_pBackground(NULL),
+m_pVertexBuffer(NULL),
 m_bLightEnable(false),
 m_fTime(0)
 {
@@ -55,6 +58,20 @@ void CGameHost::RemoveResource(const CResource* pResource, RESOURCETYPE Type)
 	}
 }
 
+void CGameHost::AddShadow(CShadow* const pShadow)
+{
+	DEBUG_ASSERT(pShadow, "pShadow can not be NULL.");
+
+	m_ShadowList.push_back(pShadow);
+}
+
+void CGameHost::RemoveShadow(CShadow* const pShadow)
+{
+	DEBUG_ASSERT(pShadow, "pShadow can not be NULL.");
+
+	m_ShadowList.remove(pShadow);
+}
+
 bool CGameHost::Destroy()
 {
 	UINT uTotalResourceTypes = TOTAL_RESOURCE_TYPES;
@@ -66,16 +83,23 @@ bool CGameHost::Destroy()
 			if( !(*Iteractor)->Destroy() )
 				return false;
 
+	for(std::list<CShadow*>::iterator i = m_ShadowList.begin(); i != m_ShadowList.end(); i ++)
+		(*i)->Destroy();
+
 	DEBUG_DELETE(m_pRenderQueue);
 	DEBUG_DELETE(m_pCamera);
 	DEBUG_DELETE(m_pScene);
+	DEBUG_DELETE(m_pVertexBuffer);
 
-	m_pRenderQueue = NULL;
-	m_pCamera      = NULL;
-	m_pScene       = NULL;
+	m_pRenderQueue  = NULL;
+	m_pCamera       = NULL;
+	m_pScene        = NULL;
+	m_pVertexBuffer = NULL;
 
 	for(INT i = 0; i < TOTAL_RESOURCE_TYPES; i ++)
 		m_ResourceList[i].clear();
+
+	m_ShadowList.clear();
 
 	return true;
 }
@@ -107,6 +131,25 @@ bool CGameHost::Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc)
 			if( !(*Iteractor)->Restore() )
 				return false;
 
+	LPVERTEX pVertices;
+
+	FLOAT sx = (FLOAT)BackBufferSurfaceDesc.Width;
+    FLOAT sy = (FLOAT)BackBufferSurfaceDesc.Height;
+
+	if( m_pVertexBuffer->Lock(0, (void**)&pVertices) )
+	{
+		pVertices[0].Position = D3DXVECTOR4(  0, sy, 0.0f, 1.0f );
+		pVertices[1].Position = D3DXVECTOR4(  0,  0, 0.0f, 1.0f );
+		pVertices[2].Position = D3DXVECTOR4( sx, sy, 0.0f, 1.0f );
+		pVertices[3].Position = D3DXVECTOR4( sx,  0, 0.0f, 1.0f );
+		pVertices[0].Color    = 0x7f000000;
+		pVertices[1].Color    = 0x7f000000;
+		pVertices[2].Color    = 0x7f000000;
+		pVertices[3].Color    = 0x7f000000;
+
+		m_pVertexBuffer->Unlock();
+	}
+
 	return true;
 }
 
@@ -121,6 +164,10 @@ bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSe
 	DEBUG_NEW( m_pRenderQueue, CRenderQueue(uMaxQueue) );
 	DEBUG_NEW( m_pScene, CSceneNode );
 	DEBUG_NEW(m_pCamera, CCamera);
+
+	DEBUG_NEW(m_pVertexBuffer, CVertexBuffer);
+
+	m_pVertexBuffer->Create(4, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, NULL, D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 
 	return true;
 }
@@ -157,6 +204,42 @@ bool CGameHost::BeginRender()
 bool CGameHost::EndRender()
 {
 	m_pRenderQueue->Render();
+
+	if( !m_ShadowList.empty() )
+	{
+		m_pDevice->SetTransform( D3DTS_VIEW, &CAMERA.GetViewMatrix() );
+
+		//设置投影矩阵
+		m_pDevice->SetTransform( D3DTS_PROJECTION, &CAMERA.GetProjectionMatrix() );
+
+		for(std::list<CShadow*>::const_iterator i = m_ShadowList.begin(); i != m_ShadowList.end(); i ++)
+		{
+			(*i)->Update();
+			(*i)->Render();
+		}
+
+		//关闭深度测试, 启用Alpha混合
+		m_pDevice->SetRenderState( D3DRS_ZENABLE,          FALSE );
+		m_pDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+		m_pDevice->SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+		m_pDevice->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+
+		//设置模板相关渲染状态
+		m_pDevice->SetRenderState( D3DRS_STENCILENABLE,    TRUE );
+		m_pDevice->SetRenderState( D3DRS_STENCILREF,  0x1 );
+		m_pDevice->SetRenderState( D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL );
+		m_pDevice->SetRenderState( D3DRS_STENCILPASS, D3DSTENCILOP_KEEP );
+
+		//渲染一个灰色矩形, 只有通过模板测试的像素才会被渲染到颜色缓冲区,表示阴影
+		m_pVertexBuffer->Activate(0, 0, true);
+
+		m_pDevice->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2 );
+
+		//恢复渲染状态
+		m_pDevice->SetRenderState( D3DRS_ZENABLE,          TRUE );
+		m_pDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+		m_pDevice->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
+	}
 
 	return true;
 }
