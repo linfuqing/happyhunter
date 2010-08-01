@@ -40,6 +40,8 @@ namespace zerO
 			UINT VerticesX, 
 			UINT VerticesY, 
 			const CRectangle2D& WorldRect);
+
+		void Update();
 	protected:
 		virtual bool __BuildVertexBuffer();
 
@@ -229,6 +231,8 @@ namespace zerO
 			UINT VerticesX, UINT VerticesY, 
 			const CRectangle2D& WorldRect);
 
+		void Update();
+
 		void Reset();
 		void Tessellate(FLOAT fScale, FLOAT fLimit);
 		void BuildTriangleList();
@@ -379,5 +383,46 @@ namespace zerO
 		}
 
 		return pSection;
+	}
+
+	class CTerrainSystem
+	{
+	public:
+		typedef enum
+		{
+			NORMAL = 0,
+			ROAM
+		}TYPE;
+
+		CTerrainSystem();
+		~CTerrainSystem();
+
+		CTerrain* GetTerrain()const;
+
+		bool Create( 
+			CTexture* pHeightMap, 
+			const CRectangle3D& WorldExtents, 
+			UINT8 uShift,
+			UINT  uDepth,
+			TYPE Type = NORMAL);
+
+		void Update();
+
+		void Render();
+
+		void Destroy();
+
+	private:
+		CQuadTree m_QuadTree;
+		CTerrain* m_pTerrain;
+
+		CQuadTreeObject* m_pRenderObjects;
+
+		TYPE m_Type;
+	};
+
+	inline CTerrain* CTerrainSystem::GetTerrain()const
+	{
+		return m_pTerrain;
 	}
 }

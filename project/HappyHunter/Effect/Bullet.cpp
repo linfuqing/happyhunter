@@ -1,15 +1,12 @@
-#include "DXUT.h"
-#include "Game.h"
+#include "StdAfx.h"
 #include "Bullet.h"
-#include <mmsystem.h>
 
 using namespace zerO;
 
 CBullet::CBullet(void) :
 m_fSpeed(0.0f),
 m_fGravity(0.0f),
-m_fOffsetRadius(0.0f),
-m_fAngle(0.0f),
+m_fOffsetRadius(0),
 
 m_uStep(0),
 m_uLength(0),
@@ -18,9 +15,7 @@ m_Acceleration(0.0f, 0.0f, 0.0f),
 m_Source(0.0f, 0.0f, 0.0f),
 m_Direction(0.0f, 0.0f, 1.0f),
 
-bIsAccelerationDirty(false),
-
-m_OffsetType(RANDOM_NONE)
+bIsAccelerationDirty(false)
 {
 }
 
@@ -43,33 +38,41 @@ void InitParticle(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 
 	pParticle->Vertex.Position    = pParent->GetSource();
 
-	zerO::FLOAT fOffsetRadius     = pParent->GetOffsetRadius();
-	zerO::FLOAT fAngle			  = pParent->GetAngle();
+	zerO::FLOAT fOffsetRadius      = pParent->GetOffsetRadius();
 
 	if(fOffsetRadius)
 	{
 		switch( pParent->GetOffsetType() )
 		{
-		case CBullet::RANDOM_NONE:
-			break;
-
 		case CBullet::RANDOM_CUBE:
-			pParticle->Vertex.Position.x += RangedRand(0.0f, RAND_MAX) * fOffsetRadius - fOffsetRadius * 0.5f;
-			pParticle->Vertex.Position.y += RangedRand(0.0f, RAND_MAX) * fOffsetRadius - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.x += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.y += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
+			pParticle->Vertex.Position.z += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
 			break;
 
 		case CBullet::RANDOM_CIRCLE:
-			if ((fAngle += USER_PI / 3.0f) > USER_PI * 2.0f)
-				fAngle = 0.0f;
-			pParent->SetAngle(fAngle);
-			zerO::FLOAT fSin = sin(fAngle), fCos = cos(fAngle);
+			zerO::FLOAT fRandom = (zerO::FLOAT)rand() / RAND_MAX, fSin = sin(fRandom), fCos = cos(fRandom);
 			pParticle->Vertex.Position.x += fOffsetRadius * fCos - fOffsetRadius * 0.5f;
-			pParticle->Vertex.Position.y += fOffsetRadius * fSin;
+			pParticle->Vertex.Position.y += fOffsetRadius * fSin - fOffsetRadius * 0.5f;
 			break;
 		}
 	}
 
 	pParticle->Parameter.Rectangle.Extract( pParticle->Vertex.Position, pParent->GetSize() );
+
+	if( pParticle->Parameter.uOldDataLength != pParent->GetStep() )
+	{
+		DEBUG_DELETE_ARRAY(pParticle->Parameter.pOldData);
+
+		DEBUG_NEW(pParticle->Parameter.pOldData, D3DXVECTOR3[pParent->GetStep()]);
+
+		pParticle->Parameter.uOldDataLength = pParent->GetStep();
+	}
+
+	for(zerO::UINT i = 0; i < pParticle->Parameter.uOldDataLength; i ++)
+		pParticle->Parameter.pOldData[i] = pParticle->Vertex.Position;
+
+	pParticle->Parameter.uOldDataIndex = 0;
 }
 
 ///
@@ -84,6 +87,10 @@ void UpdateParticle(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 	pParticle->Vertex.Position      += pParticle->Parameter.Velocity;
 
 	pParticle->Parameter.Rectangle.Extract( pParticle->Vertex.Position, pParent->GetSize() );
+
+	pParticle->Parameter.uOldDataIndex = pParticle->Parameter.uOldDataIndex < pParticle->Parameter.uOldDataLength ? pParticle->Parameter.uOldDataIndex : 0;
+
+	pParticle->Parameter.pOldData[pParticle->Parameter.uOldDataIndex ++] = pParticle->Vertex.Position;
 }
 
 ///
@@ -94,9 +101,10 @@ bool IsParticleDestroy(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 	return !pParticle->Parameter.Rectangle.TestHit( CAMERA.GetWorldRectangle() ) || pParticle->Parameter.bIsFree;//pParticle->Vertex.Position.y < - 100.0f;
 }
 
-D3DXVECTOR3 g_Position;
-D3DXVECTOR3 g_Velocity;
+//D3DXVECTOR3 g_Position;
+//D3DXVECTOR3 g_Velocity;
 
+zerO::INT g_nIndex;
 ///
 // 粒子渲染前行为
 // 返回:单个粒子渲染次数
@@ -105,10 +113,12 @@ zerO::UINT GetParticleRenderSteps(const CParticleSystem<BULLETPARAMETERS>::PARTI
 {
 	CBullet* pParent = (CBullet*)Particle.pPARENT;
 
-	g_Position = Particle.Vertex.Position;
-	g_Velocity = Particle.Parameter.Velocity / (zerO::FLOAT)pParent->GetStep() * (pParent->GetLength() + 1.0f);
+	//g_Position = Particle.Vertex.Position;
+	//g_Velocity = Particle.Parameter.Velocity / (zerO::FLOAT)pParent->GetStep() * 3;// * (pParent->GetLength() + 1.0f);
 
-	return pParent->GetStep();
+	g_nIndex = Particle.Parameter.uOldDataIndex;
+
+	return Particle.Parameter.uOldDataLength;/*pParent->GetStep();*/
 }
 
 ///
@@ -116,10 +126,12 @@ zerO::UINT GetParticleRenderSteps(const CParticleSystem<BULLETPARAMETERS>::PARTI
 ///
 bool SetParticleRenderData(const CParticleSystem<BULLETPARAMETERS>::PARTICLE& Particle, CParticleSystem<BULLETPARAMETERS>::PARTICLEVERTEX& Vertex)
 {
-	Vertex.Position = g_Position;
+	g_nIndex = g_nIndex < 0 ? (Particle.Parameter.uOldDataLength - 1) : g_nIndex;
+
+	Vertex.Position = Particle.Parameter.pOldData[g_nIndex --];//g_Position;
 	Vertex.Color    = Particle.Vertex.Color;
 
-	g_Position     -= g_Velocity;
+	/*g_Position     -= g_Velocity;*/
 
 	return true;
 }

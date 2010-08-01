@@ -7,7 +7,14 @@
 #include "resource.h"
 #include "core.h"
 
+
+#include "SDKmisc.h"
+
 #define TERRAIN//PARTICLESYSTEM
+
+
+ID3DXFont*                 g_pFont = NULL;          //ID3DXFont字体对象
+ID3DXSprite*               g_pTextSprite = NULL;    //ID3DXSprite文本精灵对象
 
 zerO::CGameHost g_Game;
 
@@ -20,8 +27,28 @@ zerO::CTexture  g_Detail;
 zerO::CSurface  g_TerrainSurface;
 zerO::CTerrain g_Terrain;
 
+//zerO::CStaticMesh g_Mesh;
+zerO::CSkinMesh   g_SkinMesh;
+zerO::CSkinMesh   g_CopyMesh;
+
+zerO::CTerrainSystem g_TerrainSystem;
+
 zerO::CSkyBox g_SkyBox;
 zerO::CSurface g_SkyBoxSurface;
+
+//zerO::CShadowVolume        g_ShadowVolume2;
+//zerO::CShadowVolume*       g_pShadowVolume;
+//LPDIRECT3DVERTEXBUFFER9    g_pBigSquareVB;
+//zerO::CSkyDome g_SkyDome;
+
+//阴影举行顶点结构和顶点格式
+struct SHADOWVERTEX
+{
+    D3DXVECTOR4 p;
+    D3DCOLOR    color;
+
+    static const DWORD FVF = D3DFVF_XYZRHW | D3DFVF_DIFFUSE;
+};
 
 //--------------------------------------------------------------------------------------
 // Rejects any D3D9 devices that aren't acceptable to the app by returning false
@@ -45,6 +72,10 @@ bool CALLBACK IsD3D9DeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat, 
 //--------------------------------------------------------------------------------------
 bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* pUserContext )
 {
+
+	//为当前设备设置深度模板缓冲区格式
+	pDeviceSettings->d3d9.pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+
     return true;
 }
 
@@ -55,24 +86,70 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc,
                                      void* pUserContext )
 {
+	HRESULT hr;
+
+	//创建字体
+    V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
+                         OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+                         L"Arial", &g_pFont ) );
+
 	//单件模式：首先需要构建一个GameHost
 	zerO::CGameHost::DEVICESETTINGS DeviceSettings;
-	memcpy( &DeviceSettings, &DXUTGetDeviceSettings(), sizeof(zerO::CGameHost::DEVICESETTINGS) );
+	memcpy( &DeviceSettings, &DXUTGetDeviceSettings().d3d9, sizeof(zerO::CGameHost::DEVICESETTINGS) );
 
 	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
-	CAMERA.SetProjection(D3DX_PI / 4.0f, 1.0f, 0.5f, 3000.0f);
+	CAMERA.SetProjection(D3DX_PI / 4.0f, (zerO::FLOAT)DeviceSettings.pp.BackBufferWidth / DeviceSettings.pp.BackBufferHeight, 0.5f, 3000.0f);
 
-	zerO::CRectangle3D Rect;
-	Rect.Set(- 3000.0f, 3000.0f, 0.0f, 500.0f, - 3000.0f, 3000.0f);
-	g_QuadTree.Create(Rect, 4);
+	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
+	if ( !g_SkinMesh.Create(TEXT("Cheetah.X")) )
+		return S_FALSE;
+
+	///*g_CopyMesh.SetEffectFile( TEXT("AnimalEffect.fx") );
+	//if ( !g_CopyMesh.Create(g_SkinMesh.GetModel()) )
+	//	return S_FALSE;*/
+
+	g_SkinMesh.Clone(g_CopyMesh);
+
+	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
+
+	g_Mesh.Create( TEXT("Cheetah.x") );*/
+
+	//创建阴影体
+	/*g_pShadowVolume = new zerO::CShadowVolume();
+
+	g_pShadowVolume->Create(*g_SkinMesh.GetMesh(), g_SkinMesh);*/
+	//g_ShadowVolume2.Create(*g_CopyMesh.GetMesh(), g_CopyMesh);
+
+	//void* pVertices, *pIndices;
+
+	////锁定网格模型顶点缓冲区和索引缓冲区
+	//g_SkinMesh./*GetMesh().*/GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
+ //   g_SkinMesh./*GetMesh().*/GetMesh()->LockIndexBuffer( 0L, (LPVOID*)&pIndices );
+	///*g_pShadowVolume->Create( g_Mesh.GetMesh().GetMesh(), g_Mesh);*/
+	//g_pShadowVolume->Create(
+	//	g_SkinMesh./*GetMesh().*/GetMesh()->GetNumVertices(), 
+	//	g_SkinMesh./*GetMesh().*/GetMesh()->GetNumFaces(),
+	//	g_SkinMesh,
+	//	g_SkinMesh./*GetMesh().*/GetMesh()->GetNumBytesPerVertex(),
+	//	pVertices,
+	//	pIndices);
+
+	//g_SkinMesh./*GetMesh().*/GetMesh()->UnlockVertexBuffer();
+ //   g_SkinMesh./*GetMesh().*/GetMesh()->UnlockIndexBuffer();
 
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
+	zerO::CRectangle3D Rect;
+	Rect.Set(- 3000.0f, 3000.0f, 0.0f, 500.0f, - 3000.0f, 3000.0f);
+
+	g_TerrainSystem.Create(&g_HeightMap, Rect, 6, 4/*, zerO::CTerrainSystem::ROAM*/);
+	/*g_QuadTree.Create(Rect, 4);
+
 	g_Terrain.Create(NULL, &g_HeightMap, Rect, 6);
 
-	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );
+	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );*/
 
 
 	g_Texture.Load( TEXT("最终纹理.dds") );
@@ -82,10 +159,12 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_TerrainSurface.SetTexture(&g_Texture, 0);
 	g_TerrainSurface.SetTexture(&g_Detail, 1);
 
-	g_Terrain.GetRenderMethod().SetSurface(&g_TerrainSurface);
+	g_TerrainSystem.GetTerrain()->GetRenderMethod().SetSurface(&g_TerrainSurface);
+	g_TerrainSystem.GetTerrain()->GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
-	g_Terrain.SetQuadTree(&g_QuadTree);
+	/*( (zerO::CRoamTerrain*)g_TerrainSystem.GetTerrain() )->SetTessellationParameters(10.33f, 0.3f);*/
 
+	//g_SkyDome.Create(5.0f, 5.0f, 10.0f);
 
 	g_SkyBox.Create(10.0f);
 
@@ -115,34 +194,47 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_SkyBoxSurface.LoadTexture(TEXT("night/afx_darksky_BK.jpg"), 5);*/
 	//g_SkyBoxSurface.LoadTexture(TEXT("night/Cloud.tga"), 6);
 
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_UP.dds"), 0);
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_DN.dds"), 1);
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_LF.dds"), 2);
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_RT.dds"), 3);
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_FR.dds"), 5);
-	g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_BK.dds"), 4);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_UP.dds"), 0);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_DN.dds"), 1);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_LF.dds"), 2);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_RT.dds"), 3);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_FR.dds"), 5);
+	//g_SkyBoxSurface.LoadTexture(TEXT("noon/cloudy_noon_BK.dds"), 4);
+	////g_SkyBoxSurface.LoadTexture(TEXT("Cloud1.png"), 6);
+
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0005.jpg"), 0);
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0006.jpg"), 1);
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0004.jpg"), 2);
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0002.jpg"), 3);
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0003.jpg"), 5);
+	g_SkyBoxSurface.LoadTexture(TEXT("sky_blue/blue_0001.jpg"), 4);
 	//g_SkyBoxSurface.LoadTexture(TEXT("Cloud1.png"), 6);
 
 	g_SkyBox.GetRenderMethod().SetSurface(&g_SkyBoxSurface);
 	g_SkyBox.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 
-		 //设置灯光
-	 D3DXVECTOR3 vecDir;
-     D3DLIGHT9 light;
-	 ZeroMemory( &light, sizeof(D3DLIGHT9) );
-     light.Type       = D3DLIGHT_DIRECTIONAL;
-     light.Diffuse.r  = 1.0f;
-     light.Diffuse.g  = 1.0f;
-     light.Diffuse.b  = 1.0f;
-	 vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
-     D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
-	 light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
-     light.Range       = 1000.0f;
+		// //设置灯光
+	 //D3DXVECTOR3 vecDir;
+  //   D3DLIGHT9 light;
+	 //ZeroMemory( &light, sizeof(D3DLIGHT9) );
+  //   light.Type       = D3DLIGHT_DIRECTIONAL;
+  //   light.Diffuse.r  = 1.0f;
+  //   light.Diffuse.g  = 1.0f;
+  //   light.Diffuse.b  = 1.0f;
+	 //vecDir = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+  //   D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+	 //light.Position = D3DXVECTOR3(-1.0f, -1.0f, 2.0f);
+  //   light.Range       = 1000.0f;
 
-	 LIGHTMANAGER.SetLight(light, 0);
+	 //LIGHTMANAGER.SetLight(light, 0);
 	 LIGHTMANAGER.SetAmbient(0x00808080);
 
-	// GAMEHOST.SetLightEnable(true);
+	GAMEHOST.SetLightEnable(true);
+
+	//创建矩形顶点缓冲区
+    /*V_RETURN( pd3dDevice->CreateVertexBuffer( 4*sizeof(SHADOWVERTEX),
+                                       D3DUSAGE_WRITEONLY, SHADOWVERTEX::FVF,
+                                       D3DPOOL_MANAGED, &g_pBigSquareVB, NULL ));*/
 
     return S_OK;
 }
@@ -160,6 +252,32 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 	if( !GAMEHOST.Restore(*pBackBufferSurfaceDesc) )
 		return S_FALSE;
 
+	////填充矩形顶点缓冲区
+	//SHADOWVERTEX* v;
+ //   float sx = (float)pBackBufferSurfaceDesc->Width;
+ //   float sy = (float)pBackBufferSurfaceDesc->Height;
+ //   g_pBigSquareVB->Lock( 0, 0, (void**)&v, 0 );
+ //   v[0].p = D3DXVECTOR4(  0, sy, 0.0f, 1.0f );
+ //   v[1].p = D3DXVECTOR4(  0,  0, 0.0f, 1.0f );
+ //   v[2].p = D3DXVECTOR4( sx, sy, 0.0f, 1.0f );
+ //   v[3].p = D3DXVECTOR4( sx,  0, 0.0f, 1.0f );
+ //   v[0].color = 0x7f000000;
+ //   v[1].color = 0x7f000000;
+ //   v[2].color = 0x7f000000;
+ //   v[3].color = 0x7f000000;
+ //   g_pBigSquareVB->Unlock();
+
+	//pd3dDevice->SetRenderState( D3DRS_AMBIENT, 0xffffffff );
+
+	HRESULT hr;
+
+		//恢复字体
+    if( g_pFont )
+        V_RETURN( g_pFont->OnResetDevice() );
+   
+	//创建ID3DXSprite接口对象
+    V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
+
     return S_OK;
 }
 
@@ -169,11 +287,49 @@ HRESULT CALLBACK OnD3D9ResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFA
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
+	//设置灯光, 实时更新光源位置
+	D3DLIGHT9 light;
+    ZeroMemory( &light, sizeof(D3DLIGHT9) );
+    light.Type       = D3DLIGHT_POINT;  
+    light.Diffuse.r  = 1.0f;
+    light.Diffuse.g  = 1.0f;
+    light.Diffuse.b  = 1.0f;
+
+	float lx,ly,lz;           //光源位置
+	lx = 10*sinf(timeGetTime()/360.0f) + 100;
+	ly = 500;
+	lz = 10*cosf(timeGetTime()/360.0f);
+	light.Position= D3DXVECTOR3(lx,ly,lz);
+
+    light.Range        = 100.0f;
+	light.Attenuation0 = 0.9f;
+    light.Attenuation1 = 0.0f;
+
+	LIGHTMANAGER.SetLight(light, 0);
+
 	GAMEHOST.Update(fElapsedTime);
+
+	g_TerrainSystem.Update();
+
+	//根据光源位置更新阴影体
+	//g_pShadowVolume->Update();
+
+	//g_Mesh.Update();
+	g_SkinMesh.Update();
+	g_CopyMesh.Update();
+
+	/*void* pVertices, *pIndices;
+	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
+    g_CopyMesh.GetMesh()->LockIndexBuffer( 0L, (LPVOID*)&pIndices );
+
+	g_CopyMesh.GetMesh()->UnlockVertexBuffer();
+    g_CopyMesh.GetMesh()->UnlockIndexBuffer();*/
+
+	//g_ShadowVolume2.SetMeshData((zerO::PUINT8)pVertices, (zerO::PUINT16)pIndices, g_CopyMesh.GetMesh()->GetNumBytesPerVertex() );
 
 	static FLOAT x = 0, y = 0, z = 0, RotationY = 0, RotationX = 0;
 
-	D3DXMATRIX Matrix, Rotation, Translation;
+	/*D3DXMATRIX Matrix, Rotation, Translation;
 
 	D3DXMatrixIdentity(&Matrix);
 
@@ -181,43 +337,109 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	Matrix *= Rotation;
 
-	D3DXMatrixTranslation( &Translation, x, g_Terrain.GetHeight(CAMERA.GetPosition().x, CAMERA.GetPosition().z) + 100.0f, z );
+	D3DXMatrixTranslation( &Translation, x, g_Terrain.GetHeight(CAMERA.GetWorldPosition().x, CAMERA.GetWorldPosition().z) + 100.0f, z );
 
 	Matrix *= Translation;
 
-	CAMERA.SetTransform(Matrix);
+	CAMERA.SetTransform(Matrix);*/
 
-	/*if( DXUTIsKeyDown(VK_UP) )
-		y += 10.0f;
+	/*g_Mesh.SetPosition( 
+		D3DXVECTOR3(
+		g_Mesh.GetPosition().x, 
+		g_TerrainSystem.GetTerrain()->GetHeight(g_Mesh.GetPosition().x, g_Mesh.GetPosition().z) + 100.0f, 
+		g_Mesh.GetPosition().z)  );*/
+
+	g_SkinMesh.SetPosition( 
+		D3DXVECTOR3(
+		g_SkinMesh.GetPosition().x, 
+		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
+		g_SkinMesh.GetPosition().z)  );
+
+	g_CopyMesh.SetPosition( 
+		D3DXVECTOR3(
+		100, 
+		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
+		g_SkinMesh.GetPosition().z)  );
+
+	CAMERA.SetRotation( 
+		D3DXVECTOR3(RotationX / 180 * D3DX_PI, RotationY / 180 * D3DX_PI, 0.0f) );
+	CAMERA.SetPosition( 
+		D3DXVECTOR3(CAMERA.GetPosition().x, 
+		g_TerrainSystem.GetTerrain()->GetHeight(CAMERA.GetPosition().x, CAMERA.GetPosition().z) + 100.0f, 
+		CAMERA.GetPosition().z) );
+
+	if( DXUTIsKeyDown(VK_UP) )
+		RotationX += 1.0f;
 	
 	if( DXUTIsKeyDown(VK_DOWN) )
-		y -= 10.0f;*/
+		RotationX -= 1.0f;
 
 	if( DXUTIsKeyDown(VK_LEFT) )
-		x -= 10.0f;
+		CAMERA.Right (- 10.0f);
 
 	if( DXUTIsKeyDown(VK_RIGHT) )
-		x += 10.0f;
+		CAMERA.Right (  10.0f);
 
 	if( DXUTIsKeyDown('W') )
-		z += 10.0f;
+		/*z += 10.0f;*/
+		CAMERA.Forward(10.0f);
 
 	if( DXUTIsKeyDown('S') )
-		z -= 10.0f;
+		CAMERA.Forward(-10.0f);
 
 	if( DXUTIsKeyDown('A') )
 		RotationY -= 1.0f;
 
 	if( DXUTIsKeyDown('D') )
 		RotationY += 1.0f;
-
-	if( DXUTIsKeyDown('Q') )
-		RotationX -= 1.0f;
-
-	if( DXUTIsKeyDown('E') )
-		RotationX += 1.0f;
 }
 
+////-----------------------------------------------------------------------------
+//// Desc: 渲染阴影
+////-----------------------------------------------------------------------------
+//HRESULT DrawShadow(IDirect3DDevice9* pd3dDevice)
+//{
+//	//关闭深度测试, 启用Alpha混合
+//    pd3dDevice->SetRenderState( D3DRS_ZENABLE,          false );
+//    pd3dDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, true );
+//    pd3dDevice->SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+//    pd3dDevice->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+//
+//    //设置模板相关渲染状态
+//	pd3dDevice->SetRenderState( D3DRS_STENCILENABLE,    true );
+//    pd3dDevice->SetRenderState( D3DRS_STENCILREF,  0x1 );
+//    pd3dDevice->SetRenderState( D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL );
+//    pd3dDevice->SetRenderState( D3DRS_STENCILPASS, D3DSTENCILOP_KEEP );
+//
+//    //渲染一个灰色矩形, 只有通过模板测试的像素才会被渲染到颜色缓冲区,表示阴影
+//    pd3dDevice->SetFVF( SHADOWVERTEX::FVF );
+//    pd3dDevice->SetStreamSource( 0, g_pBigSquareVB, 0, sizeof(SHADOWVERTEX) );
+//    pd3dDevice->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2 );
+//
+//    //恢复渲染状态
+//    pd3dDevice->SetRenderState( D3DRS_ZENABLE,          true );
+//    pd3dDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, false );
+//	pd3dDevice->SetRenderState( D3DRS_STENCILENABLE,    false );
+//
+//    return S_OK;
+//}
+
+//-----------------------------------------------------------------------------
+// Desc: 渲染文本
+//-----------------------------------------------------------------------------
+void RenderText()
+{
+    CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, 15 );
+
+    //显示当前Direct3D设备状态和渲染帧速率
+    txtHelper.Begin();
+    txtHelper.SetInsertionPos( 5, 5 );
+    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
+    txtHelper.DrawTextLine( DXUTGetFrameStats(true) );
+    txtHelper.DrawTextLine( DXUTGetDeviceStats() );
+
+    txtHelper.End();
+}
 
 //--------------------------------------------------------------------------------------
 // Render the scene using the D3D9 device
@@ -226,12 +448,8 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 {
     HRESULT hr;
 
-	zerO::CRectangle3D Rect;
-	Rect.Set(- 500.0f, 0.0f, - 500.0f, 0.0f, 0.0f, 500.0f);
-	zerO::CQuadTreeObject* pObject = g_QuadTree.SearchObject( CAMERA.GetWorldRectangle() ), * pCurrentObject;
-
     // Clear the render target and the zbuffer 
-    V( pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 45, 50, 170 ), 1.0f, 0 ) );
+    V( pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, D3DCOLOR_ARGB( 0, 45, 50, 170 ), 1.0f, 0 ) );
 
     // Render the scene
     if( SUCCEEDED( pd3dDevice->BeginScene() ) )
@@ -239,16 +457,32 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//开始渲染
 		g_Game.BeginRender();
 
-		pCurrentObject = pObject;
+		g_TerrainSystem.Render();
 
-		while(pCurrentObject)
-		{
-			pCurrentObject->ApplyForRender();
-			pCurrentObject = pCurrentObject->GetNext();
-		}
+		//g_Mesh.ApplyForRender();
+		g_SkinMesh.ApplyForRender();
+		g_CopyMesh.ApplyForRender();
 
 		//结束渲染
 		g_Game.EndRender();
+
+		//pd3dDevice->SetVertexShader(NULL);
+		//pd3dDevice->SetPixelShader(NULL);
+
+		//pd3dDevice->SetTransform( D3DTS_VIEW, &CAMERA.GetViewMatrix() );
+
+		////设置投影矩阵
+		//pd3dDevice->SetTransform( D3DTS_PROJECTION, &CAMERA.GetProjectionMatrix() );
+
+		//渲染阴影
+		//g_pShadowVolume->Render(false);
+
+		//DrawShadow(pd3dDevice);
+
+		//渲染文本和控件
+        DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"HUD / Stats" ); 
+        RenderText();
+        DXUT_EndPerfEvent();
 
         V( pd3dDevice->EndScene() );
     }
@@ -272,6 +506,10 @@ void CALLBACK OnD3D9LostDevice( void* pUserContext )
 {
 	//自动化释放
 	DEBUG_ASSERT(GAMEHOST.Disable(), "Disable error.");
+
+	if( g_pFont )
+        g_pFont->OnLostDevice();
+    SAFE_RELEASE( g_pTextSprite );
 }
 
 
@@ -282,6 +520,15 @@ void CALLBACK OnD3D9DestroyDevice( void* pUserContext )
 {
 	//自动化销毁
 	DEBUG_ASSERT(GAMEHOST.Destroy(), "Destroy error.");
+
+	/*if(g_pBigSquareVB)
+		g_pBigSquareVB->Release();*/
+
+	/*g_pShadowVolume->Destroy();*/
+	/*if(g_pShadowVolume )
+		delete g_pShadowVolume ;*/
+
+	SAFE_RELEASE( g_pFont );
 }
 
 

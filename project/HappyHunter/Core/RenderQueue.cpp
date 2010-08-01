@@ -66,13 +66,20 @@ void CRenderQueue::Render()
 
 		UINT32 uFlags = 0xffffffff;
 
+		CEffect* pEffect;
+
 		LPRENDERENTRY pCurrentEntry = m_ppEntryList[0], pPreviousEntry = NULL;
+
+		if(pCurrentEntry->hEffect)
+		{
+			pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pCurrentEntry->hEffect, RESOURCE_EFFECT) );
+
+			pEffect->Active(pCurrentEntry->uRenderPass);
+		}
 
 		pCurrentEntry->pParent->Render(
 			pCurrentEntry, 
 			uFlags);
-
-		CEffect* pEffect;
 
 		for (UINT i = 1; i < m_uActiveEntries; i ++)
 		{
@@ -83,9 +90,19 @@ void CRenderQueue::Render()
 
 			if (pPreviousEntry->hEffect != pCurrentEntry->hEffect)
 			{
-				pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect, RESOURCE_EFFECT) );
+				if(pPreviousEntry->hEffect)
+				{
+					pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect, RESOURCE_EFFECT) );
 
-				pEffect->End();
+					pEffect->End();
+				}
+
+				if(pCurrentEntry->hEffect)
+				{
+					pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pCurrentEntry->hEffect, RESOURCE_EFFECT) );
+
+					pEffect->Active(pCurrentEntry->uRenderPass);
+				}
 
 				SET_BIT(uFlags, EFFECT);
 				SET_BIT(uFlags, EFFECT_PASS);
@@ -93,6 +110,20 @@ void CRenderQueue::Render()
 			}
 			else if (pPreviousEntry->uRenderPass != pCurrentEntry->uRenderPass)
 			{
+				if(pPreviousEntry->hEffect)
+				{
+					pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pPreviousEntry->hEffect, RESOURCE_EFFECT) );
+
+					pEffect->EndPass();
+				}
+
+				if(pCurrentEntry->hEffect)
+				{
+					pEffect = dynamic_cast<CEffect*>( GAMEHOST.GetResource(pCurrentEntry->hEffect, RESOURCE_EFFECT) );
+
+					pEffect->BeginPass(pCurrentEntry->uRenderPass);
+				}
+
 				SET_BIT(uFlags, EFFECT_PASS);
 				SET_BIT(uFlags, EFFECT_PARAM);
 			}		
@@ -118,8 +149,11 @@ void CRenderQueue::Render()
 					SET_BIT(uFlags, MODEL_PARAMB);	
 			}
 
-			if (pPreviousEntry->hSurface != pCurrentEntry->hSurface)
+			if(pPreviousEntry->hSurface != pCurrentEntry->hSurface)
 				SET_BIT(uFlags, SURFACE);
+
+			if(pPreviousEntry->pParent != pCurrentEntry->pParent)
+				SET_BIT(uFlags, PARENT);
 
 			pCurrentEntry->pParent->Render(pCurrentEntry, uFlags);
 		}

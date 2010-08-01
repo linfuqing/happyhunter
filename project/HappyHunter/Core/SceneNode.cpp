@@ -5,15 +5,10 @@ using namespace zerO;
 
 CSceneNode::CSceneNode(void) :
 m_pParent(NULL), 
-m_bIsTransformDirty(false), 
-m_Position(0.0f, 0.0f, 0.0f),
-m_Right(1.0f, 0.0f, 0.0f),
-m_Up(0.0f, 1.0f, 0.0f),
-m_Forward(0.0f, 0.0f, 1.0f)
+m_bIsTransformDirty(false)
 {
 	D3DXMatrixIdentity(&m_LocalMatrix);
 	D3DXMatrixIdentity(&m_WorldMatrix);
-	D3DXMatrixIdentity(&m_InverseWorldMatrix);
 
 	if( GAMEHOST.GetScene() )
 		GAMEHOST.GetScene()->AddChild(this);
@@ -82,33 +77,28 @@ void CSceneNode::UpdateTransform()
 	else
 		m_WorldMatrix = m_LocalMatrix;
 
-	D3DXMatrixInverse(&m_InverseWorldMatrix, NULL, &m_WorldMatrix);
-
 	m_WorldRect = m_LocalRect;
 
 	m_WorldRect.Transform(m_WorldMatrix);
-
-	m_Right.x    = m_WorldMatrix._11 / m_WorldMatrix._14;
-	m_Right.y    = m_WorldMatrix._12 / m_WorldMatrix._14;
-	m_Right.z    = m_WorldMatrix._13 / m_WorldMatrix._14;
-
-	m_Up.x       = m_WorldMatrix._21 / m_WorldMatrix._24;
-	m_Up.y       = m_WorldMatrix._22 / m_WorldMatrix._24;
-	m_Up.z       = m_WorldMatrix._23 / m_WorldMatrix._24;
-
-	m_Forward.x  = m_WorldMatrix._31 / m_WorldMatrix._34;
-	m_Forward.y  = m_WorldMatrix._32 / m_WorldMatrix._34;
-	m_Forward.z  = m_WorldMatrix._33 / m_WorldMatrix._34;
-
-	m_Position.x = m_WorldMatrix._41 / m_WorldMatrix._44;
-	m_Position.y = m_WorldMatrix._42 / m_WorldMatrix._44;
-	m_Position.z = m_WorldMatrix._43 / m_WorldMatrix._44;
 }
 
 void CSceneNode::Update()
 {
 	if(m_bIsTransformDirty)
 		UpdateTransform();
+}
+
+void CSceneNode::Clone(CSceneNode& Node)const
+{
+	for(std::list<CSceneNode*>::const_iterator i =  m_Children.begin(); i != m_Children.end(); i ++)
+		Node.m_Children.push_back(*i);
+
+	Node.m_LocalMatrix = m_LocalMatrix;
+	Node.m_WorldMatrix = m_WorldMatrix;
+	Node.m_LocalRect   = m_LocalRect;
+	Node.m_WorldRect   = m_WorldRect;
+
+	Node.m_bIsTransformDirty = m_bIsTransformDirty;
 }
 
 bool CSceneNode::ApplyForRender()

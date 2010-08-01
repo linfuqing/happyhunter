@@ -82,6 +82,10 @@ bool CTerrainSection::Create(
 	return bResult;
 }
 
+void CTerrainSection::Update()
+{
+}
+
 bool CTerrainSection::__BuildVertexBuffer()
 {
 	LPVERTEX pVertices;
@@ -504,10 +508,10 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 	
 	if (pEffect)
 	{	
-		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
-			pEffect->Begin();
+		/*if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
+			pEffect->Begin();*/
 
-		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
+		/*pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);*/
 
 		if( TEST_BIT(uFlag, CRenderQueue::MODEL) )
 			m_VertexBuffer.Activate(0, 0, true);
@@ -536,11 +540,11 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 			(FLOAT)pSection->GetSectorY() );
 
 		pEffect->SetParameter(
-			CEffect::POSITION, 
+			CEffect::POSITION_OFFSET, 
 			(D3DXVECTOR4*)&SectorOffset);
 
 		pEffect->SetParameter(
-			CEffect::UV, 
+			CEffect::UV_OFFSET, 
 			(D3DXVECTOR4*)&UVScaleOffset);
 
 		pEffect->GetEffect()->CommitChanges();
@@ -553,7 +557,7 @@ void CTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, cons
 			0,
 			m_IndexBuffer.GetPrimitiveCount() );
 
-		pEffect->GetEffect()->EndPass();
+		//pEffect->GetEffect()->EndPass();
 	}
 }
 
@@ -618,6 +622,13 @@ bool CRoamTerrainSection::Create(
 	return bResult;
 }
 
+void CRoamTerrainSection::Update()
+{
+	Reset();
+
+	PrepareForRender();
+}
+
 void CRoamTerrainSection::Reset()
 {
 	m_RootTriangleA.pLeftChild     = NULL;
@@ -664,7 +675,7 @@ void CRoamTerrainSection::PrepareForRender()
 	D3DXVECTOR2 Corner2( m_WorldRect.GetMaxX(), m_WorldRect.GetMaxZ() );
 	D3DXVECTOR2 Corner3( m_WorldRect.GetMaxX(), m_WorldRect.GetMinZ() );
 
-	const D3DXVECTOR3 CameraPosition = CAMERA.GetPosition();
+	const D3DXVECTOR3 CameraPosition = CAMERA.GetWorldPosition();
 
 	D3DXVECTOR2 ViewPoint(CameraPosition.x, CameraPosition.z);
 
@@ -873,6 +884,7 @@ m_uTessellationQueueCount(0)
 
 CRoamTerrain::~CRoamTerrain()
 {
+	Destroy();
 }
 
 void CRoamTerrain::SetQuadTree(CQuadTree* pQuadTree)
@@ -961,15 +973,6 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 	{	
 		CRoamTerrainSection* pRoamSection=(CRoamTerrainSection*)pSection;
 
-		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
-		{
-			pEffect->Begin();
-
-			//pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, pSection->GetWorldMatrix() * CAMERA.GetViewProjectionMatrix() );
-		}
-
-		pEffect->GetEffect()->BeginPass(pEntry->uRenderPass);
-
 		if( TEST_BIT(uFlag, CRenderQueue::MODEL) )
 			m_VertexBuffer.Activate(0, 0, true);
 
@@ -997,11 +1000,11 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 			(FLOAT)pSection->GetSectorY() );
 
 		pEffect->SetParameter(
-			CEffect::POSITION, 
+			CEffect::POSITION_OFFSET, 
 			(D3DXVECTOR4*)&SectorOffset);
 
 		pEffect->SetParameter(
-			CEffect::UV, 
+			CEffect::UV_OFFSET, 
 			(D3DXVECTOR4*)&UVScaleOffset);
 
 		pEffect->GetEffect()->CommitChanges();
@@ -1015,8 +1018,6 @@ void CRoamTerrain::RenderSection(CTerrainSection* pSection, zerO::UINT32 uFlag, 
 			m_uSectorVertices * m_uSectorVertices,
 			0,
 			uTotalPolys);
-
-		pEffect->GetEffect()->EndPass();
 	}
 }
 
@@ -1025,12 +1026,12 @@ void CRoamTerrain::Reset()
 	m_uTessellationQueueCount = 0;
 	m_uNextTriangleNode       = 0;
 
-	UINT uTotal = m_uSectorCountY * m_uSectorCountX;
+	/*UINT uTotal = m_uSectorCountY * m_uSectorCountX;
 
 	for (UINT i = 0; i < uTotal; i ++)
 	{
 		m_pRoamSection[i].Reset();
-	}
+	}*/
 }
 
 bool CRoamTerrain::AddToTessellationQueue(CRoamTerrainSection* pSection)
@@ -1128,4 +1129,89 @@ bool CRoamTerrain::_AllocateSectors()
 	}
 
 	return true;
+}
+
+CTerrainSystem::CTerrainSystem() :
+m_pTerrain(NULL),
+m_pRenderObjects(NULL),
+m_Type(NORMAL)
+{
+}
+
+CTerrainSystem::~CTerrainSystem()
+{
+	Destroy();
+}
+
+bool CTerrainSystem::Create(
+						   CTexture* pHeightMap, 
+						   const CRectangle3D& WorldExtents, 
+						   zerO::UINT8 uShift,
+						   zerO::UINT  uDepth,
+						   TYPE Type)
+{
+	m_QuadTree.Create(WorldExtents, uDepth);
+
+	switch(Type)
+	{
+	case ROAM:
+		DEBUG_NEW(m_pTerrain, CRoamTerrain);
+		break;
+
+	default:
+		DEBUG_NEW(m_pTerrain, CTerrain);
+	}
+
+	m_Type = Type;
+
+	bool bResult = m_pTerrain->Create(NULL, pHeightMap, WorldExtents, uShift);
+
+	m_pTerrain->SetQuadTree(&m_QuadTree);
+
+	return bResult;
+}
+
+void CTerrainSystem::Update()
+{
+	m_pRenderObjects = m_QuadTree.SearchObject( CAMERA.GetWorldRectangle() );
+
+	CQuadTreeObject* pObject = m_pRenderObjects;
+
+	switch(m_Type)
+	{
+	case ROAM:
+		( (CRoamTerrain*)m_pTerrain )->Reset();
+
+		while(pObject)
+		{
+			pObject->Update();
+			pObject = pObject->GetNext();
+		}
+
+		( (CRoamTerrain*)m_pTerrain )->ProcessTessellationQueue();
+		break;
+	}
+}
+
+void CTerrainSystem::Render()
+{
+	CQuadTreeObject* pObject = m_pRenderObjects;
+
+	while(pObject)
+	{
+		pObject->ApplyForRender();
+		pObject = pObject->GetNext();
+	}
+}
+
+void CTerrainSystem::Destroy()
+{
+	m_QuadTree.Destroy();
+
+	if(m_pTerrain)
+		m_pTerrain->Destroy();
+
+	DEBUG_DELETE(m_pTerrain);
+
+	m_pTerrain = NULL;
 }

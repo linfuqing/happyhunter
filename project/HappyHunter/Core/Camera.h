@@ -1,5 +1,5 @@
 #pragma once
-#include "scenenode.h"
+#include "Sprite.h"
 #include "BitFlag.h"
 
 namespace zerO
@@ -69,7 +69,7 @@ namespace zerO
 	// œ‡ª˙¿‡
 	///
 	class CCamera :
-		public CSceneNode
+		public CSprite
 	{
 	public:
 		CCamera(void);
@@ -78,6 +78,8 @@ namespace zerO
 		const D3DXMATRIX& GetViewMatrix()const;
 		const D3DXMATRIX& GetProjectionMatrix()const;
 		const D3DXMATRIX& GetViewProjectionMatrix()const;
+
+		const D3DXVECTOR3& GetWorldPosition()const;
 
 		const FRUSTUM& GetFrustum()const;
 
@@ -90,10 +92,13 @@ namespace zerO
 
 		void UpdateTransform();
 	private:
+		D3DXMATRIX m_ViewMatrix;
 		D3DXMATRIX m_ProjectionMatrix;
 		D3DXMATRIX m_InverseProjectionMatrix;
 		D3DXMATRIX m_ViewProjectionMatrix;
 		D3DXMATRIX m_InverseViewProjectionMatrix;
+
+		D3DXVECTOR3	m_WorldPosition;
 
 		FRUSTUM m_Frustum;
 
@@ -102,7 +107,7 @@ namespace zerO
 
 	inline const D3DXMATRIX& CCamera::GetViewMatrix()const
 	{
-		return m_InverseWorldMatrix;
+		return m_ViewMatrix;
 	}
 
 	inline const D3DXMATRIX& CCamera::GetProjectionMatrix()const
@@ -118,5 +123,10 @@ namespace zerO
 	inline const FRUSTUM& CCamera::GetFrustum()const
 	{
 		return m_Frustum;
+	}
+
+	inline const D3DXVECTOR3& CCamera::GetWorldPosition()const
+	{
+		return m_WorldPosition;
 	}
 }
