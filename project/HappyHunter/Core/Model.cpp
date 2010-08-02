@@ -166,6 +166,32 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 	{
 		D3DVERTEXELEMENT9   decl[]   = 
 		{ 
+			{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+			{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+			{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+			{   0,   32,   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDWEIGHT,   0   }, 
+			{   0,   48,   D3DDECLTYPE_UBYTE4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BLENDINDICES,   0   }, 
+			{   0,   52,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_BINORMAL,   0   }, 
+			{   0,   64,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+			D3DDECL_END(), 
+		}; 
+
+		hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+		if (FAILED(hr))
+			return hr;
+
+		//确保顶点包含法线
+		hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+		if (FAILED(hr))
+			return hr;
+
+		//计算切线
+		hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+		if (FAILED(hr))
+			return hr;
+
+		D3DVERTEXELEMENT9   decl2[]   = 
+		{ 
 			{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
 			{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
 			{   0,   28,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
@@ -176,13 +202,36 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 			D3DDECL_END(), 
 		}; 
 
-		hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+		hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMeshContainer->MeshData.pMesh );
 		if (FAILED(hr))
 			return hr;
 	}
 	else if(m_Type == SOFTWARE)
 	{
 		D3DVERTEXELEMENT9   decl[]   = 
+		{ 
+			{   0,   0,	   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
+			{   0,   12,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
+			{   0,   24,   D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TEXCOORD,   0   }, 
+			{   0,   32,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_TANGENT,   0   }, 
+			D3DDECL_END(), 
+		}; 
+
+		hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+		if (FAILED(hr))
+			return hr;
+
+		//确保顶点包含法线
+		hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+		if (FAILED(hr))
+			return hr;
+
+		//计算切线
+		hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+		if (FAILED(hr))
+			return hr;
+
+		D3DVERTEXELEMENT9   decl2[]   = 
 		{ 
 			{   0,   0,	   D3DDECLTYPE_FLOAT4,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_POSITION,   0   }, 
 			{   0,   16,   D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT,   D3DDECLUSAGE_NORMAL,   0   }, 
@@ -191,30 +240,13 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 			D3DDECL_END(), 
 		}; 
 
-		hr = pMeshSysMem->CloneMesh(D3DXMESH_MANAGED, decl, &DEVICE, &pMeshSysMem2);
+		//pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+		hr = pMeshSysMem2->CloneMesh(D3DXMESH_MANAGED, decl2, &DEVICE, &pMeshContainer->MeshData.pMesh );
 		if (FAILED(hr))
 			return hr;
 
-		/*hr = D3DXComputeNormals(pMeshContainer->pOrigMesh, NULL);
-		if (FAILED(hr))
-			return hr;
-		}*/
-	}
-	else
-		return S_FALSE;
-	
-	//确保顶点包含法线
-	hr = D3DXComputeNormals(pMeshSysMem2,NULL);
-	if (FAILED(hr))
-		return hr;
+		//pMeshContainer->MeshData.pMesh = pMeshSysMem2;
 
-	//计算切线
-	hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
-	if (FAILED(hr))
-		return hr;
-
-	if(m_Type == SOFTWARE)
-	{
 		UINT uNumVertices = pMeshContainer->pOrigMesh->GetNumVertices();
 
 		pMeshContainer->puMeshBuffer  = new UINT8[pMeshContainer->pOrigMesh->GetNumBytesPerVertex() * uNumVertices];
@@ -245,6 +277,23 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 
 		pMeshSysMem2->UnlockVertexBuffer();
 	}
+	else
+		return S_FALSE;
+	
+	//确保顶点包含法线
+	//hr = D3DXComputeNormals(pMeshSysMem2,NULL);
+	//if (FAILED(hr))
+	//	return hr;
+
+	////计算切线
+	//hr = D3DXComputeTangent( pMeshSysMem2, 0, 0, 0, true, NULL );
+	//if (FAILED(hr))
+	//	return hr;
+
+	//if(m_Type == SOFTWARE)
+	//{
+	//	
+	//}
 
 	/*D3DVERTEXELEMENT9   decl2[]   = 
 	{ 
@@ -263,13 +312,13 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 	if (FAILED(hr))
 		return hr;*/
 
-	pMeshContainer->MeshData.pMesh = pMeshSysMem2;
+	//pMeshContainer->MeshData.pMesh = pMeshSysMem2;
 
 	//释放临时网格模型对象
 	DEBUG_RELEASE(pMeshSysMem);
-	//DEBUG_RELEASE(pMeshSysMem2);
+	DEBUG_RELEASE(pMeshSysMem2);
 
-	m_pMesh = pMeshSysMem2;
+	m_pMesh = pMeshContainer->MeshData.pMesh;
 
 	return hr;
 }

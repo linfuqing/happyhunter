@@ -411,6 +411,8 @@ HRESULT UpdateSkinnedMesh(ID3DXSkinInfo *pSkinInfo,
 
 	if(pTangentSrc && pTangentDst)
 	{
+		memcpy( pTangentDst, pTangentSrc, numTotalVerts * sizeof(D3DXVECTOR3) );
+
 		for(DWORD i = 0; i < pSkinInfo->GetNumBones(); i++)
 		{
 		   dwNumVerts = pSkinInfo->GetNumBoneInfluences(i); //得到受影响的顶点个数
@@ -544,13 +546,14 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 				zerO::UINT uNumBytesPerVertexSrc  = pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
 						   uNumBytesPerVertexDest = pMeshContainer->MeshData.pMesh->GetNumBytesPerVertex(),
 						   uNumVertices           = pMeshContainer->pOrigMesh->GetNumVertices(),
-						   uPositionSize          = sizeof(D3DXVECTOR4),
+						   uPosition4Size         = sizeof(D3DXVECTOR4),
+						   uPosition3Size         = sizeof(D3DXVECTOR3),
 						   uTangentOffset         = uNumBytesPerVertexDest - sizeof(D3DXVECTOR3);
 
 				for(zerO::UINT i = 0; i < uNumVertices; i ++)
 				{
 					*(D3DXVECTOR4*)(pbVerticesDest                 ) = D3DXVECTOR4(*(D3DVECTOR*)puMeshBuffer, 1.0f);
-					*(D3DXVECTOR3*)(pbVerticesDest + uPositionSize ) = *(D3DXVECTOR3*)(puMeshBuffer + uPositionSize);
+					*(D3DXVECTOR3*)(pbVerticesDest + uPosition4Size) = *(D3DXVECTOR3*)(puMeshBuffer + uPosition3Size);
 					*(D3DXVECTOR3*)(pbVerticesDest + uTangentOffset) = pTangentBuffer[i];
 
 
@@ -563,7 +566,7 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 
 				//D3DXComputeNormals(pMeshContainer->MeshData.pMesh,NULL);
 
-				//计算切线
+				////计算切线
 				//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
 			}
 			else if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::HARDWARE)
