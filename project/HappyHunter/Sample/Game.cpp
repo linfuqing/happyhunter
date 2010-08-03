@@ -16,8 +16,10 @@ ID3DXSprite*               g_pTextSprite = NULL;    //ID3DXSprite文本精灵对象
 
 zerO::CGameHost g_Game;
 
-zerO::CCrossPlane g_CrossPlane;
-//zerO::CBillboard g_Billboard;
+//zerO::CCrossPlane g_CrossPlane;
+//zerO::CCrossPlane g_CopyPlane;
+zerO::CBillboard g_Billboard;
+zerO::CBillboard g_Copyboard;
 zerO::CSurface   g_Surface;
 
 //--------------------------------------------------------------------------------------
@@ -68,9 +70,9 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	CAMERA.SetProjection(D3DX_PI / 4.0f, 1.0f, 0.5f, 3000.0f);
 
-	 //g_Billboard.Create(800, 600);
+	 g_Billboard.Create(800, 600);
 
-	g_CrossPlane.Create(800, 600, 5);
+	/*g_CrossPlane.Create(800, 600, 5);*/
 
 	 D3DMATERIAL9 Matrial;
 	 memset( &Matrial, 0, sizeof(D3DMATERIAL9) );
@@ -81,10 +83,16 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	 g_Surface.SetMaterial(Matrial);
 	 g_Surface.LoadTexture(TEXT("heightmap.jpg"), 0);
-	 /*g_Billboard.GetRenderMethod().SetSurface(&g_Surface);
-	 g_Billboard.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );*/
-	 g_CrossPlane.GetRenderMethod().SetSurface(&g_Surface);
+	 g_Billboard.GetRenderMethod().SetSurface(&g_Surface);
+	 g_Billboard.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
+	 /*g_CrossPlane.GetRenderMethod().SetSurface(&g_Surface);
 	 g_CrossPlane.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
+
+	 g_CrossPlane.Clone(g_CopyPlane);
+	 g_CopyPlane.SetPosition( D3DXVECTOR3(500.0f, 0.0f, 0.0f) );*/
+
+	 g_Billboard.Clone(g_Copyboard);
+	 g_Copyboard.SetPosition( D3DXVECTOR3(500.0f, 0.0f, 0.0f) );
 
 		 //设置灯光
 	 D3DXVECTOR3 vecDir;
@@ -169,8 +177,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	if( DXUTIsKeyDown('D') )
 		RotationY += 1.0f;
 
-	//g_Billboard.Update();
-	g_CrossPlane.Update();
+	g_Billboard.Update();
+	g_Copyboard.Update();
+	/*g_CrossPlane.Update();
+	g_CopyPlane.Update();*/
 }
 
 //-----------------------------------------------------------------------------
@@ -206,8 +216,10 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//开始渲染
 		g_Game.BeginRender();
 
-		//g_Billboard.ApplyForRender();
-		g_CrossPlane.ApplyForRender();
+		g_Billboard.ApplyForRender();
+		g_Copyboard.ApplyForRender();
+		/*g_CrossPlane.ApplyForRender();
+		g_CopyPlane.ApplyForRender();*/
 
 		//结束渲染
 		g_Game.EndRender();
