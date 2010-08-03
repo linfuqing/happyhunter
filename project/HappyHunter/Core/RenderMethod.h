@@ -29,6 +29,8 @@ namespace zerO
 		bool LoadEffect(const PBASICCHAR pcFileName);
 		bool LoadEffect(const PBASICCHAR pcFileName, UINT uStage);
 
+		void Clone(CRenderMethod& RenderMethod)const;
+
 		bool Destroy();
 		
 		void DestroySurface();

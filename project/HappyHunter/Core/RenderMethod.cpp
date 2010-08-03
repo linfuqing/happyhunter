@@ -61,6 +61,18 @@ bool CRenderMethod::LoadEffect(const PBASICCHAR pcFileName, zerO::UINT uStage)
 	return false;
 }
 
+void CRenderMethod::Clone(CRenderMethod& RenderMethod)const
+{
+	for(std::vector<CEffect*>::const_iterator i = m_EffectList.begin(); i != m_EffectList.end(); i ++)
+		RenderMethod.m_EffectList.push_back(*i);
+
+	for(std::vector<CSurface*>::const_iterator i = m_SurfaceList.begin(); i != m_SurfaceList.end(); i ++)
+		RenderMethod.m_SurfaceList.push_back(*i);
+
+	RenderMethod.m_uActiveEffect  = m_uActiveEffect;
+	RenderMethod.m_uActiveSurface = m_uActiveSurface;
+}
+
 bool CRenderMethod::Destroy()
 {
 	for(std::list<CEffect*>::iterator i = m_EffectDestroyList.begin(); i != m_EffectDestroyList.end(); i ++)

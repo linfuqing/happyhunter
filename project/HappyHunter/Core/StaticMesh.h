@@ -19,6 +19,9 @@ namespace zerO
 		CMesh& GetMesh();
 
 		bool Create(const PBASICCHAR meshFile);
+		bool Destroy();
+
+		void Clone(CStaticMesh& StaticMesh)const;
 
 		virtual bool ApplyForRender();
 		virtual void Update();
@@ -32,8 +35,10 @@ namespace zerO
 	private:
 		CRenderMethod			m_RenderMethod;		// 渲染方法
 		BASICSTRING				m_strEffectFile;	// 效果文件
-		CMesh                   m_Mesh;
+		CMesh*                  m_pMesh;
 		//CShadowVolume           m_Shadow;
+
+		bool                    m_bIsCreated;
 	};
 
 	//---------------------------------------------------------------------------
@@ -56,7 +61,7 @@ namespace zerO
 
 	inline CMesh& CStaticMesh::GetMesh()
 	{
-		return m_Mesh;
+		return *m_pMesh;
 	}
 
 	inline const CRenderMethod& CStaticMesh::GetRenderMethod() const

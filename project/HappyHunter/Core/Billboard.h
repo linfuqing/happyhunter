@@ -34,7 +34,7 @@ namespace zerO
 		void Stop();
 		void Pause();
 
-		bool Create(FLOAT fWidth, FLOAT fHeight);
+		bool Create(FLOAT fWidth, FLOAT fHeight, const D3DXVECTOR3* pCenter);
 
 		void Update();
 
@@ -43,8 +43,8 @@ namespace zerO
 		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
 	private:
-		FLOAT         m_fHalfWidth;
-		FLOAT         m_fHalfHeight;
+		FLOAT         m_fWidth;
+		FLOAT         m_fHeight;
 		FLOAT         m_fOffsetU;
 		FLOAT         m_fOffsetV;
 

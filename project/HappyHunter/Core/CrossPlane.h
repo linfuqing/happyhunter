@@ -25,7 +25,7 @@ namespace zerO
 
 		CRenderMethod& GetRenderMethod();
 
-		bool Create(FLOAT fWidth, FLOAT fHeight, UINT uNumPlanes);
+		bool Create(FLOAT fWidth, FLOAT fHeight, UINT uNumPlanes, const D3DXVECTOR3* pCenter = NULL);
 
 		void Update();
 
@@ -37,8 +37,8 @@ namespace zerO
 		CRenderMethod m_RenderMethod;
 		CVertexBuffer m_VertexBuffer;
 
-		FLOAT m_fHalfWidth;
-		FLOAT m_fHalfHeight;
+		FLOAT m_fWidth;
+		FLOAT m_fHeight;
 		UINT m_uNumPlanes;
 	};
 

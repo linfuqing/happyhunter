@@ -5,8 +5,8 @@
 using namespace zerO;
 
 CCrossPlane::CCrossPlane(void) :
-m_fHalfWidth(0.0f),
-m_fHalfHeight(0.0f),
+m_fWidth(0.0f),
+m_fHeight(0.0f),
 m_uNumPlanes(0)
 {
 }
@@ -15,18 +15,29 @@ CCrossPlane::~CCrossPlane(void)
 {
 }
 
-bool CCrossPlane::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, zerO::UINT uNumPlanes)
+bool CCrossPlane::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, zerO::UINT uNumPlanes, const D3DXVECTOR3* pCenter)
 {
-	m_fHalfWidth  = fWidth * 0.5f;
-	m_fHalfHeight = fHeight * 0.5f;
+	m_fWidth      = fWidth;
+	m_fHeight     = fHeight;
 	m_uNumPlanes  = uNumPlanes;
+
+	FLOAT fHalfWidth  = fWidth * 0.5f;
+	FLOAT fHalfHeight = fHeight * 0.5f;
 
 	FLOAT fOffsetAngle = D3DX_PI / uNumPlanes;
 
-	D3DXVECTOR3 p0(- m_fHalfWidth, - m_fHalfHeight, 0.0f),
-		p1(- m_fHalfWidth,   m_fHalfHeight, 0.0f),
-		p2(  m_fHalfWidth, - m_fHalfHeight, 0.0f),
-		p3(  m_fHalfWidth,   m_fHalfHeight, 0.0f);
+	D3DXVECTOR3 p0(- fHalfWidth, - fHalfHeight, 0.0f),
+		p1(- fHalfWidth,   fHalfHeight, 0.0f),
+		p2(  fHalfWidth, - fHalfHeight, 0.0f),
+		p3(  fHalfWidth,   fHalfHeight, 0.0f);
+
+	if(pCenter)
+	{
+		p0 += *pCenter;
+		p1 += *pCenter;
+		p2 += *pCenter;
+		p3 += *pCenter;
+	}
 
 	D3DXMATRIX Matrix;
 
@@ -43,10 +54,10 @@ bool CCrossPlane::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, zerO::UINT uNu
 		pPlane[i].Vertices[2].Position = p2;
 		pPlane[i].Vertices[3].Position = p3;
 
-		pPlane[i].Vertices[0].UV = D3DXVECTOR2(0.0f, 0.0f);
-		pPlane[i].Vertices[1].UV = D3DXVECTOR2(0.0f, 1.0f);
-		pPlane[i].Vertices[2].UV = D3DXVECTOR2(1.0f, 0.0f);
-		pPlane[i].Vertices[3].UV = D3DXVECTOR2(1.0f, 1.0f);
+		pPlane[i].Vertices[0].UV = D3DXVECTOR2(0.0f, 1.0f);
+		pPlane[i].Vertices[1].UV = D3DXVECTOR2(0.0f, 0.0f);
+		pPlane[i].Vertices[2].UV = D3DXVECTOR2(1.0f, 1.0f);
+		pPlane[i].Vertices[3].UV = D3DXVECTOR2(1.0f, 0.0f);
 
 		D3DXVec3TransformCoord(&p0, &p0, &Matrix);
 		D3DXVec3TransformCoord(&p1, &p1, &Matrix);
@@ -101,6 +112,10 @@ void CCrossPlane::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 	
 	if (pEffect)
 	{	
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE         );
+		DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
+		DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
 		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
 		if( TEST_BIT(uFlag, CRenderQueue::PARENT) )
@@ -118,5 +133,7 @@ void CCrossPlane::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, i << 2, 2);
 
 		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 	}
 }

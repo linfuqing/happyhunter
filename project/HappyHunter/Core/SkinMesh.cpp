@@ -585,10 +585,12 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 					iMatrixIndex = pBoneComb[pEntry->uModelParamB].BoneId[iPaletteEntry];
 
 					if (iMatrixIndex != UINT_MAX)
+					{
 						D3DXMatrixMultiply(
 							&m_pModel->GetBoneMatrices()[iPaletteEntry], 
 							&pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], 
 							pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
+					}
 				}
 
 				m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, m_pModel->GetBoneMatrices(), pMeshContainer->NumPaletteEntries);
@@ -603,7 +605,7 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 		}
 		else
 		{
-			matTemp = pFrame->CombinedTransformationMatrix * CAMERA.GetViewProjectionMatrix() * m_WorldMatrix;
+			matTemp = pFrame->CombinedTransformationMatrix * m_WorldMatrix * CAMERA.GetViewProjectionMatrix();
 			m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, &matTemp, 1);
 		}
 	}

@@ -15,8 +15,6 @@ namespace zerO
 		CSceneNode(void);
 		~CSceneNode(void);
 
-		virtual bool Destroy();
-
 		CSceneNode* GetParent()const;
 
 		//本地矩阵
@@ -40,6 +38,8 @@ namespace zerO
 		virtual bool ApplyForRender();
 
 		virtual void UpdateTransform();
+
+		virtual bool Destroy();
 
 		//渲染之外的所有变换更新,进行CPU计算.
 		virtual void Update();
