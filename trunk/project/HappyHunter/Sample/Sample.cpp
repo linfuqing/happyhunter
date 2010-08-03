@@ -27,9 +27,9 @@ zerO::CTexture  g_Detail;
 zerO::CSurface  g_TerrainSurface;
 zerO::CTerrain g_Terrain;
 
-zerO::CStaticMesh g_Mesh;
-zerO::CStaticMesh g_Copy;
-//zerO::CSkinMesh   g_SkinMesh;
+//zerO::CStaticMesh g_Mesh;
+//zerO::CStaticMesh g_Copy;
+zerO::CSkinMesh   g_SkinMesh;
 //zerO::CSkinMesh   g_CopyMesh;
 
 zerO::CTerrainSystem g_TerrainSystem;
@@ -103,9 +103,9 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	CAMERA.SetProjection(D3DX_PI / 4.0f, (zerO::FLOAT)DeviceSettings.pp.BackBufferWidth / DeviceSettings.pp.BackBufferHeight, 0.5f, 3000.0f);
 
-	/*g_SkinMesh.SetEffectFile( TEXT("HLSLSkinHardware.fx") );
-	if ( !g_SkinMesh.Create(TEXT("Player.X")) )
-		return S_FALSE;*/
+	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinHardware.fx") );
+	if ( !g_SkinMesh.Create(TEXT("机关枪.X")) )
+		return S_FALSE;
 
 	///*g_CopyMesh.SetEffectFile( TEXT("AnimalEffect.fx") );
 	//if ( !g_CopyMesh.Create(g_SkinMesh.GetModel()) )
@@ -113,11 +113,11 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	//g_SkinMesh.Clone(g_CopyMesh);
 
-	g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
+	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
 
 	g_Mesh.Create( TEXT("Brown bear.x") );
 
-	g_Mesh.Clone(g_Copy);
+	g_Mesh.Clone(g_Copy);*/
 
 	//创建阴影体
 	/*g_pShadowVolume = new zerO::CShadowVolume();
@@ -298,9 +298,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     light.Diffuse.g  = 1.0f;
     light.Diffuse.b  = 1.0f;
 
-	//light.Direction.x = 0.0f;
-	//light.Direction.y =  1.0f;
-	//light.Direction.x = - 1.0f;
+	//light.Direction.x = 1.0f;
+	//light.Direction.y =  -1.0f;
+	//light.Direction.z = 1.0f;
 
 	float lx,ly,lz;           //光源位置
 	lx = 10*sinf(timeGetTime()/360.0f);
@@ -321,9 +321,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//根据光源位置更新阴影体
 	//g_pShadowVolume->Update();
 
-	g_Mesh.Update();
-	g_Copy.Update();
-	//g_SkinMesh.Update();
+	/*g_Mesh.Update();
+	g_Copy.Update();*/
+	g_SkinMesh.Update();
 	//g_CopyMesh.Update();
 
 	/*void* pVertices, *pIndices;
@@ -351,7 +351,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.SetTransform(Matrix);*/
 
-	g_Mesh.SetPosition( 
+	/*g_Mesh.SetPosition( 
 		D3DXVECTOR3(
 		g_Mesh.GetPosition().x, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_Mesh.GetPosition().x, g_Mesh.GetPosition().z) + 100.0f, 
@@ -361,13 +361,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		D3DXVECTOR3(
 		100, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_Mesh.GetPosition().x, g_Mesh.GetPosition().z) + 100.0f, 
-		g_Mesh.GetPosition().z)  );
+		g_Mesh.GetPosition().z)  );*/
 
-	/*g_SkinMesh.SetPosition( 
+	g_SkinMesh.SetPosition( 
 		D3DXVECTOR3(
-		g_SkinMesh.GetPosition().x, 
+		g_SkinMesh.GetPosition().x + 1, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
-		g_SkinMesh.GetPosition().z)  );*/
+		g_SkinMesh.GetPosition().z)  );
 
 	/*g_CopyMesh.SetPosition( 
 		D3DXVECTOR3(
@@ -473,9 +473,9 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 
 		g_TerrainSystem.Render();
 
-		g_Mesh.ApplyForRender();
-		g_Copy.ApplyForRender();
-		//g_SkinMesh.ApplyForRender();
+		/*g_Mesh.ApplyForRender();
+		g_Copy.ApplyForRender();*/
+		g_SkinMesh.ApplyForRender();
 		//g_CopyMesh.ApplyForRender();
 
 		//结束渲染
