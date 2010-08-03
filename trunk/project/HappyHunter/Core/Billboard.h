@@ -34,7 +34,11 @@ namespace zerO
 		void Stop();
 		void Pause();
 
-		bool Create(FLOAT fWidth, FLOAT fHeight, const D3DXVECTOR3* pCenter);
+		void Clone(CBillboard& Billboard)const;
+
+		bool Create(FLOAT fWidth, FLOAT fHeight, const D3DXVECTOR3* pCenter = NULL);
+
+		bool Destroy();
 
 		void Update();
 
@@ -43,21 +47,22 @@ namespace zerO
 		void Render(CRenderQueue::LPRENDERENTRY pEntry, UINT32 uFlag);
 
 	private:
-		FLOAT         m_fWidth;
-		FLOAT         m_fHeight;
-		FLOAT         m_fOffsetU;
-		FLOAT         m_fOffsetV;
+		FLOAT          m_fWidth;
+		FLOAT          m_fHeight;
+		FLOAT          m_fOffsetU;
+		FLOAT          m_fOffsetV;
 
-		CRectangle2D  m_CurrentUV;
-		CRectangle2D  m_MaxUV;
+		CRectangle2D   m_CurrentUV;
+		CRectangle2D   m_MaxUV;
 
-		bool          m_bIsPlay;
+		bool           m_bIsPlay;
+		bool           m_bIsCreated;
 
-		LOCKTYPE      m_LockType;
+		LOCKTYPE       m_LockType;
 
-		VERTEX        m_RenderData[4];
-		CVertexBuffer m_VertexBuffer;
-		CRenderMethod m_RenderMethod;
+		VERTEX         m_RenderData[4];
+		CVertexBuffer* m_pVertexBuffer;
+		CRenderMethod  m_RenderMethod;
 	};
 
 	inline void CBillboard::SetLocalType(LOCKTYPE Type)

@@ -620,6 +620,8 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, &matTemp, 1);
 		}
 	}
+	else
+		return;
 
 	m_pEffect->GetEffect()->CommitChanges();
 

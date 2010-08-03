@@ -7,12 +7,29 @@ using namespace zerO;
 CCrossPlane::CCrossPlane(void) :
 m_fWidth(0.0f),
 m_fHeight(0.0f),
-m_uNumPlanes(0)
+m_uNumPlanes(0),
+m_bIsCreated(false),
+m_pVertexBuffer(NULL)
 {
 }
 
 CCrossPlane::~CCrossPlane(void)
 {
+	Destroy();
+}
+
+void CCrossPlane::Clone(CCrossPlane& CrossPlane)const
+{
+	CSprite::Clone(CrossPlane);
+
+	CrossPlane.m_pVertexBuffer = m_pVertexBuffer;
+
+	m_RenderMethod.Clone(CrossPlane.m_RenderMethod);
+
+	CrossPlane.m_uNumPlanes = m_uNumPlanes;
+
+	CrossPlane.m_fWidth     = m_fWidth;
+	CrossPlane.m_fHeight    = m_fHeight;
 }
 
 bool CCrossPlane::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, zerO::UINT uNumPlanes, const D3DXVECTOR3* pCenter)
@@ -65,10 +82,26 @@ bool CCrossPlane::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, zerO::UINT uNu
 		D3DXVec3TransformCoord(&p3, &p3, &Matrix);
 	}
 
-	if( !m_VertexBuffer.Create(4 * uNumPlanes, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, pPlane, D3DFVF_XYZ | D3DFVF_TEX1) )
+	DEBUG_NEW(m_pVertexBuffer, CVertexBuffer);
+
+	if( !m_pVertexBuffer->Create(4 * uNumPlanes, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, pPlane, D3DFVF_XYZ | D3DFVF_TEX1) )
 		return false;
 
 	DEBUG_DELETE_ARRAY(pPlane);
+
+	m_bIsCreated = true;
+
+	return true;
+}
+
+bool CCrossPlane::Destroy()
+{
+	if(m_bIsCreated)
+	{
+		DEBUG_DELETE(m_pVertexBuffer);
+
+		m_pVertexBuffer = NULL;
+	}
 
 	return true;
 }
@@ -93,7 +126,7 @@ bool CCrossPlane::ApplyForRender()
 			pRenderEntry->hEffect      = pEffect->GetHandle();
 			pRenderEntry->hSurface     = m_RenderMethod.GetSurface()->GetHandle();
 			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER_TYPE;
-			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
+			pRenderEntry->hModel       = m_pVertexBuffer->GetHandle();
 			pRenderEntry->uRenderPass  = i;
 			pRenderEntry->pParent      = this;
 
@@ -122,7 +155,7 @@ void CCrossPlane::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
 
 		if( TEST_BIT(uFlag, CRenderQueue::MODEL) )
-			m_VertexBuffer.Activate(0, 0, true);
+			m_pVertexBuffer->Activate(0, 0, true);
 
 		if ( TEST_BIT(uFlag, CRenderQueue::SURFACE) )
 			pEffect->SetSurface( m_RenderMethod.GetSurface() );

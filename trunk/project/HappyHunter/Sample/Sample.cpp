@@ -18,7 +18,7 @@ ID3DXSprite*               g_pTextSprite = NULL;    //ID3DXSprite文本精灵对象
 
 zerO::CGameHost g_Game;
 
-#define HEIGHT_MAP_FILE TEXT("最终高度图.jpg")
+#define HEIGHT_MAP_FILE TEXT("spring1_height.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
@@ -104,7 +104,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	CAMERA.SetProjection(D3DX_PI / 4.0f, (zerO::FLOAT)DeviceSettings.pp.BackBufferWidth / DeviceSettings.pp.BackBufferHeight, 0.5f, 3000.0f);
 
 	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinHardware.fx") );
-	if ( !g_SkinMesh.Create(TEXT("机关枪.X")) )
+	if ( !g_SkinMesh.Create(TEXT("Player.X")) )
 		return S_FALSE;
 
 	///*g_CopyMesh.SetEffectFile( TEXT("AnimalEffect.fx") );
@@ -145,7 +145,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 3000.0f, 3000.0f, 0.0f, 500.0f, - 3000.0f, 3000.0f);
+	Rect.Set(- 5120.0f, 5120.0f, 0.0f, 128.0f, - 5120.0f, 5120.0f);
 
 	g_TerrainSystem.Create(&g_HeightMap, Rect, 6, 4/*, zerO::CTerrainSystem::ROAM*/);
 	/*g_QuadTree.Create(Rect, 4);
@@ -155,7 +155,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );*/
 
 
-	g_Texture.Load( TEXT("最终纹理.dds") );
+	g_Texture.Load( TEXT("spring_TX.dds") );
 
 	g_Detail.Load( TEXT("dirt_grass.jpg") );
 
@@ -365,7 +365,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	g_SkinMesh.SetPosition( 
 		D3DXVECTOR3(
-		g_SkinMesh.GetPosition().x + 1, 
+		g_SkinMesh.GetPosition().x, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
 		g_SkinMesh.GetPosition().z)  );
 

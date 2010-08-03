@@ -6,12 +6,36 @@ using namespace zerO;
 
 CBillboard::CBillboard(void) :
 m_bIsPlay(false),
+m_bIsCreated(false),
 m_LockType(UNLOCK)
 {
 }
 
 CBillboard::~CBillboard(void)
 {
+	Destroy();
+}
+
+void CBillboard::Clone(CBillboard& Billboard)const
+{
+	CSprite::Clone(Billboard);
+
+	Billboard.m_fWidth        = m_fWidth;
+	Billboard.m_fHeight       = m_fHeight;
+	Billboard.m_fOffsetU      = m_fOffsetU;
+	Billboard.m_fOffsetV      = m_fOffsetV;
+
+	Billboard.m_CurrentUV     = m_CurrentUV;
+	Billboard.m_MaxUV         = m_MaxUV;
+
+	Billboard.m_bIsPlay       = m_bIsPlay;
+
+	Billboard.m_LockType      = m_LockType;
+
+	Billboard.m_pVertexBuffer = m_pVertexBuffer;
+
+	memcpy( Billboard.m_RenderData, m_RenderData, sizeof(m_RenderData) );
+	m_RenderMethod.Clone(Billboard.m_RenderMethod);
 }
 
 bool CBillboard::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, const D3DXVECTOR3* pCenter)
@@ -48,8 +72,20 @@ bool CBillboard::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, const D3DXVECTO
 		m_RenderData[3].Position += *pCenter;
 	}
 
-	if( !m_VertexBuffer.Create(4, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, m_RenderData, D3DFVF_XYZ | D3DFVF_TEX1) )
+	DEBUG_NEW(m_pVertexBuffer, CVertexBuffer);
+
+	if( !m_pVertexBuffer->Create(4, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, m_RenderData, D3DFVF_XYZ | D3DFVF_TEX1) )
 		return false;
+
+	m_bIsCreated = true;
+
+	return true;
+}
+
+bool CBillboard::Destroy()
+{
+	if(m_bIsCreated)
+		DEBUG_DELETE(m_pVertexBuffer);
 
 	return true;
 }
@@ -57,50 +93,6 @@ bool CBillboard::Create(zerO::FLOAT fWidth, zerO::FLOAT fHeight, const D3DXVECTO
 void CBillboard::Update()
 {
 	CSprite::Update();
-
-	if(!m_bIsPlay)
-		return;
-
-	if(m_CurrentUV.GetMaxX() > m_MaxUV.GetMaxX() - m_fOffsetU)
-	{
-		m_CurrentUV.GetMinX() = m_MaxUV.GetMinX();
-		m_CurrentUV.GetMaxX() = m_MaxUV.GetMinX() + m_fOffsetU;
-	}
-	else
-	{
-		m_CurrentUV.GetMinX() += m_fOffsetU;
-		m_CurrentUV.GetMaxX() += m_fOffsetU;
-	}
-
-	if(m_CurrentUV.GetMaxY() > m_MaxUV.GetMaxY() - m_fOffsetV)
-	{
-		m_CurrentUV.GetMinY() = m_MaxUV.GetMinY();
-		m_CurrentUV.GetMaxY() = m_MaxUV.GetMinY() + m_fOffsetV;
-	}
-	else
-	{
-		m_CurrentUV.GetMinY() += m_fOffsetV;
-		m_CurrentUV.GetMaxY() += m_fOffsetV;
-	}
-
-	m_RenderData[1].UV.x = m_CurrentUV.GetMinX();
-	m_RenderData[1].UV.y = m_CurrentUV.GetMinY();
-
-	m_RenderData[0].UV.x = m_CurrentUV.GetMinX();
-	m_RenderData[0].UV.y = m_CurrentUV.GetMaxY();
-
-	m_RenderData[3].UV.x = m_CurrentUV.GetMaxX();
-	m_RenderData[3].UV.y = m_CurrentUV.GetMinY();
-
-	m_RenderData[2].UV.x = m_CurrentUV.GetMaxX();
-	m_RenderData[2].UV.y = m_CurrentUV.GetMaxY();
-
-	void* pVertices;
-	m_VertexBuffer.Lock(0, &pVertices);
-
-	memcpy( pVertices, m_RenderData, sizeof(m_RenderData) );
-
-	m_VertexBuffer.Unlock();
 }
 
 bool CBillboard::ApplyForRender()
@@ -118,7 +110,7 @@ bool CBillboard::ApplyForRender()
 			pRenderEntry->hEffect      = pEffect->GetHandle();
 			pRenderEntry->hSurface     = m_RenderMethod.GetSurface()->GetHandle();
 			pRenderEntry->uModelType   = CRenderQueue::RENDERENTRY::BUFFER_TYPE;
-			pRenderEntry->hModel       = m_VertexBuffer.GetHandle();
+			pRenderEntry->hModel       = m_pVertexBuffer->GetHandle();
 			pRenderEntry->uRenderPass  = i;
 			pRenderEntry->pParent      = this;
 
@@ -141,7 +133,9 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 		DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
 		DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
-		if( TEST_BIT(uFlag, CRenderQueue::EFFECT) )
+		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+		if( TEST_BIT(uFlag, CRenderQueue::PARENT) )
 		{
 			D3DXMATRIX Matrix;
 			
@@ -159,10 +153,55 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 			}
 
 			pEffect->SetMatrix( CEffect::WORLD_VIEW_PROJECTION, Matrix * CAMERA.GetViewProjectionMatrix() );
+
+			if(m_bIsPlay)
+			{
+
+				if(m_CurrentUV.GetMaxX() > m_MaxUV.GetMaxX() - m_fOffsetU)
+				{
+					m_CurrentUV.GetMinX() = m_MaxUV.GetMinX();
+					m_CurrentUV.GetMaxX() = m_MaxUV.GetMinX() + m_fOffsetU;
+				}
+				else
+				{
+					m_CurrentUV.GetMinX() += m_fOffsetU;
+					m_CurrentUV.GetMaxX() += m_fOffsetU;
+				}
+
+				if(m_CurrentUV.GetMaxY() > m_MaxUV.GetMaxY() - m_fOffsetV)
+				{
+					m_CurrentUV.GetMinY() = m_MaxUV.GetMinY();
+					m_CurrentUV.GetMaxY() = m_MaxUV.GetMinY() + m_fOffsetV;
+				}
+				else
+				{
+					m_CurrentUV.GetMinY() += m_fOffsetV;
+					m_CurrentUV.GetMaxY() += m_fOffsetV;
+				}
+
+				m_RenderData[1].UV.x = m_CurrentUV.GetMinX();
+				m_RenderData[1].UV.y = m_CurrentUV.GetMinY();
+
+				m_RenderData[0].UV.x = m_CurrentUV.GetMinX();
+				m_RenderData[0].UV.y = m_CurrentUV.GetMaxY();
+
+				m_RenderData[3].UV.x = m_CurrentUV.GetMaxX();
+				m_RenderData[3].UV.y = m_CurrentUV.GetMinY();
+
+				m_RenderData[2].UV.x = m_CurrentUV.GetMaxX();
+				m_RenderData[2].UV.y = m_CurrentUV.GetMaxY();
+
+				void* pVertices;
+				m_pVertexBuffer->Lock(0, &pVertices);
+
+				memcpy( pVertices, m_RenderData, sizeof(m_RenderData) );
+
+				m_pVertexBuffer->Unlock();
+			}
 		}
 
 		if( TEST_BIT(uFlag, CRenderQueue::MODEL) )
-			m_VertexBuffer.Activate(0, 0, true);
+			m_pVertexBuffer->Activate(0, 0, true);
 
 		if ( TEST_BIT(uFlag, CRenderQueue::SURFACE) )
 			pEffect->SetSurface( m_RenderMethod.GetSurface() );
@@ -171,6 +210,7 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 
 		DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 
+		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE       );
 	}
 }

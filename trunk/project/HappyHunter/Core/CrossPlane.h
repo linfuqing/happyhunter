@@ -25,7 +25,11 @@ namespace zerO
 
 		CRenderMethod& GetRenderMethod();
 
+		void Clone(CCrossPlane& CrossPlane)const;
+
 		bool Create(FLOAT fWidth, FLOAT fHeight, UINT uNumPlanes, const D3DXVECTOR3* pCenter = NULL);
+
+		bool Destroy();
 
 		void Update();
 
@@ -35,11 +39,13 @@ namespace zerO
 
 	private:
 		CRenderMethod m_RenderMethod;
-		CVertexBuffer m_VertexBuffer;
+		CVertexBuffer* m_pVertexBuffer;
 
 		FLOAT m_fWidth;
 		FLOAT m_fHeight;
 		UINT m_uNumPlanes;
+
+		bool m_bIsCreated;
 	};
 
 	inline CRenderMethod& CCrossPlane::GetRenderMethod()
