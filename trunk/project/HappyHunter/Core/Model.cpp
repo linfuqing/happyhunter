@@ -9,7 +9,7 @@ m_pBoneMatrices(NULL),
 m_pMesh(NULL),
 m_NumBoneMatricesMax(0),
 m_uNumContainers(0),
-m_Type(SOFTWARE)
+m_Type(HARDWARE)
 {
 }
 
@@ -57,9 +57,7 @@ HRESULT CAllocateHierarchy::__GenerateSkinnedMesh(MODELCONTAINER *pMeshContainer
 		DEVICE.GetDeviceCaps( &d3dCaps );
 
 		pMeshContainer->NumPaletteEntries = min(26, pMeshContainer->pSkinInfo->GetNumBones());
-		DWORD Flags;
-		
-		Flags = D3DXMESHOPT_VERTEXCACHE;
+		DWORD Flags = D3DXMESHOPT_VERTEXCACHE;
 
 		if (d3dCaps.VertexShaderVersion >= D3DVS_VERSION(1, 1))
 		{
@@ -280,6 +278,8 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 	else
 		return S_FALSE;
 	
+	//pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+
 	//确保顶点包含法线
 	//hr = D3DXComputeNormals(pMeshSysMem2,NULL);
 	//if (FAILED(hr))
@@ -409,11 +409,38 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
 	
 	NumFaces = pMesh->GetNumFaces();
 
-	pMeshContainer->MeshData.pMesh = pMesh;
+	 // if no normals are in the mesh, add them
+ //   if( !( pMesh->GetFVF() & D3DFVF_NORMAL ) )
+	//{
+ //       pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+
+ //   // clone the mesh to make room for the normals
+ //       hr = pMesh->CloneMeshFVF( pMesh->GetOptions(),
+ //                                   pMesh->GetFVF() | D3DFVF_NORMAL,
+ //                                   &DEVICE, &pMeshContainer->MeshData.pMesh );
+ //       if( FAILED( hr ) )
+ //           return hr;
+
+ //   // get the new pMesh pointer back out of the mesh container to use
+ //   // NOTE: we do not release pMesh because we do not have a reference to it yet
+ //       pMesh = pMeshContainer->MeshData.pMesh;
+
+ //   // now generate the normals for the pmesh
+ //       D3DXComputeNormals( pMesh, NULL );
+ //   }
+ //   else  // if no normals, just add a reference to the mesh for the mesh container
+	//{
+ //       pMeshContainer->MeshData.pMesh = pMesh;
+ //       pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+
+ //       pMesh->AddRef();
+ //   }
+
+	/*pMeshContainer->MeshData.pMesh = pMesh;
 
 	pMesh->AddRef();
 
-	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;*/
 	
     //为网格模型准备材质和纹理
     pMeshContainer->NumMaterials = max(1, NumMaterials); 
@@ -590,7 +617,8 @@ m_fTimeCurrent(0.0f),
 m_uPlayTime(0),
 m_fFrameTime(0.0f),
 m_lfTotalFrameTime(0.0),
-m_uControlPlayTime(0)
+m_uControlPlayTime(0),
+m_uNumContainers(0)
 {
 }
 
@@ -908,11 +936,9 @@ bool CModel::__SetupMeshContainer(LPD3DXMESHCONTAINER pMeshContainerBase)
 	//先强制转为扩展型
     MODELCONTAINER *pMeshContainer = (MODELCONTAINER*)pMeshContainerBase;
 
-	static UINT s_uNumContainer        = 0;
+	pMeshContainer->uIndex             = m_uNumContainers;
 
-	pMeshContainer->uIndex             = s_uNumContainer;
-
-	m_ppContainers[s_uNumContainer ++] = pMeshContainer;
+	m_ppContainers[m_uNumContainers ++] = pMeshContainer;
 
     // 只有蒙皮网格模型才有骨骼矩阵
     if (pMeshContainer->pSkinInfo != NULL)

@@ -116,6 +116,7 @@ VS_OUTPUT VShade(VS_INPUT i, uniform int NumBones)
     
     o.Pos = mul(float4(Pos.xyz, 1.0f), mWorldViewProj);
     Normal = normalize(Normal);
+    Tangent = normalize(Tangent);
     
     //-------------------------------------------------------------------------
     

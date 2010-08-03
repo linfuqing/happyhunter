@@ -159,6 +159,7 @@ namespace zerO
 		std::string					m_strNowAnimSetName;	// 当前动作名称
 
 		LPMODELCONTAINER*           m_ppContainers;
+		UINT                        m_uNumContainers;
 	};
 
 	inline LPD3DXFRAME CModel::GetFrameRoot()const
