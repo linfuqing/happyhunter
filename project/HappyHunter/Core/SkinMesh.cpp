@@ -470,18 +470,15 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 	LPMODELCONTAINER pMeshContainer = m_pModel->GetModelContainer(pEntry->uModelParamA);
 	LPMODELFRAME pFrame = pMeshContainer->pParent;
 
-	UINT uNumBoneInfluences = pEntry->uBoneCount;
+	UINT uNumBoneInfluences = pMeshContainer->NumInfl - 1;
 
 	D3DXMATRIXA16 matTemp;
 
+	if(pMeshContainer->UseSoftwareVP)
+		DEVICE.SetSoftwareVertexProcessing(TRUE);
+
 	if( TEST_BIT(uFlag, zerO::CRenderQueue::SURFACE) )
 		m_pEffect->SetSurface(&pMeshContainer->pSurfaces[pEntry->uUserData]);
-
-	if( TEST_BIT(uFlag, zerO::CRenderQueue::PARENT) )
-	{
-		m_pEffect->SetMatrix(CEffect::WORLD, m_WorldMatrix);
-		m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
-	}
 
 	if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT) )
 	{
@@ -500,112 +497,126 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			D3DXVECTOR4 LightDirection(pLight->Direction, 1.0f);
 			m_pEffect->GetEffect()->SetVector("vecLightDir", &LightDirection);
 		}
+	}
 
+	if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::SOFTWARE)
+	{
 		if(pMeshContainer->pSkinInfo)
 		{
-			if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::SOFTWARE)
+			DWORD cBones; 
+			DWORD iBone;
+			PBYTE pbVerticesSrc;
+			PBYTE pbVerticesDest;
+
+			cBones = pMeshContainer->pSkinInfo->GetNumBones();
+
+			// set up bone transforms
+			for( iBone = 0; iBone < cBones; ++iBone )
 			{
-				DWORD cBones; 
-				DWORD iBone;
-				PBYTE pbVerticesSrc;
-				PBYTE pbVerticesDest;
-
-				cBones = pMeshContainer->pSkinInfo->GetNumBones();
-
-				// set up bone transforms
-				for( iBone = 0; iBone < cBones; ++iBone )
-				{
-					D3DXMatrixMultiply
-						(
-						&m_pModel->GetBoneMatrices()[iBone],                 // output
-						&pMeshContainer->pBoneOffsetMatrices[iBone],
-						pMeshContainer->ppBoneMatrixPtrs[iBone]
-						);
-				}
-
-				pMeshContainer->pOrigMesh->LockVertexBuffer( D3DLOCK_READONLY, ( LPVOID* )&pbVerticesSrc );
-				pMeshContainer->MeshData.pMesh->LockVertexBuffer( 0, ( LPVOID* )&pbVerticesDest );
-
-				// generate skinned mesh
-				//pMeshContainer->pSkinInfo->UpdateSkinnedMesh(m_pModel->GetBoneMatrices(), NULL, pbVerticesSrc, pMeshContainer->puBuffer);
-				UpdateSkinnedMesh(
-					pMeshContainer->pSkinInfo, 
-					m_pModel->GetBoneMatrices(),
-					pbVerticesSrc, 
-					pMeshContainer->puMeshBuffer, 
-					pMeshContainer->pOrigMesh->GetNumVertices(),
-					pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
-					pMeshContainer->pTangentInfo,
-					pMeshContainer->pTangentBuffer
+				D3DXMatrixMultiply
+					(
+					&m_pModel->GetBoneMatrices()[iBone],                 // output
+					&pMeshContainer->pBoneOffsetMatrices[iBone],
+					pMeshContainer->ppBoneMatrixPtrs[iBone]
 					);
-
-				zerO::PUINT8 puMeshBuffer = pMeshContainer->puMeshBuffer;
-
-				D3DXVECTOR3* pTangentBuffer = pMeshContainer->pTangentBuffer;
-
-				zerO::UINT uNumBytesPerVertexSrc  = pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
-						   uNumBytesPerVertexDest = pMeshContainer->MeshData.pMesh->GetNumBytesPerVertex(),
-						   uNumVertices           = pMeshContainer->pOrigMesh->GetNumVertices(),
-						   uPosition4Size         = sizeof(D3DXVECTOR4),
-						   uPosition3Size         = sizeof(D3DXVECTOR3),
-						   uTangentOffset         = uNumBytesPerVertexDest - sizeof(D3DXVECTOR3);
-
-				for(zerO::UINT i = 0; i < uNumVertices; i ++)
-				{
-					*(D3DXVECTOR4*)(pbVerticesDest                 ) = D3DXVECTOR4(*(D3DVECTOR*)puMeshBuffer, 1.0f);
-					*(D3DXVECTOR3*)(pbVerticesDest + uPosition4Size) = *(D3DXVECTOR3*)(puMeshBuffer + uPosition3Size);
-					*(D3DXVECTOR3*)(pbVerticesDest + uTangentOffset) = pTangentBuffer[i];
-
-
-					puMeshBuffer   += uNumBytesPerVertexSrc;
-					pbVerticesDest += uNumBytesPerVertexDest;
-				}
-
-				pMeshContainer->pOrigMesh->UnlockVertexBuffer();
-				pMeshContainer->MeshData.pMesh->UnlockVertexBuffer();
-
-				//D3DXComputeNormals(pMeshContainer->MeshData.pMesh,NULL);
-
-				////计算切线
-				//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
 			}
-			else if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::HARDWARE)
+
+			pMeshContainer->pOrigMesh->LockVertexBuffer( D3DLOCK_READONLY, ( LPVOID* )&pbVerticesSrc );
+			pMeshContainer->MeshData.pMesh->LockVertexBuffer( 0, ( LPVOID* )&pbVerticesDest );
+
+			// generate skinned mesh
+			//pMeshContainer->pSkinInfo->UpdateSkinnedMesh(m_pModel->GetBoneMatrices(), NULL, pbVerticesSrc, pMeshContainer->puBuffer);
+			UpdateSkinnedMesh(
+				pMeshContainer->pSkinInfo, 
+				m_pModel->GetBoneMatrices(),
+				pbVerticesSrc, 
+				pMeshContainer->puMeshBuffer, 
+				pMeshContainer->pOrigMesh->GetNumVertices(),
+				pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
+				pMeshContainer->pTangentInfo,
+				pMeshContainer->pTangentBuffer
+				);
+
+			zerO::PUINT8 puMeshBuffer = pMeshContainer->puMeshBuffer;
+
+			D3DXVECTOR3* pTangentBuffer = pMeshContainer->pTangentBuffer;
+
+			zerO::UINT uNumBytesPerVertexSrc  = pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
+					   uNumBytesPerVertexDest = pMeshContainer->MeshData.pMesh->GetNumBytesPerVertex(),
+					   uNumVertices           = pMeshContainer->pOrigMesh->GetNumVertices(),
+					   uPosition4Size         = sizeof(D3DXVECTOR4),
+					   uPosition3Size         = sizeof(D3DXVECTOR3),
+					   uTangentOffset         = uNumBytesPerVertexDest - sizeof(D3DXVECTOR3);
+
+			for(zerO::UINT i = 0; i < uNumVertices; i ++)
 			{
-				if(pMeshContainer->UseSoftwareVP)
-					DEVICE.SetSoftwareVertexProcessing(TRUE);
+				*(D3DXVECTOR4*)(pbVerticesDest                 ) = D3DXVECTOR4(*(D3DVECTOR*)puMeshBuffer, 1.0f);
+				*(D3DXVECTOR3*)(pbVerticesDest + uPosition4Size) = *(D3DXVECTOR3*)(puMeshBuffer + uPosition3Size);
+				*(D3DXVECTOR3*)(pbVerticesDest + uTangentOffset) = pTangentBuffer[i];
 
-				UINT iMatrixIndex;
-				UINT iPaletteEntry;
-				LPD3DXBONECOMBINATION pBoneComb;
-				
-				pBoneComb = reinterpret_cast<LPD3DXBONECOMBINATION>( pMeshContainer->pBoneCombinationBuf->GetBufferPointer() );
 
-				for (iPaletteEntry = 0; iPaletteEntry < pMeshContainer->NumPaletteEntries; ++iPaletteEntry)
-				{
-					iMatrixIndex = pBoneComb[pEntry->uModelParamB].BoneId[iPaletteEntry];
+				puMeshBuffer   += uNumBytesPerVertexSrc;
+				pbVerticesDest += uNumBytesPerVertexDest;
+			}
 
-					if (iMatrixIndex != UINT_MAX)
-					{
-						D3DXMatrixMultiply(
-							&m_pModel->GetBoneMatrices()[iPaletteEntry], 
-							&pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], 
-							pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
-					}
-				}
+			pMeshContainer->pOrigMesh->UnlockVertexBuffer();
+			pMeshContainer->MeshData.pMesh->UnlockVertexBuffer();
 
-				m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, m_pModel->GetBoneMatrices(), pMeshContainer->NumPaletteEntries);
+			//D3DXComputeNormals(pMeshContainer->MeshData.pMesh,NULL);
 
-				if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT_PARAM) )
-					//设置当前骨骼数量
-					m_pEffect->SetParameter(CEffect::BONE_INFLUENCES_NUMBER, (void*)&uNumBoneInfluences);
+			////计算切线
+			//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
 
-				if(pMeshContainer->UseSoftwareVP)
-					DEVICE.SetSoftwareVertexProcessing(FALSE);
+			if( TEST_BIT(uFlag, zerO::CRenderQueue::PARENT) )
+			{
+				m_pEffect->SetMatrix(CEffect::WORLD, m_WorldMatrix);
+				m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
 			}
 		}
 		else
 		{
-			matTemp = pFrame->CombinedTransformationMatrix * m_WorldMatrix * CAMERA.GetViewProjectionMatrix();
+			m_pEffect->SetMatrix(CEffect::WORLD, pFrame->CombinedTransformationMatrix * m_WorldMatrix);
+			m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, pFrame->CombinedTransformationMatrix * m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
+		}
+	}
+	else if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::HARDWARE)
+	{
+		if( TEST_BIT(uFlag, zerO::CRenderQueue::PARENT) )
+		{
+			m_pEffect->SetMatrix(CEffect::WORLD, m_WorldMatrix);
+			m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
+		}
+
+		if( TEST_BIT(uFlag, zerO::CRenderQueue::EFFECT_PARAM) )
+				//设置当前骨骼数量
+				m_pEffect->SetParameter(CEffect::BONE_INFLUENCES_NUMBER, (void*)&uNumBoneInfluences);
+
+		if(pMeshContainer->pSkinInfo)
+		{
+			UINT iMatrixIndex;
+			UINT iPaletteEntry;
+			LPD3DXBONECOMBINATION pBoneComb;
+			
+			pBoneComb = reinterpret_cast<LPD3DXBONECOMBINATION>( pMeshContainer->pBoneCombinationBuf->GetBufferPointer() );
+
+			for (iPaletteEntry = 0; iPaletteEntry < pMeshContainer->NumPaletteEntries; ++iPaletteEntry)
+			{
+				iMatrixIndex = pBoneComb[pEntry->uModelParamB].BoneId[iPaletteEntry];
+
+				if (iMatrixIndex != UINT_MAX)
+				{
+					D3DXMatrixMultiply(
+						&m_pModel->GetBoneMatrices()[iPaletteEntry], 
+						&pMeshContainer->pBoneOffsetMatrices[iMatrixIndex], 
+						pMeshContainer->ppBoneMatrixPtrs[iMatrixIndex]);
+				}
+			}
+
+			m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, m_pModel->GetBoneMatrices(), pMeshContainer->NumPaletteEntries);
+		}
+		else
+		{
+			matTemp = pFrame->CombinedTransformationMatrix;
 			m_pEffect->SetMatrixArray(CEffect::WORLD_MATRIX_ARRAY, &matTemp, 1);
 		}
 	}
@@ -614,6 +625,9 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 
 	//绘制
 	pMeshContainer->MeshData.pMesh->DrawSubset(pEntry->uModelParamB);
+
+	if(pMeshContainer->UseSoftwareVP)
+		DEVICE.SetSoftwareVertexProcessing(FALSE);
 }
 
 

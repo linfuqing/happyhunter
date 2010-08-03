@@ -245,40 +245,43 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 
 		//pMeshContainer->MeshData.pMesh = pMeshSysMem2;
 
-		UINT uNumVertices = pMeshContainer->pOrigMesh->GetNumVertices();
-
-		pMeshContainer->puMeshBuffer  = new UINT8[pMeshContainer->pOrigMesh->GetNumBytesPerVertex() * uNumVertices];
-		pMeshContainer->pTangentBuffer = new D3DXVECTOR3[uNumVertices];
-		pMeshContainer->pTangentInfo   = new D3DXVECTOR3[uNumVertices];
-
-		if(pMeshContainer->puMeshBuffer == NULL 
-			|| pMeshContainer->pTangentBuffer == NULL
-			|| pMeshContainer->pTangentInfo == NULL)
+		if(pMeshContainer->pSkinInfo)
 		{
-			hr = E_OUTOFMEMORY;
-			DestroyMeshContainer(pMeshContainer);
-			return hr;
+			UINT uNumVertices = pMeshContainer->pOrigMesh->GetNumVertices();
+
+			pMeshContainer->puMeshBuffer  = new UINT8[pMeshContainer->pOrigMesh->GetNumBytesPerVertex() * uNumVertices];
+			pMeshContainer->pTangentBuffer = new D3DXVECTOR3[uNumVertices];
+			pMeshContainer->pTangentInfo   = new D3DXVECTOR3[uNumVertices];
+
+			if(pMeshContainer->puMeshBuffer == NULL 
+				|| pMeshContainer->pTangentBuffer == NULL
+				|| pMeshContainer->pTangentInfo == NULL)
+			{
+				hr = E_OUTOFMEMORY;
+				DestroyMeshContainer(pMeshContainer);
+				return hr;
+			}
+
+			zerO::PUINT8 puVertices;
+
+			zerO::UINT uVertexSize = pMeshSysMem2->GetNumBytesPerVertex(), uTangentOffset = uVertexSize - sizeof(D3DXVECTOR3);
+
+			pMeshSysMem2->LockVertexBuffer(0, (void**)&puVertices);
+
+			for(zerO::UINT i = 0; i < uNumVertices; i ++)
+			{
+				pMeshContainer->pTangentInfo[i] = *( (D3DXVECTOR3*)(puVertices + uTangentOffset) );
+
+				puVertices += uVertexSize;
+			}
+
+			pMeshSysMem2->UnlockVertexBuffer();
 		}
-
-		zerO::PUINT8 puVertices;
-
-		zerO::UINT uVertexSize = pMeshSysMem2->GetNumBytesPerVertex(), uTangentOffset = uVertexSize - sizeof(D3DXVECTOR3);
-
-		pMeshSysMem2->LockVertexBuffer(0, (void**)&puVertices);
-
-		for(zerO::UINT i = 0; i < uNumVertices; i ++)
-		{
-			pMeshContainer->pTangentInfo[i] = *( (D3DXVECTOR3*)(puVertices + uTangentOffset) );
-
-			puVertices += uVertexSize;
-		}
-
-		pMeshSysMem2->UnlockVertexBuffer();
 	}
 	else
 		return S_FALSE;
 	
-	//pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
+	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
 
 	//确保顶点包含法线
 	//hr = D3DXComputeNormals(pMeshSysMem2,NULL);
@@ -436,11 +439,11 @@ HRESULT CAllocateHierarchy::CreateMeshContainer(LPCSTR Name,
  //       pMesh->AddRef();
  //   }
 
-	/*pMeshContainer->MeshData.pMesh = pMesh;
+	pMeshContainer->MeshData.pMesh = pMesh;
 
 	pMesh->AddRef();
 
-	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;*/
+	pMeshContainer->MeshData.Type = D3DXMESHTYPE_MESH;
 	
     //为网格模型准备材质和纹理
     pMeshContainer->NumMaterials = max(1, NumMaterials); 

@@ -11,8 +11,8 @@ float4   vecLightDir;
 float4   vecEye : EYEPOSITION;
 
 float4 lightDiffuse = {0.6f, 0.6f, 0.6f, 1.0f}; 
-float4 MaterialAmbient : MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};
-float4 MaterialDiffuse : MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};
+//float4 MaterialAmbient : MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};
+//float4 MaterialDiffuse : MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};
 
 static const int MAX_MATRICES = 26;
 float4x3    mWorldMatrixArray[MAX_MATRICES] : WORLDMATRIXARRAY;
