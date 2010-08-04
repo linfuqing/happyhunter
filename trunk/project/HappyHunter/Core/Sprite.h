@@ -25,6 +25,8 @@ namespace zerO
 		void SetScale(const D3DXVECTOR3& Scale);
 		void SetRotation(const D3DXVECTOR3& Rotation);
 
+		void SetDirection(const D3DXVECTOR3& Direction);
+
 		const D3DXVECTOR3 GetPosition()const;
 		const D3DXVECTOR3 GetScale()const;
 		const D3DXVECTOR3 GetRotation()const;

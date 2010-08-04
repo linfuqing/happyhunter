@@ -30,7 +30,7 @@ bool CShadowVolume::Create(zerO::UINT uNumVertices, zerO::UINT uNumTriangles, CS
 	m_pParent       = &Parent;
 
 	//为阴影体顶点分配存储空间
-	DEBUG_NEW(m_pShadowVertices, D3DXVECTOR3[m_uNumTriangles * 3 * 6]);
+	DEBUG_NEW(m_pShadowVertices, D3DXVECTOR3[m_uNumTriangles * 3 * 8]);
 	DEBUG_NEW(m_pEdges         , EDGE       [m_uNumTriangles * 3    ]);
 	DEBUG_NEW(m_pTriangles     , TRIANGLE   [m_uNumTriangles        ]);
 
@@ -39,7 +39,7 @@ bool CShadowVolume::Create(zerO::UINT uNumVertices, zerO::UINT uNumTriangles, CS
 	return true;
 }
 
-bool CShadowVolume::Create(ID3DXMesh& Mesh, CSceneNode& Noe)
+bool CShadowVolume::Create(ID3DXMesh& Mesh, CSceneNode& Node)
 {
 	void* pVertices, *pIndices;
 
@@ -52,7 +52,7 @@ bool CShadowVolume::Create(ID3DXMesh& Mesh, CSceneNode& Noe)
 	return Create(
 		Mesh.GetNumVertices(), 
 		Mesh.GetNumFaces(),
-		Noe,
+		Node,
 		Mesh.GetNumBytesPerVertex(),
 		pVertices,
 		pIndices);
@@ -93,6 +93,19 @@ void CShadowVolume::SetMeshData(zerO::PUINT8 pVertices, zerO::PUINT16 pIndices, 
     }
 }
 
+void CShadowVolume::SetMeshData(ID3DXMesh& Mesh)
+{
+	void* pVertices, *pIndices;
+
+	Mesh.LockVertexBuffer( 0L, (LPVOID*)&pVertices );
+    Mesh.LockIndexBuffer( 0L, (LPVOID*)&pIndices );
+
+	SetMeshData( (PUINT8)pVertices, (PUINT16)pIndices, Mesh.GetNumBytesPerVertex() );
+
+	Mesh.UnlockVertexBuffer();
+    Mesh.UnlockIndexBuffer();
+}
+
 //-----------------------------------------------------------------------------
 // Desc: 根据网格模型和光源位置构造阴影体
 //       首先检查网格模型的每个三角形, 将网格模型的轮廓边保存到一个临时列表中.
@@ -109,10 +122,11 @@ void CShadowVolume::Update()
 
 	D3DXVec3TransformCoord(&LightPosition, &LightPosition, &InverseWorldMatrix);
 
-	D3DXVECTOR3 Extend = LightPosition * 500;
+	D3DXVECTOR3 v1, v2, v3, v4, Extend = LightPosition * 500;
 
     DWORD i;
 
+	m_uNumShadowVertices = 0;
     //遍历网格模型的每个面(三角形), 将网格模型的轮廓边添加到临时边列表中
     for(i = 0; i < m_uNumTriangles; i ++)
     {
@@ -122,18 +136,29 @@ void CShadowVolume::Update()
 			__AddEdge(m_pTriangles[i].v0, m_pTriangles[i].v1);
             __AddEdge(m_pTriangles[i].v1, m_pTriangles[i].v2);
             __AddEdge(m_pTriangles[i].v2, m_pTriangles[i].v0);
+
+			v1 = CASE(m_pVertices[m_pTriangles[i].v0], D3DXVECTOR3);
+			v2 = CASE(m_pVertices[m_pTriangles[i].v1], D3DXVECTOR3);
+			v3 = CASE(m_pVertices[m_pTriangles[i].v2], D3DXVECTOR3);
+
+			/*m_pShadowVertices[m_uNumShadowVertices ++] = v2;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v1;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v3;
+
+			m_pShadowVertices[m_uNumShadowVertices ++] = v1 + Extend;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v2 + Extend;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v3 + Extend;*/
         }
     }
 
 	//针对保存的每条轮廓边, 添加一个矩形, 所有的矩形构成阴影体
-	m_uNumShadowVertices = 0;
     for(i = 0; i < m_uNumEdges; i ++)
     {
 		//计算矩形的四个的顶点
-        D3DXVECTOR3 v1 = CASE(m_pVertices[m_pEdges[i].v0], D3DXVECTOR3);
-        D3DXVECTOR3 v2 = CASE(m_pVertices[m_pEdges[i].v1], D3DXVECTOR3);
-        D3DXVECTOR3 v3 = v1 - Extend;
-        D3DXVECTOR3 v4 = v2 - Extend;
+        v1 = CASE(m_pVertices[m_pEdges[i].v0], D3DXVECTOR3);
+        v2 = CASE(m_pVertices[m_pEdges[i].v1], D3DXVECTOR3);
+        v3 = v1 - Extend;
+        v4 = v2 - Extend;
 
 		//添加矩形
         m_pShadowVertices[m_uNumShadowVertices ++] = v1;
@@ -218,12 +243,12 @@ void CShadowVolume::Render()
 	DEVICE.SetRenderState( D3DRS_STENCILFUNC,  D3DCMP_ALWAYS );
     
 
-	////渲染阴影体背面
-	//DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CW );
-	//DEVICE.SetRenderState( D3DRS_STENCILZFAIL, D3DSTENCILOP_INCR );
-	//DEVICE.SetTransform( D3DTS_WORLD, &m_pParent->GetWorldMatrix() );
-	//DEVICE.SetFVF( D3DFVF_XYZ );
- //   DEVICE.DrawPrimitiveUP( D3DPT_TRIANGLELIST, uNumFaces, m_pShadowVertices, sizeof(D3DXVECTOR3) );
+	//渲染阴影体背面
+	/*DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CW );
+	DEVICE.SetRenderState( D3DRS_STENCILZFAIL, D3DSTENCILOP_INCR );
+	DEVICE.SetTransform( D3DTS_WORLD, &m_pParent->GetWorldMatrix() );
+	DEVICE.SetFVF( D3DFVF_XYZ );
+    DEVICE.DrawPrimitiveUP( D3DPT_TRIANGLELIST, uNumFaces, m_pShadowVertices, sizeof(D3DXVECTOR3) );*/
 
 	//渲染阴影体前面
 	DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );

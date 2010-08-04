@@ -2,7 +2,7 @@
 #include "Resource.h"
 #include "Sprite.h"
 #include "Surface.h"
-//#include "ShadowVolume.h"
+#include "ShadowVolume.h"
 
 namespace zerO
 {
@@ -20,11 +20,15 @@ namespace zerO
 	//-----------------------------------------------------------------------------
 	typedef struct MODELCONTAINER: public D3DXMESHCONTAINER
 	{
+		CShadowVolume*       pShadow;
 		UINT                 uIndex;
 		LPMODELFRAME         pParent;
 		PUINT8               puMeshBuffer;
 		D3DXVECTOR3*         pTangentBuffer;
 		D3DXVECTOR3*         pTangentInfo;
+		PUINT                puNumBoneInfluences;
+		LPDWORD*             ppdwVerticesIndices;
+		PFLOAT*              ppfWeights;
 		CSurface*            pSurfaces; 
 		LPD3DXMESH           pOrigMesh;             //Ô­Íø¸ñ
 		LPD3DXATTRIBUTERANGE pAttributeTable;
@@ -79,6 +83,8 @@ namespace zerO
 		UINT                        m_NumBoneMatricesMax;
 		UINT                        m_uNumContainers;
 		TYPE                        m_Type;
+		bool                        m_bIsShadow;
+		CSceneNode*                 m_pParent;
 		LPD3DXMESH                  m_pMesh;
 
 		friend class CModel;
@@ -119,6 +125,8 @@ namespace zerO
 		bool Disable(); 
 		bool Restore();
 
+		bool Create(const PBASICCHAR pcFileName, CSceneNode* pParent);
+
 		bool Load(const PBASICCHAR pcFileName = NULL);
 
 		void Update(FLOAT fElapsedAppTime);
@@ -140,7 +148,7 @@ namespace zerO
 		bool __SetupFrame( LPD3DXFRAME pFrame );
 		bool __SetupMeshContainer( LPD3DXMESHCONTAINER pMeshContainerBase );
 
-		void __UpdateFrameMatrices(LPD3DXFRAME pFrameBase, const LPD3DXMATRIX pParentMatrix);
+		void __UpdateFrame(LPD3DXFRAME pFrameBase, const LPD3DXMATRIX pParentMatrix);
 
 		void __ReleaseFrame(LPD3DXFRAME pFrame);
 

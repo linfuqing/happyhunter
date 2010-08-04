@@ -7,9 +7,11 @@ using namespace zerO;
 CAllocateHierarchy::CAllocateHierarchy() :
 m_pBoneMatrices(NULL), 
 m_pMesh(NULL),
+m_pParent(NULL),
 m_NumBoneMatricesMax(0),
 m_uNumContainers(0),
-m_Type(HARDWARE)
+m_bIsShadow(true),
+m_Type(SOFTWARE)
 {
 }
 
@@ -253,9 +255,16 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 			pMeshContainer->pTangentBuffer = new D3DXVECTOR3[uNumVertices];
 			pMeshContainer->pTangentInfo   = new D3DXVECTOR3[uNumVertices];
 
+			pMeshContainer->puNumBoneInfluences = new UINT[pMeshContainer->pSkinInfo->GetNumBones()];
+			pMeshContainer->ppdwVerticesIndices = new LPDWORD[pMeshContainer->pSkinInfo->GetNumBones()];
+			pMeshContainer->ppfWeights          = new PFLOAT[pMeshContainer->pSkinInfo->GetNumBones()];
+
 			if(pMeshContainer->puMeshBuffer == NULL 
 				|| pMeshContainer->pTangentBuffer == NULL
-				|| pMeshContainer->pTangentInfo == NULL)
+				|| pMeshContainer->pTangentInfo == NULL
+				|| pMeshContainer->puNumBoneInfluences == NULL
+				|| pMeshContainer->ppdwVerticesIndices == NULL
+				|| pMeshContainer->ppfWeights == NULL)
 			{
 				hr = E_OUTOFMEMORY;
 				DestroyMeshContainer(pMeshContainer);
@@ -264,18 +273,43 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 
 			zerO::PUINT8 puVertices;
 
-			zerO::UINT uVertexSize = pMeshSysMem2->GetNumBytesPerVertex(), uTangentOffset = uVertexSize - sizeof(D3DXVECTOR3);
+			zerO::UINT i, uVertexSize = pMeshSysMem->GetNumBytesPerVertex(), uTangentOffset = uVertexSize - sizeof(D3DXVECTOR3);
 
-			pMeshSysMem2->LockVertexBuffer(0, (void**)&puVertices);
+			pMeshSysMem->LockVertexBuffer(0, (void**)&puVertices);
 
-			for(zerO::UINT i = 0; i < uNumVertices; i ++)
+			for(i = 0; i < uNumVertices; i ++)
 			{
 				pMeshContainer->pTangentInfo[i] = *( (D3DXVECTOR3*)(puVertices + uTangentOffset) );
 
 				puVertices += uVertexSize;
 			}
 
-			pMeshSysMem2->UnlockVertexBuffer();
+			pMeshSysMem->UnlockVertexBuffer();
+
+			UINT uNumBoneInfluences, uNumBones = pMeshContainer->pSkinInfo->GetNumBones();
+			for(i = 0; i < uNumBones; i ++)
+			{
+				pMeshContainer->puNumBoneInfluences[i] = uNumBoneInfluences = pMeshContainer->pSkinInfo->GetNumBoneInfluences(i);
+
+				pMeshContainer->ppdwVerticesIndices[i] = new DWORD[uNumBoneInfluences];
+				pMeshContainer->ppfWeights[i]          = new FLOAT[uNumBoneInfluences];
+
+				pMeshContainer->pSkinInfo->GetBoneInfluence(i, pMeshContainer->ppdwVerticesIndices[i], pMeshContainer->ppfWeights[i]);
+			}
+		}
+
+		if(m_bIsShadow && m_pParent)
+		{
+			pMeshContainer->pShadow = new CShadowVolume;
+
+			if(pMeshContainer->pShadow == NULL)
+			{
+				hr = E_OUTOFMEMORY;
+				DestroyMeshContainer(pMeshContainer);
+				return hr;
+			}
+
+			pMeshContainer->pShadow->Create(*pMeshContainer->MeshData.pMesh, *m_pParent);
 		}
 	}
 	else
@@ -597,8 +631,25 @@ HRESULT CAllocateHierarchy::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContai
 
     DEBUG_RELEASE( pMeshContainer->pBoneCombinationBuf );
     DEBUG_RELEASE( pMeshContainer->MeshData.pMesh );
+
+	if(pMeshContainer->puNumBoneInfluences || pMeshContainer->ppdwVerticesIndices || pMeshContainer->ppfWeights)
+	{
+		UINT i, uNumBones = pMeshContainer->pSkinInfo->GetNumBones();
+		for(i = 0; i < uNumBones; i ++)
+		{
+			DEBUG_DELETE_ARRAY(pMeshContainer->ppdwVerticesIndices[i]);
+			DEBUG_DELETE_ARRAY(pMeshContainer->ppfWeights[i]);
+		}
+
+		delete[] pMeshContainer->puNumBoneInfluences;
+		delete[] pMeshContainer->ppdwVerticesIndices;
+		delete[] pMeshContainer->ppfWeights;
+	}
+
     DEBUG_RELEASE( pMeshContainer->pSkinInfo );
     DEBUG_RELEASE( pMeshContainer->pOrigMesh );
+
+	DEBUG_DELETE(pMeshContainer->pShadow);
 
     DEBUG_DELETE( pMeshContainer );
 
@@ -689,6 +740,13 @@ bool CModel::Disable()
 	return true;
 }
 
+bool CModel::Create(const PBASICCHAR pcFileName, CSceneNode* pParent)
+{
+	m_Alloc.m_pParent = pParent;
+
+	return Load(pcFileName);
+}
+
 //-----------------------------------------------------------------------------
 // Desc: 从文件加载蒙皮网格模型
 //-----------------------------------------------------------------------------
@@ -773,7 +831,7 @@ void CModel::Update(zerO::FLOAT fElapsedAppTime)
 
 void CModel::Update(const LPD3DXMATRIX pMatrix)
 {
-	__UpdateFrameMatrices(m_pFrameRoot, pMatrix);  //调用子函数
+	__UpdateFrame(m_pFrameRoot, pMatrix);  //调用子函数
 }
 
 void CModel::SetAnimation( zerO::UINT index, DWORD dwControlPlayTime, bool bSmooth )
@@ -970,9 +1028,9 @@ bool CModel::__SetupMeshContainer(LPD3DXMESHCONTAINER pMeshContainerBase)
 //-----------------------------------------------------------------------------
 // Desc:计算各个骨骼的组合变换矩阵
 //-----------------------------------------------------------------------------
-void CModel::__UpdateFrameMatrices(LPD3DXFRAME pFrameBase, const LPD3DXMATRIX pParentMatrix)
+void CModel::__UpdateFrame(LPD3DXFRAME pFrameBase, const LPD3DXMATRIX pParentMatrix)
 {
-    MODELFRAME *pFrame = (MODELFRAME*)pFrameBase;
+    LPMODELFRAME pFrame = (LPMODELFRAME)pFrameBase;
 
     if (pParentMatrix != NULL)
         D3DXMatrixMultiply(&pFrame->CombinedTransformationMatrix, &pFrame->TransformationMatrix, pParentMatrix);
@@ -981,12 +1039,12 @@ void CModel::__UpdateFrameMatrices(LPD3DXFRAME pFrameBase, const LPD3DXMATRIX pP
 
     if (pFrame->pFrameSibling != NULL)
     {
-        __UpdateFrameMatrices(pFrame->pFrameSibling, pParentMatrix);
+        __UpdateFrame(pFrame->pFrameSibling, pParentMatrix);
     }
 
     if (pFrame->pFrameFirstChild != NULL)
     {
-        __UpdateFrameMatrices(pFrame->pFrameFirstChild, &pFrame->CombinedTransformationMatrix);
+        __UpdateFrame(pFrame->pFrameFirstChild, &pFrame->CombinedTransformationMatrix);
     }
 }
 
