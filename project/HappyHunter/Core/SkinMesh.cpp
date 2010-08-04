@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "basicutils.h"
+#include "d3dutils.h"
 #include "RenderQueue.h"
 #include "SkinMesh.h"
 #include "Camera.h"
@@ -175,7 +176,7 @@ bool CSkinMesh::Create(const PBASICCHAR fileName)
 
 	DEBUG_NEW(m_pModel, CModel);
 
-	if( !m_pModel->Load(fileName) )
+	if( !m_pModel->Create(fileName, this) )
 		return false;
 
 	m_bIsCreated = true;
@@ -205,260 +206,6 @@ bool CSkinMesh::ApplyForRender()
 		__ApplyForRenderFrame( m_pModel->GetFrameRoot() );
 
 	return true;
-}
-
-//HRESULT UpdateSkinnedMesh(ID3DXSkinInfo *pSkinInfo,
-//
-//                  const D3DXMATRIX *pBoneTransforms,
-//
-//                  LPCVOID pVerticesSrc,
-//
-//                  PVOID pVerticesDst,
-//
-////注意下面增加的两个变量是原函数在调用时没有的，因为ID3DXSkinInfo的内部机制可以获得
-//
-//                  DWORD numTotalVerts, //add 1，指mesh的顶点个数
-//
-//                  DWORD dwStride //add 2，指mesh每个顶点的间距，即每个顶点结构的大小
-//                  )
-//
-//{
-//
-//    DWORD *pVertsIndic = NULL;
-//
-//    float *pVertsWeigh = NULL;
-//
-//    DWORD dwNumVerts;
-//
-//    DWORD offsetByte;
-//
-//
-//    BYTE *pDest = (BYTE*)pVerticesDst; //目标顶点缓冲
-//
-//    const BYTE *pSrc = (BYTE*)pVerticesSrc; //源顶点缓冲
-//
-//
-//    memcpy(pDest, pSrc, numTotalVerts * dwStride);
-//
-//
-//    for(DWORD i = 0; i < pSkinInfo->GetNumBones(); i++)
-//
-//    {
-//
-//       dwNumVerts = pSkinInfo->GetNumBoneInfluences(i); //得到受影响的顶点个数
-//
-//       if(dwNumVerts <= 0)
-//
-//           continue;
-//
-//
-//       pVertsIndic = new DWORD[dwNumVerts];
-//
-//       pVertsWeigh = new float[dwNumVerts];
-//
-//       pSkinInfo->GetBoneInfluence(i, pVertsIndic, pVertsWeigh);
-//
-//
-//       while(dwNumVerts--)
-//
-//       {
-//
-//           DWORD index = pVertsIndic[dwNumVerts]; //当前受影响的顶点索引
-//
-//           float weight = pVertsWeigh[dwNumVerts]; //当前受影响顶点的权重
-//
-//           offsetByte = index * dwStride;
-//
-//
-//           D3DXVECTOR3 vecPos = *(D3DXVECTOR3 *)(pSrc + offsetByte); //位置
-//
-//           D3DXVECTOR3 vecNor = *(D3DXVECTOR3 *)(pSrc + offsetByte + sizeof(D3DXVECTOR3)); //法线
-//
-//
-//           D3DXVECTOR3 vecPos2, vecNor2;
-//
-//           D3DXVec3TransformCoord(&vecPos2, &vecPos, &pBoneTransforms[i]);
-//
-//           D3DXVec3TransformNormal(&vecNor2, &vecNor, &pBoneTransforms[i]);
-//
-//
-//           D3DXVECTOR3 *pV = (D3DXVECTOR3 *)(pDest + offsetByte);
-//
-//           D3DXVECTOR3 *pN = (D3DXVECTOR3 *)(pDest + offsetByte + sizeof(D3DXVECTOR3));
-//
-//
-//           D3DXVECTOR3 diff = (vecPos2 - vecPos) * weight;
-//
-//           *pV += diff;
-//
-//
-//           diff = (vecNor2 - vecNor) * weight;
-//
-//           *pN += diff;
-//
-//       }
-//
-//
-//       delete[] pVertsIndic;
-//
-//       delete[] pVertsWeigh;
-//
-//    }
-//
-//
-//    return S_OK;
-//
-//}
-
-HRESULT UpdateSkinnedMesh(ID3DXSkinInfo *pSkinInfo,
-
-                  const D3DXMATRIX *pBoneTransforms,
-
-                  LPCVOID pVerticesSrc,
-
-                  PVOID pVerticesDst,
-
-//注意下面增加的两个变量是原函数在调用时没有的，因为ID3DXSkinInfo的内部机制可以获得
-
-                  DWORD numTotalVerts, //add 1，指mesh的顶点个数
-
-                  DWORD dwStride, //add 2，指mesh每个顶点的间距，即每个顶点结构的大小
-
-				  D3DXVECTOR3* pTangentSrc = NULL,
-
-				  D3DXVECTOR3* pTangentDst = NULL
-                  )
-
-{
-
-    DWORD *pVertsIndic = NULL;
-
-    float *pVertsWeigh = NULL;
-
-    DWORD dwNumVerts;
-
-    DWORD offsetByte;
-
-    BYTE *pDest = (BYTE*)pVerticesDst; //目标顶点缓冲
-
-    const BYTE *pSrc = (BYTE*)pVerticesSrc; //源顶点缓冲
-
-
-    memcpy(pDest, pSrc, numTotalVerts * dwStride);
-
-    for(DWORD i = 0; i < pSkinInfo->GetNumBones(); i++)
-    {
-
-       dwNumVerts = pSkinInfo->GetNumBoneInfluences(i); //得到受影响的顶点个数
-
-       if(dwNumVerts <= 0)
-
-           continue;
-
-
-       pVertsIndic = new DWORD[dwNumVerts];
-
-       pVertsWeigh = new float[dwNumVerts];
-
-       pSkinInfo->GetBoneInfluence(i, pVertsIndic, pVertsWeigh);
-
-
-       while(dwNumVerts--)
-
-       {
-
-           DWORD index = pVertsIndic[dwNumVerts]; //当前受影响的顶点索引
-
-           float weight = pVertsWeigh[dwNumVerts]; //当前受影响顶点的权重
-
-           offsetByte = index * dwStride;
-
-
-           D3DXVECTOR3 vecPos = *(D3DXVECTOR3 *)(pSrc + offsetByte); //位置
-
-           D3DXVECTOR3 vecNor = *(D3DXVECTOR3 *)(pSrc + offsetByte + sizeof(D3DXVECTOR3)); //法线
-
-
-           D3DXVECTOR3 vecPos2, vecNor2;
-
-           D3DXVec3TransformCoord(&vecPos2, &vecPos, &pBoneTransforms[i]);
-
-           D3DXVec3TransformNormal(&vecNor2, &vecNor, &pBoneTransforms[i]);
-
-
-           D3DXVECTOR3 *pV = (D3DXVECTOR3 *)(pDest + offsetByte);
-
-           D3DXVECTOR3 *pN = (D3DXVECTOR3 *)(pDest + offsetByte + sizeof(D3DXVECTOR3));
-
-
-           D3DXVECTOR3 diff = (vecPos2 - vecPos) * weight;
-
-           *pV += diff;
-
-
-           diff = (vecNor2 - vecNor) * weight;
-
-           *pN += diff;
-
-       }
-
-
-       delete[] pVertsIndic;
-
-       delete[] pVertsWeigh;
-
-    }
-
-	if(pTangentSrc && pTangentDst)
-	{
-		memcpy( pTangentDst, pTangentSrc, numTotalVerts * sizeof(D3DXVECTOR3) );
-
-		for(DWORD i = 0; i < pSkinInfo->GetNumBones(); i++)
-		{
-		   dwNumVerts = pSkinInfo->GetNumBoneInfluences(i); //得到受影响的顶点个数
-
-		   if(dwNumVerts <= 0)
-			   continue;
-
-
-		   pVertsIndic = new DWORD[dwNumVerts];
-
-		   pVertsWeigh = new float[dwNumVerts];
-
-		   pSkinInfo->GetBoneInfluence(i, pVertsIndic, pVertsWeigh);
-
-		   while(dwNumVerts--)
-		   {
-
-			   DWORD index = pVertsIndic[dwNumVerts]; //当前受影响的顶点索引
-
-			   float weight = pVertsWeigh[dwNumVerts]; //当前受影响顶点的权重
-
-
-			   D3DXVECTOR3 vecTan = pTangentSrc[index]; //位置
-
-			   D3DXVECTOR3 vecTan2;
-
-			   D3DXVec3TransformNormal(&vecTan2, &vecTan, &pBoneTransforms[i]);
-
-			   D3DXVECTOR3 *pT = &pTangentDst[index];
-
-			   D3DXVECTOR3 diff = (vecTan2 - vecTan) * weight;
-
-			   *pT += diff;
-		   }
-
-
-		   delete[] pVertsIndic;
-
-		   delete[] pVertsWeigh;
-
-		}
-	}
-
-
-    return S_OK;
-
 }
 
 //-----------------------------------------------------------------------------
@@ -503,69 +250,78 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 	{
 		if(pMeshContainer->pSkinInfo)
 		{
-			DWORD cBones; 
-			DWORD iBone;
-			PBYTE pbVerticesSrc;
-			PBYTE pbVerticesDest;
-
-			cBones = pMeshContainer->pSkinInfo->GetNumBones();
-
-			// set up bone transforms
-			for( iBone = 0; iBone < cBones; ++iBone )
+			if( TEST_BIT(uFlag, zerO::CRenderQueue::MODEL_PARAMA) )
 			{
-				D3DXMatrixMultiply
-					(
-					&m_pModel->GetBoneMatrices()[iBone],                 // output
-					&pMeshContainer->pBoneOffsetMatrices[iBone],
-					pMeshContainer->ppBoneMatrixPtrs[iBone]
+				DWORD cBones; 
+				DWORD iBone;
+				PBYTE pbVerticesSrc;
+				PBYTE pbVerticesDest;
+
+				cBones = pMeshContainer->pSkinInfo->GetNumBones();
+
+				// set up bone transforms
+				for( iBone = 0; iBone < cBones; ++iBone )
+				{
+					D3DXMatrixMultiply
+						(
+						&m_pModel->GetBoneMatrices()[iBone],                 // output
+						&pMeshContainer->pBoneOffsetMatrices[iBone],
+						pMeshContainer->ppBoneMatrixPtrs[iBone]
+						);
+				}
+
+				pMeshContainer->pOrigMesh->LockVertexBuffer( D3DLOCK_READONLY, ( LPVOID* )&pbVerticesSrc );
+				pMeshContainer->MeshData.pMesh->LockVertexBuffer( 0, ( LPVOID* )&pbVerticesDest );
+
+				// generate skinned mesh
+				//pMeshContainer->pSkinInfo->UpdateSkinnedMesh(m_pModel->GetBoneMatrices(), NULL, pbVerticesSrc, pMeshContainer->puBuffer);
+				UpdateSkinnedMesh(
+					m_pModel->GetBoneMatrices(),
+					pMeshContainer->pSkinInfo->GetNumBones(),
+					pbVerticesSrc, 
+					pMeshContainer->puMeshBuffer, 
+					pMeshContainer->pOrigMesh->GetNumVertices(),
+					pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
+					pMeshContainer->puNumBoneInfluences,
+					pMeshContainer->ppdwVerticesIndices,
+					pMeshContainer->ppfWeights,
+					pMeshContainer->pTangentInfo,
+					pMeshContainer->pTangentBuffer
 					);
+
+				zerO::PUINT8 puMeshBuffer = pMeshContainer->puMeshBuffer;
+
+				D3DXVECTOR3* pTangentBuffer = pMeshContainer->pTangentBuffer;
+
+				zerO::UINT uNumBytesPerVertexSrc  = pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
+						   uNumBytesPerVertexDest = pMeshContainer->MeshData.pMesh->GetNumBytesPerVertex(),
+						   uNumVertices           = pMeshContainer->pOrigMesh->GetNumVertices(),
+						   uPosition4Size         = sizeof(D3DXVECTOR4),
+						   uPosition3Size         = sizeof(D3DXVECTOR3),
+						   uTangentOffset         = uNumBytesPerVertexDest - sizeof(D3DXVECTOR3);
+
+				for(zerO::UINT i = 0; i < uNumVertices; i ++)
+				{
+					*(D3DXVECTOR4*)(pbVerticesDest                 ) = D3DXVECTOR4(*(D3DVECTOR*)puMeshBuffer, 1.0f);
+					*(D3DXVECTOR3*)(pbVerticesDest + uPosition4Size) = *(D3DXVECTOR3*)(puMeshBuffer + uPosition3Size);
+					*(D3DXVECTOR3*)(pbVerticesDest + uTangentOffset) = pTangentBuffer[i];
+
+
+					puMeshBuffer   += uNumBytesPerVertexSrc;
+					pbVerticesDest += uNumBytesPerVertexDest;
+				}
+
+				pMeshContainer->pOrigMesh->UnlockVertexBuffer();
+				pMeshContainer->MeshData.pMesh->UnlockVertexBuffer();
+
+				//D3DXComputeNormals(pMeshContainer->MeshData.pMesh,NULL);
+
+				////计算切线
+				//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
+
+				if(pMeshContainer->pShadow)
+					pMeshContainer->pShadow->SetMeshData(*pMeshContainer->MeshData.pMesh);
 			}
-
-			pMeshContainer->pOrigMesh->LockVertexBuffer( D3DLOCK_READONLY, ( LPVOID* )&pbVerticesSrc );
-			pMeshContainer->MeshData.pMesh->LockVertexBuffer( 0, ( LPVOID* )&pbVerticesDest );
-
-			// generate skinned mesh
-			//pMeshContainer->pSkinInfo->UpdateSkinnedMesh(m_pModel->GetBoneMatrices(), NULL, pbVerticesSrc, pMeshContainer->puBuffer);
-			UpdateSkinnedMesh(
-				pMeshContainer->pSkinInfo, 
-				m_pModel->GetBoneMatrices(),
-				pbVerticesSrc, 
-				pMeshContainer->puMeshBuffer, 
-				pMeshContainer->pOrigMesh->GetNumVertices(),
-				pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
-				pMeshContainer->pTangentInfo,
-				pMeshContainer->pTangentBuffer
-				);
-
-			zerO::PUINT8 puMeshBuffer = pMeshContainer->puMeshBuffer;
-
-			D3DXVECTOR3* pTangentBuffer = pMeshContainer->pTangentBuffer;
-
-			zerO::UINT uNumBytesPerVertexSrc  = pMeshContainer->pOrigMesh->GetNumBytesPerVertex(),
-					   uNumBytesPerVertexDest = pMeshContainer->MeshData.pMesh->GetNumBytesPerVertex(),
-					   uNumVertices           = pMeshContainer->pOrigMesh->GetNumVertices(),
-					   uPosition4Size         = sizeof(D3DXVECTOR4),
-					   uPosition3Size         = sizeof(D3DXVECTOR3),
-					   uTangentOffset         = uNumBytesPerVertexDest - sizeof(D3DXVECTOR3);
-
-			for(zerO::UINT i = 0; i < uNumVertices; i ++)
-			{
-				*(D3DXVECTOR4*)(pbVerticesDest                 ) = D3DXVECTOR4(*(D3DVECTOR*)puMeshBuffer, 1.0f);
-				*(D3DXVECTOR3*)(pbVerticesDest + uPosition4Size) = *(D3DXVECTOR3*)(puMeshBuffer + uPosition3Size);
-				*(D3DXVECTOR3*)(pbVerticesDest + uTangentOffset) = pTangentBuffer[i];
-
-
-				puMeshBuffer   += uNumBytesPerVertexSrc;
-				pbVerticesDest += uNumBytesPerVertexDest;
-			}
-
-			pMeshContainer->pOrigMesh->UnlockVertexBuffer();
-			pMeshContainer->MeshData.pMesh->UnlockVertexBuffer();
-
-			//D3DXComputeNormals(pMeshContainer->MeshData.pMesh,NULL);
-
-			////计算切线
-			//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
 
 			if( TEST_BIT(uFlag, zerO::CRenderQueue::PARENT) )
 			{

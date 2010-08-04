@@ -173,6 +173,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\d3dutils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Effect.cpp"
 				>
 			</File>

@@ -31,8 +31,9 @@ namespace zerO
 		~CShadowVolume(void);
 
 		void SetMeshData(PUINT8 pVertices, PUINT16 pIndices, UINT uVertexSize);
+		void SetMeshData(ID3DXMesh& Mesh);
 
-		bool Create(ID3DXMesh& Mesh, CSceneNode& Noe);
+		bool Create(ID3DXMesh& Mesh, CSceneNode& Node);
 		bool Create(UINT uNumVertices, UINT uNumTriangles, CSceneNode& Parent, UINT uVertexSize, void* pVertices = NULL, void* pIndices = NULL);
 		void Update();
 		void Render();

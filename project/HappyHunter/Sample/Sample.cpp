@@ -30,7 +30,7 @@ zerO::CTerrain g_Terrain;
 //zerO::CStaticMesh g_Mesh;
 //zerO::CStaticMesh g_Copy;
 zerO::CSkinMesh   g_SkinMesh;
-//zerO::CSkinMesh   g_CopyMesh;
+zerO::CSkinMesh   g_CopyMesh;
 
 zerO::CTerrainSystem g_TerrainSystem;
 
@@ -103,15 +103,15 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	CAMERA.SetProjection(D3DX_PI / 4.0f, (zerO::FLOAT)DeviceSettings.pp.BackBufferWidth / DeviceSettings.pp.BackBufferHeight, 0.5f, 3000.0f);
 
-	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinHardware.fx") );
-	if ( !g_SkinMesh.Create(TEXT("Player.X")) )
+	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
+	if ( !g_SkinMesh.Create(TEXT("Aardvark.X")) )
 		return S_FALSE;
 
 	///*g_CopyMesh.SetEffectFile( TEXT("AnimalEffect.fx") );
 	//if ( !g_CopyMesh.Create(g_SkinMesh.GetModel()) )
 	//	return S_FALSE;*/
 
-	//g_SkinMesh.Clone(g_CopyMesh);
+	g_SkinMesh.Clone(g_CopyMesh);
 
 	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
 
@@ -145,7 +145,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 5120.0f, 5120.0f, 0.0f, 128.0f, - 5120.0f, 5120.0f);
+	Rect.Set(- 2560.0f, 2560.0f, 0.0f, 128.0f, - 2560.0f, 2560.0f);
 
 	g_TerrainSystem.Create(&g_HeightMap, Rect, 6, 4/*, zerO::CTerrainSystem::ROAM*/);
 	/*g_QuadTree.Create(Rect, 4);
@@ -298,7 +298,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     light.Diffuse.g  = 1.0f;
     light.Diffuse.b  = 1.0f;
 
-	//light.Direction.x = 1.0f;
+	//light.Direction.x = - 1.0f;
 	//light.Direction.y =  -1.0f;
 	//light.Direction.z = 1.0f;
 
@@ -307,6 +307,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	ly = 500;
 	lz = 10*cosf(timeGetTime()/360.0f);
 	light.Position= D3DXVECTOR3(lx,ly,lz);
+	light.Direction = D3DXVECTOR3(lx, 1000, lz);
 
     light.Range        = 100.0f;
 	light.Attenuation0 = 0.9f;
@@ -324,7 +325,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	/*g_Mesh.Update();
 	g_Copy.Update();*/
 	g_SkinMesh.Update();
-	//g_CopyMesh.Update();
+	g_CopyMesh.Update();
 
 	/*void* pVertices, *pIndices;
 	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
@@ -369,11 +370,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
 		g_SkinMesh.GetPosition().z)  );
 
-	/*g_CopyMesh.SetPosition( 
+	g_CopyMesh.SetPosition( 
 		D3DXVECTOR3(
 		100, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
-		g_SkinMesh.GetPosition().z)  );*/
+		g_SkinMesh.GetPosition().z)  );
 
 	CAMERA.SetRotation( 
 		D3DXVECTOR3(RotationX / 180 * D3DX_PI, RotationY / 180 * D3DX_PI, 0.0f) );
@@ -476,7 +477,7 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		/*g_Mesh.ApplyForRender();
 		g_Copy.ApplyForRender();*/
 		g_SkinMesh.ApplyForRender();
-		//g_CopyMesh.ApplyForRender();
+		g_CopyMesh.ApplyForRender();
 
 		//Ω· ¯‰÷»æ
 		g_Game.EndRender();
