@@ -11,7 +11,8 @@ using namespace zerO;
 //--------------------------------------------------------------------
 CSkinMesh::CSkinMesh() :
 m_strEffectFile(TEXT("")),
-m_bIsCreated(false)
+m_bIsCreated(false),
+m_bIsVisibleShadow(true)
 {
 }
 
@@ -322,7 +323,16 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 				//D3DXComputeTangent(pMeshContainer->MeshData.pMesh, 0, 0, 0, true, NULL);
 
 				if(pMeshContainer->pShadow)
-					pMeshContainer->pShadow->SetMeshData(*pMeshContainer->MeshData.pMesh);
+				{
+					if(m_bIsVisibleShadow)
+					{
+						pMeshContainer->pShadow->SetVisible(true);
+						pMeshContainer->pShadow->SetMeshData(*pMeshContainer->MeshData.pMesh);
+					}
+					else
+						pMeshContainer->pShadow->SetVisible(false);
+				}
+
 			}
 
 			if( TEST_BIT(uFlag, zerO::CRenderQueue::PARENT) )
@@ -337,7 +347,15 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, pFrame->CombinedTransformationMatrix * m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
 
 			if(pMeshContainer->pShadow)
-				pMeshContainer->pShadow->SetTransform(pFrame->CombinedTransformationMatrix);
+			{
+				if(m_bIsVisibleShadow)
+				{
+					pMeshContainer->pShadow->SetVisible(true);
+					pMeshContainer->pShadow->SetTransform(pFrame->CombinedTransformationMatrix);
+				}
+				else
+					pMeshContainer->pShadow->SetVisible(false);
+			}
 		}
 	}
 	else if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::HARDWARE)

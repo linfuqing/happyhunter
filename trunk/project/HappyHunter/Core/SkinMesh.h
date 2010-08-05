@@ -19,6 +19,8 @@ namespace zerO
 	public:
 		CModel* GetModel()const;
 
+		void SetShadowVisible(bool bValue);
+
 		void Clone(CSkinMesh& SkinMesh)const;
 
 		bool Create(const PBASICCHAR fileName);
@@ -62,6 +64,7 @@ namespace zerO
 		BASICSTRING					m_strEffectFile;		// 效果文件
 
 		bool                        m_bIsCreated;
+		bool                        m_bIsVisibleShadow;
 	};
 
 	//---------------------------------------------------------------------------
@@ -90,5 +93,10 @@ namespace zerO
 	inline CModel* CSkinMesh::GetModel()const
 	{
 		return m_pModel;
+	}
+
+	inline void CSkinMesh::SetShadowVisible(bool bValue)
+	{
+		m_bIsVisibleShadow = bValue;
 	}
 }

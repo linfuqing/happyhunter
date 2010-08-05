@@ -10,7 +10,8 @@ using namespace zerO;
 
 
 CShadowVolume::CShadowVolume(void) :
-m_bIsRenderVolume(false)
+m_bIsRenderVolume(false),
+m_bIsVisible(false)
 {
 	D3DXMatrixIdentity(&m_Matrix);
 }
@@ -114,6 +115,9 @@ void CShadowVolume::SetMeshData(ID3DXMesh& Mesh)
 //-----------------------------------------------------------------------------
 void CShadowVolume::Update()
 {
+	if(!m_bIsVisible)
+		return;
+
 	m_uNumEdges = 0;
 
 	D3DXVECTOR3 LightPosition(LIGHTMANAGER.GetLight(0)->Position);
@@ -208,6 +212,9 @@ void CShadowVolume::__AddEdge(zerO::UINT v0, zerO::UINT v1 )
 //-----------------------------------------------------------------------------
 void CShadowVolume::Render()
 {
+	if(!m_bIsVisible)
+		return;
+
 	//禁用z缓冲区写操作, 并启用模板缓冲区
     DEVICE.SetRenderState( D3DRS_ZWRITEENABLE,  FALSE );
     DEVICE.SetRenderState( D3DRS_STENCILENABLE, TRUE );
