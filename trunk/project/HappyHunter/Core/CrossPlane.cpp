@@ -148,6 +148,7 @@ void CCrossPlane::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 		DEVICE.SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
 		DEVICE.SetRenderState(D3DRS_ALPHAREF, 0x0000000);
 		DEVICE.SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+
 		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
 		if( TEST_BIT(uFlag, CRenderQueue::PARENT) )
@@ -165,6 +166,7 @@ void CCrossPlane::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 			DEVICE.DrawPrimitive(D3DPT_TRIANGLESTRIP, i << 2, 2);
 
 		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+
 		DEVICE.SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
 	}
 }

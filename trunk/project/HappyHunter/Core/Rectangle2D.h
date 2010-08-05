@@ -35,7 +35,7 @@ namespace zerO
 		CBasicRectangle2D<T>& operator  =(const CBasicRectangle2D<T>& Rect);
 		CBasicRectangle2D<T>& operator +=(const CBasicRectangle2D<T>& Rect);
 		CBasicRectangle2D<T>& operator *=(const CBasicRectangle2D<T>& Rect);
-	public:
+	protected:
 		T m_MaxX;
 		T m_MinX;
 		T m_MaxY;

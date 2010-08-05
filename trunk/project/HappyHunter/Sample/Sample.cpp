@@ -107,11 +107,11 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	if ( !g_SkinMesh.Create(TEXT("Aardvark.X")) )
 		return S_FALSE;
 
-	///*g_CopyMesh.SetEffectFile( TEXT("AnimalEffect.fx") );
-	//if ( !g_CopyMesh.Create(g_SkinMesh.GetModel()) )
-	//	return S_FALSE;*/
+	g_CopyMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
+	if ( !g_CopyMesh.Create( TEXT("Cheetah.x") ) )
+		return S_FALSE;
 
-	g_SkinMesh.Clone(g_CopyMesh);
+	//g_SkinMesh.Clone(g_CopyMesh);
 
 	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
 
@@ -327,6 +327,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_SkinMesh.Update();
 	g_CopyMesh.Update();
 
+	g_SkinMesh.SetDirection(D3DXVECTOR3(lx / 10 * D3DX_PI, lz / 10 * D3DX_PI, 0.0f));
+
 	/*void* pVertices, *pIndices;
 	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
     g_CopyMesh.GetMesh()->LockIndexBuffer( 0L, (LPVOID*)&pIndices );
@@ -396,8 +398,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		CAMERA.Right (  10.0f);
 
 	if( DXUTIsKeyDown('W') )
+	{
 		/*z += 10.0f;*/
 		CAMERA.Forward(10.0f);
+	}
 
 	if( DXUTIsKeyDown('S') )
 		CAMERA.Forward(-10.0f);

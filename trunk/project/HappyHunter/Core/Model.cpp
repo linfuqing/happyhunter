@@ -6,7 +6,6 @@ using namespace zerO;
 
 CAllocateHierarchy::CAllocateHierarchy() :
 m_pBoneMatrices(NULL), 
-m_pMesh(NULL),
 m_pParent(NULL),
 m_NumBoneMatricesMax(0),
 m_uNumContainers(0),
@@ -354,8 +353,6 @@ HRESULT CAllocateHierarchy::__GenerateDeclMesh(MODELCONTAINER *pMeshContainer)
 	//释放临时网格模型对象
 	DEBUG_RELEASE(pMeshSysMem);
 	DEBUG_RELEASE(pMeshSysMem2);
-
-	m_pMesh = pMeshContainer->MeshData.pMesh;
 
 	return hr;
 }
@@ -766,9 +763,19 @@ bool CModel::Load(const PBASICCHAR pcFileName)
 		return false;
 	}
 
-	/*__GetBoundBox(pMesh, m_LocalRect);*/
+	D3DXVECTOR3* pVertices, Max, Min;
+
+	pMesh->LockVertexBuffer(0, (void**)&pVertices);
+
+	D3DXComputeBoundingBox(pVertices, pMesh->GetNumVertices(), pMesh->GetNumBytesPerVertex(), &Min, &Max);
+
+	pMesh->UnlockVertexBuffer();
+
 	DEBUG_RELEASE(pMesh);
+
 	pMesh = NULL;
+
+	m_Rectangle.Set(Min.x, Max.x, Min.y,  Max.y, Min.z, Max.z);
 
 	wcscpy(m_Alloc.m_strFilePath, pcFileName);
 

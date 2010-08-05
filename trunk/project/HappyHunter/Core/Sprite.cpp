@@ -61,18 +61,18 @@ void CSprite::Update()
 
 		D3DXMatrixIdentity(&m_LocalMatrix);
 
-		if( TEST_BIT(m_uDirtyFlag, SCALE) )
-		{
-			D3DXMatrixScaling(&Matrix, m_Scale.x, m_Scale.y, m_Scale.z);
-
-			m_LocalMatrix *= Matrix;
-		}
-
 		if( TEST_BIT(m_uDirtyFlag, ROTATION) )
 		{
 			D3DXQuaternionRotationYawPitchRoll(&m_Quaternion, m_Rotation.y, m_Rotation.x, m_Rotation.z);
 
 			D3DXMatrixRotationQuaternion(&Matrix, &m_Quaternion);
+
+			m_LocalMatrix *= Matrix;
+		}
+
+		if( TEST_BIT(m_uDirtyFlag, SCALE) )
+		{
+			D3DXMatrixScaling(&Matrix, m_Scale.x, m_Scale.y, m_Scale.z);
 
 			m_LocalMatrix *= Matrix;
 		}

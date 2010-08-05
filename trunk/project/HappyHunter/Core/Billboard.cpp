@@ -132,6 +132,7 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 		DEVICE.SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
 		DEVICE.SetRenderState(D3DRS_ALPHAREF, 0x0000000);
 		DEVICE.SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+
 		DEVICE.SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
 		if( TEST_BIT(uFlag, CRenderQueue::PARENT) )
