@@ -12,6 +12,7 @@ using namespace zerO;
 CShadowVolume::CShadowVolume(void) :
 m_bIsRenderVolume(false)
 {
+	D3DXMatrixIdentity(&m_Matrix);
 }
 
 CShadowVolume::~CShadowVolume(void)
@@ -118,7 +119,7 @@ void CShadowVolume::Update()
 	D3DXVECTOR3 LightPosition(LIGHTMANAGER.GetLight(0)->Position);
 
 	D3DXMATRIX InverseWorldMatrix;
-    D3DXMatrixInverse( &InverseWorldMatrix, NULL, &m_pParent->GetWorldMatrix() );
+    D3DXMatrixInverse( &InverseWorldMatrix, NULL, &( m_Matrix * m_pParent->GetWorldMatrix() ) );
 
 	D3DXVec3TransformCoord(&LightPosition, &LightPosition, &InverseWorldMatrix);
 
@@ -241,7 +242,8 @@ void CShadowVolume::Render()
 
 	
 	DEVICE.SetRenderState( D3DRS_STENCILFUNC,  D3DCMP_ALWAYS );
-    
+
+	DEVICE.SetTransform( D3DTS_WORLD, &( m_Matrix * m_pParent->GetWorldMatrix() ) );
 
 	//渲染阴影体背面
 	/*DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CW );
@@ -253,14 +255,14 @@ void CShadowVolume::Render()
 	//渲染阴影体前面
 	DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );
 	DEVICE.SetRenderState( /*D3DRS_STENCILZFAIL*/D3DRS_STENCILPASS,  /*D3DSTENCILOP_DECR*/D3DSTENCILOP_INCR );
-	DEVICE.SetTransform( D3DTS_WORLD, &m_pParent->GetWorldMatrix() );
+
 	DEVICE.SetFVF( D3DFVF_XYZ );
     DEVICE.DrawPrimitiveUP( D3DPT_TRIANGLELIST, uNumFaces, m_pShadowVertices, sizeof(D3DXVECTOR3) );
 
 	//渲染阴影体背面
 	DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CW );
 	DEVICE.SetRenderState( D3DRS_STENCILPASS, D3DSTENCILOP_DECR );
-	DEVICE.SetTransform( D3DTS_WORLD, &m_pParent->GetWorldMatrix() );
+	
 	DEVICE.SetFVF( D3DFVF_XYZ );
     DEVICE.DrawPrimitiveUP( D3DPT_TRIANGLELIST, uNumFaces, m_pShadowVertices, sizeof(D3DXVECTOR3) );
 

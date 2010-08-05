@@ -335,6 +335,9 @@ void CSkinMesh::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 		{
 			m_pEffect->SetMatrix(CEffect::WORLD, pFrame->CombinedTransformationMatrix * m_WorldMatrix);
 			m_pEffect->SetMatrix(CEffect::WORLD_VIEW_PROJECTION, pFrame->CombinedTransformationMatrix * m_WorldMatrix * CAMERA.GetViewProjectionMatrix() );
+
+			if(pMeshContainer->pShadow)
+				pMeshContainer->pShadow->SetTransform(pFrame->CombinedTransformationMatrix);
 		}
 	}
 	else if(m_pModel->GetAllocateHierarchy().GetType() == CAllocateHierarchy::HARDWARE)
