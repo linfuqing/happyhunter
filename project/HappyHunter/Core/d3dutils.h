@@ -20,6 +20,8 @@ namespace zerO
 		PFLOAT* ppfWeights,
 		const D3DXVECTOR3* pTangentSrc = NULL,
 		D3DXVECTOR3* pTangentDst = NULL);
+
+	void DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3 Direction);
 }
 
 #endif

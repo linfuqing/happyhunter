@@ -86,3 +86,27 @@ void zerO::UpdateSkinnedMesh(
 		}
 	}
 }
+
+void zerO::DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3 Direction)
+{
+	if( Direction.x == 0 && Direction.z == 0 && Direction.y == 0 )
+	{
+		x = 0;
+		y = 0;
+	}
+	else if( Direction.x == 0 && Direction.z == 0  )
+	{
+		x = - asin( Direction.y / D3DXVec3Length(&Direction) );
+		y =   0;
+	}
+	else if( Direction.z < 0 )
+	{
+		x = - asin( Direction.y / D3DXVec3Length(&Direction) );
+		y =   D3DX_PI - asin( Direction.x / sqrt(Direction.x * Direction.x + Direction.z * Direction.z) );
+	}
+	else
+	{
+		x = - asin( Direction.y / D3DXVec3Length(&Direction) );
+		y =   asin( Direction.x / sqrt(Direction.x * Direction.x + Direction.z * Direction.z) );
+	}
+}

@@ -336,7 +336,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_CopyMesh.Update();
 
 	//g_SkinMesh.SetDirection(D3DXVECTOR3(0, 0, -1.0f));
-	g_CopyMesh.SetSceneDirection(D3DXVECTOR3(-1.0f, 0.0f, 1.0f));
+	g_CopyMesh.SetSceneDirection(D3DXVECTOR3(-0.588091, -0.030936, 0.808203));
 
 	/*void* pVertices, *pIndices;
 	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );

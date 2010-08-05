@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "Sprite.h"
+#include "d3dutils.h"
 
 using namespace zerO;
 
@@ -29,26 +30,7 @@ void CSprite::SetDirection(const D3DXVECTOR3& Direction)
 {
 	D3DXVECTOR3 Rotation(0.0f, 0.0f, m_Rotation.z);
 
-	if( Direction.x == 0 && Direction.z == 0 && Direction.y == 0 )
-	{
-		Rotation.x = 0;
-		Rotation.y = 0;
-	}
-	else if( Direction.x == 0 && Direction.z == 0  )
-	{
-		Rotation.x = - asin( Direction.y / D3DXVec3Length(&Direction) );
-		Rotation.y =   0;
-	}
-	else if( Direction.z < 0 )
-	{
-		Rotation.x = - asin( Direction.y / D3DXVec3Length(&Direction) );
-		Rotation.y =   D3DX_PI - asin( Direction.x / sqrt(Direction.x * Direction.x + Direction.z * Direction.z) );
-	}
-	else
-	{
-		Rotation.x = - asin( Direction.y / D3DXVec3Length(&Direction) );
-		Rotation.y =   asin( Direction.x / sqrt(Direction.x * Direction.x + Direction.z * Direction.z) );
-	}
+	DirectionToRotation(Rotation.x, Rotation.y, Direction);
 
 	SetRotation(Rotation);
 }
