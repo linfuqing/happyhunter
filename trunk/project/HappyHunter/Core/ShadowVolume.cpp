@@ -30,7 +30,7 @@ bool CShadowVolume::Create(zerO::UINT uNumVertices, zerO::UINT uNumTriangles, CS
 	m_pParent       = &Parent;
 
 	//为阴影体顶点分配存储空间
-	DEBUG_NEW(m_pShadowVertices, D3DXVECTOR3[m_uNumTriangles * 3 * 8]);
+	DEBUG_NEW(m_pShadowVertices, D3DXVECTOR3[m_uNumTriangles * 3 * 6]);
 	DEBUG_NEW(m_pEdges         , EDGE       [m_uNumTriangles * 3    ]);
 	DEBUG_NEW(m_pTriangles     , TRIANGLE   [m_uNumTriangles        ]);
 

@@ -17,7 +17,8 @@ m_pScene(NULL),
 m_pBackground(NULL),
 m_pVertexBuffer(NULL),
 m_bLightEnable(false),
-m_fTime(0)
+m_fTime(0),
+m_ShadowColor(0x7f000000)
 {
 	DEBUG_ASSERT(!sm_pInstance, "Only one instance of CGameHost is permitted.");
 
@@ -142,10 +143,10 @@ bool CGameHost::Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc)
 		pVertices[1].Position = D3DXVECTOR4(  0,  0, 0.0f, 1.0f );
 		pVertices[2].Position = D3DXVECTOR4( sx, sy, 0.0f, 1.0f );
 		pVertices[3].Position = D3DXVECTOR4( sx,  0, 0.0f, 1.0f );
-		pVertices[0].Color    = 0x7f000000;
-		pVertices[1].Color    = 0x7f000000;
-		pVertices[2].Color    = 0x7f000000;
-		pVertices[3].Color    = 0x7f000000;
+		pVertices[0].Color    = m_ShadowColor;
+		pVertices[1].Color    = m_ShadowColor;
+		pVertices[2].Color    = m_ShadowColor;
+		pVertices[3].Color    = m_ShadowColor;
 
 		m_pVertexBuffer->Unlock();
 	}
@@ -189,6 +190,7 @@ bool CGameHost::Update(zerO::FLOAT fElapsedTime)
 	return true;
 }
 
+#include"basicutils.h"
 bool CGameHost::BeginRender()
 {
 	if(m_pBackground)
@@ -223,6 +225,13 @@ bool CGameHost::EndRender()
 		m_pDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
 		m_pDevice->SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
 		m_pDevice->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+		m_pDevice->SetRenderState( D3DRS_BLENDOP, D3DBLENDOP_ADD);
+
+		m_pDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+		m_pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+
+		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 
 		//设置模板相关渲染状态
 		m_pDevice->SetRenderState( D3DRS_STENCILENABLE,    TRUE );
@@ -239,6 +248,9 @@ bool CGameHost::EndRender()
 		m_pDevice->SetRenderState( D3DRS_ZENABLE,          TRUE );
 		m_pDevice->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
 		m_pDevice->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
+
+		m_pDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 	}
 
 	return true;

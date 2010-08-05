@@ -224,7 +224,7 @@ void CSkyBox::Render()
 
 	if(pEffect)
 	{
-		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, true         );
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE         );
 		DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
 		DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
@@ -294,7 +294,7 @@ void CSkyBox::Render()
 
 		pEffect->End();
 
-		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, false        );
+		DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE        );
 	}
 
 #undef SET_TEXTURE
