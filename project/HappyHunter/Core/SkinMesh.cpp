@@ -179,6 +179,8 @@ bool CSkinMesh::Create(const PBASICCHAR fileName)
 	if( !m_pModel->Create(fileName, this) )
 		return false;
 
+	m_LocalRect = m_pModel->GetRectangle();
+
 	m_bIsCreated = true;
 
 	return true;

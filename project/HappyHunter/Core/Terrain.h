@@ -81,8 +81,6 @@ namespace zerO
 		CTerrain(void);
 		~CTerrain(void);
 
-		const CRectangle3D& GetWorldExtents() const;
-
 		UINT GetTableWidth()const;
 		UINT GetTableHeight()const;
 
@@ -144,11 +142,6 @@ namespace zerO
 		PFLOAT m_pfHeightTable;
 		LPD3DXVECTOR3 m_pNormalTable;
 	};
-
-	inline const CRectangle3D& CTerrain::GetWorldExtents() const
-	{
-		return m_WorldExtents;
-	}
 
 	inline UINT CTerrain::GetTableWidth()const
 	{

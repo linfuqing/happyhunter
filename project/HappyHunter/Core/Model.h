@@ -1,8 +1,8 @@
 #pragma once
 #include "Resource.h"
-#include "Sprite.h"
 #include "Surface.h"
 #include "ShadowVolume.h"
+#include "SceneNode.h"
 
 namespace zerO
 {
@@ -85,7 +85,6 @@ namespace zerO
 		TYPE                        m_Type;
 		bool                        m_bIsShadow;
 		CSceneNode*                 m_pParent;
-		LPD3DXMESH                  m_pMesh;
 
 		friend class CModel;
 	};
@@ -117,7 +116,7 @@ namespace zerO
 
 		LPD3DXMATRIX GetBoneMatrices()const;
 
-		LPD3DXMESH GetMesh()const;
+		const CRectangle3D& GetRectangle()const;
 
 		CAllocateHierarchy& GetAllocateHierarchy();
 
@@ -168,6 +167,7 @@ namespace zerO
 
 		LPMODELCONTAINER*           m_ppContainers;
 		UINT                        m_uNumContainers;
+		CRectangle3D                m_Rectangle;
 	};
 
 	inline LPD3DXFRAME CModel::GetFrameRoot()const
@@ -178,11 +178,6 @@ namespace zerO
 	inline LPD3DXMATRIX CModel::GetBoneMatrices()const
 	{
 		return m_Alloc.m_pBoneMatrices;
-	}
-
-	inline LPD3DXMESH CModel::GetMesh()const
-	{
-		return m_Alloc.m_pMesh;
 	}
 
 	inline LPMODELCONTAINER CModel::GetModelContainer(UINT uIndex)const
@@ -196,5 +191,10 @@ namespace zerO
 	inline CAllocateHierarchy& CModel::GetAllocateHierarchy()
 	{
 		return m_Alloc;
+	}
+
+	inline const CRectangle3D& CModel::GetRectangle()const
+	{
+		return m_Rectangle;
 	}
 }

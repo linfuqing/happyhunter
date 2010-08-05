@@ -7,6 +7,14 @@ namespace zerO
 	class CSprite :
 		public CSceneNode
 	{
+		typedef enum
+		{
+			NONE     = 0,
+			ROTATION,
+			POSITION,
+			SCALE
+
+		}DIRTYFLAG;
 	public:
 		CSprite(void);
 		~CSprite(void);
@@ -32,15 +40,6 @@ namespace zerO
 		void Update();
 
 	protected:
-		typedef enum
-		{
-			NONE     = 0,
-			ROTATION,
-			POSITION,
-			SCALE
-
-		}DIRTYFLAG;
-
 		D3DXVECTOR3 m_Position;
 		D3DXVECTOR3 m_Rotation;
 		D3DXVECTOR3 m_Scale;

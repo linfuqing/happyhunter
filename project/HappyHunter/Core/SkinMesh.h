@@ -16,8 +16,6 @@ namespace zerO
 		CSkinMesh();
 		virtual ~CSkinMesh();
 
-		/*void __GetBoundBox(const LPD3DXMESH pMesh, CRectangle3D& rect3d);*/
-
 	public:
 		CModel* GetModel()const;
 
@@ -92,10 +90,5 @@ namespace zerO
 	inline CModel* CSkinMesh::GetModel()const
 	{
 		return m_pModel;
-	}
-
-	inline LPD3DXMESH CSkinMesh::GetMesh()const
-	{
-		return m_pModel->GetMesh();
 	}
 }
