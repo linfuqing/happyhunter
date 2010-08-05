@@ -55,7 +55,7 @@ void CSprite::SetDirection(const D3DXVECTOR3& Direction)
 
 void CSprite::SetSceneDirection(const D3DXVECTOR3& Direction)
 {
-	SetDirection( D3DXVECTOR3(Direction.x, Direction.y, - Direction.z) );
+	SetDirection( D3DXVECTOR3(- Direction.x, - Direction.y, - Direction.z) );
 }
 
 void CSprite::Update()

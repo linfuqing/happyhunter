@@ -30,6 +30,8 @@ namespace zerO
 		CShadowVolume(void);
 		~CShadowVolume(void);
 
+		void SetTransform(const D3DXMATRIX Matrix);
+
 		void SetMeshData(PUINT8 pVertices, PUINT16 pIndices, UINT uVertexSize);
 		void SetMeshData(ID3DXMesh& Mesh);
 
@@ -57,7 +59,14 @@ namespace zerO
 		UINT         m_uNumEdges;
 		UINT         m_uNumShadowVertices;
 
+		D3DXMATRIX   m_Matrix;
+
 		CSceneNode*  m_pParent;
 		bool         m_bIsRenderVolume;
 	};
+
+	inline void CShadowVolume::SetTransform(const D3DXMATRIX Matrix)
+	{
+		m_Matrix = Matrix;
+	}
 }
