@@ -53,6 +53,11 @@ void CSprite::SetDirection(const D3DXVECTOR3& Direction)
 	SetRotation(Rotation);
 }
 
+void CSprite::SetSceneDirection(const D3DXVECTOR3& Direction)
+{
+	SetDirection( D3DXVECTOR3(Direction.x, Direction.y, - Direction.z) );
+}
+
 void CSprite::Update()
 {
 	if(m_uDirtyFlag)

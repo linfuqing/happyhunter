@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "datatype.h"
 #include "LightManager.h"
+#include "color.h"
 #include <vector>
 #include <list>
 
@@ -85,6 +86,8 @@ namespace zerO
 
 		void SetLightEnable(bool bValue);
 
+		void SetShadowColor(ARPGCOLOR Color);
+
 		void SetBackground(CBackground* pBackground);
 
 		RESOURCEHANDLE AddResource(CResource* const pResource, RESOURCETYPE Type);
@@ -128,6 +131,8 @@ namespace zerO
 		CVertexBuffer* m_pVertexBuffer;
 
 		bool m_bLightEnable;
+
+		ARPGCOLOR m_ShadowColor;
 	};
 
 	inline IDirect3DDevice9& CGameHost::GetDevice()
@@ -192,5 +197,10 @@ namespace zerO
 	inline void CGameHost::SetLightEnable(bool bValue)
 	{
 		m_bLightEnable = bValue;
+	}
+
+	inline void CGameHost::SetShadowColor(ARPGCOLOR Color)
+	{
+		m_ShadowColor = Color;
 	}
 }

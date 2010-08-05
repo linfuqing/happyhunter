@@ -108,9 +108,17 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 		return S_FALSE;
 
 	g_CopyMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
-	if ( !g_CopyMesh.Create( TEXT("Cheetah.x") ) )
+	if ( !g_CopyMesh.Create( TEXT("»ú¹ØÇ¹.x") ) )
 		return S_FALSE;
 
+	//float start = 50.0f;
+	//float end   = 200.0f;
+	//pd3dDevice->SetRenderState(D3DRS_FOGENABLE, TRUE);
+	//pd3dDevice->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_EXP2);
+	////pd3dDevice->SetRenderState(D3DRS_FOGDENSITY, *(DWORD*)&start);
+	//pd3dDevice->SetRenderState(D3DRS_FOGSTART, CASE(start, DWORD));
+	//pd3dDevice->SetRenderState(D3DRS_FOGEND,  CASE(end, DWORD));
+	//pd3dDevice->SetRenderState(D3DRS_FOGCOLOR, 0xff00ff00);
 	//g_SkinMesh.Clone(g_CopyMesh);
 
 	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
@@ -230,7 +238,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
   //   light.Range       = 1000.0f;
 
 	 //LIGHTMANAGER.SetLight(light, 0);
-	 LIGHTMANAGER.SetAmbient(0x00808080);
+	 LIGHTMANAGER.SetAmbient(0xffffffff);
 
 	GAMEHOST.SetLightEnable(true);
 
@@ -327,7 +335,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_SkinMesh.Update();
 	g_CopyMesh.Update();
 
-	g_SkinMesh.SetDirection(D3DXVECTOR3(lx / 10 * D3DX_PI, lz / 10 * D3DX_PI, 0.0f));
+	g_SkinMesh.SetDirection(D3DXVECTOR3(0, 0, -1.0f));
+	g_CopyMesh.SetDirection(D3DXVECTOR3(0, 0, -1.0f));
 
 	/*void* pVertices, *pIndices;
 	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
@@ -369,13 +378,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_SkinMesh.SetPosition( 
 		D3DXVECTOR3(
 		g_SkinMesh.GetPosition().x, 
-		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
+		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z), 
 		g_SkinMesh.GetPosition().z)  );
 
 	g_CopyMesh.SetPosition( 
 		D3DXVECTOR3(
 		100, 
-		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z) + 100.0f, 
+		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z), 
 		g_SkinMesh.GetPosition().z)  );
 
 	CAMERA.SetRotation( 
@@ -486,8 +495,8 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		//½áÊøäÖÈ¾
 		g_Game.EndRender();
 
-		//pd3dDevice->SetVertexShader(NULL);
-		//pd3dDevice->SetPixelShader(NULL);
+		/*pd3dDevice->SetVertexShader(NULL);
+		pd3dDevice->SetPixelShader(NULL);*/
 
 		//pd3dDevice->SetTransform( D3DTS_VIEW, &CAMERA.GetViewMatrix() );
 
