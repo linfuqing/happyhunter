@@ -115,33 +115,3 @@ void zerO::SceneDirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direc
 {
 	DirectionToRotation(x, y, -Direction);
 }
-
-bool zerO::MoveBuffer(
-					  D3DXVECTOR3& outRot, 
-					  D3DXVECTOR3& outTrans, 
-					  const D3DXVECTOR3& rotPoor, 
-					  const D3DXVECTOR3& transPoor, 
-					  FLOAT rotRef, 
-					  FLOAT transRef, 
-					  FLOAT step
-					  )
-{
-	bool bRot = false, bTrans = false;
-
-	if (!FloatEquals(D3DXVec3Length(&rotPoor), 0.0f, rotRef))
-	{
-		outRot += rotPoor * step;
-		bRot = true;
-	}
-
-	if (!bRot)
-	{
-		if (!FloatEquals(D3DXVec3Length(&transPoor), 0.0f, transRef))
-		{
-			outTrans += transPoor * step;
-			bTrans = true;
-		}
-	}
-
-	return bRot || bTrans;
-}
