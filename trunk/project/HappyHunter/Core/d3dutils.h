@@ -25,19 +25,22 @@ namespace zerO
 	void DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direction);
 	void SceneDirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direction);
 
-	// »º¶¯Ð§¹û£¨»º³å£©
-	bool MoveBuffer(
-		D3DXVECTOR3& outRot, 
-		D3DXVECTOR3& outTrans, 
-		const D3DXVECTOR3& rotPoor, 
-		const D3DXVECTOR3& transPoor, 
-		FLOAT rotRef, 
-		FLOAT transRef, 
-		FLOAT step);
-
-	inline bool FloatEquals(FLOAT lhs, FLOAT rhs, FLOAT ref)
+	template <typename Type>
+	inline bool ElmentEquals(Type lhs, Type rhs, Type ref)
 	{
 		return abs(lhs - rhs) < ref;
+	}
+
+	template <typename Type1, typename Type2>
+	inline bool MoveBuffer(Type1& out, const Type1& poor, Type2 poorLen, Type2 ref, Type2 step)
+	{
+		if (!ElmentEquals(poorLen, 0.0f, ref))
+		{
+			out += poor * step;
+			return true;
+		}
+
+		return false;
 	}
 }
 
