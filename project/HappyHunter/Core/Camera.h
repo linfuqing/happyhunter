@@ -30,6 +30,8 @@ namespace zerO
 		//根据CRectangle3D::TESTPLANESTATE值测试矩形位置
 		bool Test(const CRectangle3D& Rect, UINT32 uTestFlag)const;
 
+		bool TestHit(const CRectangle3D& Rect)const;
+
 		void Transform(const D3DXMATRIX& Matrix);
 
 		//从视口投影矩阵构建视锥体
@@ -48,6 +50,12 @@ namespace zerO
 			&& TEST_FLAG( nFlag, Rect.Test(Bottom) )
 			&& TEST_FLAG( nFlag, Rect.Test(Far   ) )
 			&& TEST_FLAG( nFlag, Rect.Test(Near  ) );
+	}
+
+	inline bool FRUSTUM::TestHit(const CRectangle3D& Rect)const
+	{
+		static UINT32 s_uTestFlag = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
+		return Test(Rect, s_uTestFlag);
 	}
 
 	inline void FRUSTUM::Transform(const D3DXMATRIX& Matrix)
@@ -83,6 +91,11 @@ namespace zerO
 
 		const FRUSTUM& GetFrustum()const;
 
+		FLOAT GetFOV()const;
+		FLOAT GetAspect()const;
+		FLOAT GetNearPlane()const;
+		FLOAT GetFarPlane()const;
+
 		//投影矩阵参数.
 		void SetProjection(
 			FLOAT fFOV, 
@@ -103,6 +116,11 @@ namespace zerO
 		FRUSTUM m_Frustum;
 
 		D3DXVECTOR3	m_FarPlanePoints[8];
+
+		FLOAT m_fFOV;
+		FLOAT m_fAspect;
+		FLOAT m_fNearPlane;
+		FLOAT m_fFarPlane;
 	};
 
 	inline const D3DXMATRIX& CCamera::GetViewMatrix()const
@@ -128,5 +146,25 @@ namespace zerO
 	inline const D3DXVECTOR3& CCamera::GetWorldPosition()const
 	{
 		return m_WorldPosition;
+	}
+
+	inline FLOAT CCamera::GetFOV()const
+	{
+		return m_fFOV;
+	}
+
+	inline FLOAT CCamera::GetAspect()const
+	{
+		return m_fAspect;
+	}
+
+	inline FLOAT CCamera::GetNearPlane()const
+	{
+		return m_fNearPlane;
+	}
+
+	inline FLOAT CCamera::GetFarPlane()const
+	{
+		return m_fFarPlane;
 	}
 }

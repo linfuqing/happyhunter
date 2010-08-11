@@ -15,7 +15,7 @@ CSkyBox::~CSkyBox(void)
 
 bool CSkyBox::Create(zerO::FLOAT fSize)
 {
-	m_fHalfSize = fSize * 0.5f;
+	m_fHalfSize = sqrt(2.0f) * 0.5f;//fSize * 0.5f;
 
 	///
 	//----------------------------------

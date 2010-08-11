@@ -2,10 +2,10 @@
 #define D3DUTILS_H
 
 #include "datatype.h"
+#include "basicutils.h"
 
 namespace zerO
 {
-#define USER_PI ((zerO::FLOAT)  3.141592654f)
 #define TO_DEGREE(x) ( (x) * 180.0f / D3DX_PI )
 #define TO_RADIAN(x) ( (x) * D3DX_PI / 180.0f )
 
@@ -22,7 +22,8 @@ namespace zerO
 		const D3DXVECTOR3* pTangentSrc = NULL,
 		D3DXVECTOR3* pTangentDst = NULL);
 
-	void DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direction);
+	void DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3 Direction);
+
 	void SceneDirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direction);
 
 	template <typename Type>

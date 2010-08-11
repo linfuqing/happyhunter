@@ -181,6 +181,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FogManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FullScreenEffect.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GameHost.cpp"
 				>
 			</File>
@@ -281,6 +289,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\TexturePrinter.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\VertexBuffer.cpp"
 				>
 			</File>
@@ -348,6 +360,14 @@
 			</File>
 			<File
 				RelativePath=".\Effect.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FogManager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FullScreenEffect.h"
 				>
 			</File>
 			<File
@@ -452,6 +472,10 @@
 			</File>
 			<File
 				RelativePath=".\Texture.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TexturePrinter.h"
 				>
 			</File>
 			<File

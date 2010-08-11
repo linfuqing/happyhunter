@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "BasicString.h"
 #include "safefunction.h"
+#include "basicmath.h"
 
 ///
 // ¸½´ø¹¤¾ß
@@ -151,6 +152,16 @@ namespace zerO
 		_asm mov nResult, eax
 
 		return nResult;
+	}
+
+	template<typename T>
+	inline void Slerp(T& Out, const T& Source, const T& Target, FLOAT fRate)
+	{
+		fRate = MAX(MIN(fRate, 1), 0);
+
+		Out   = Source;
+
+		Out  += (Target - Source) * fRate;
 	}
 
 	inline void RemovePathFromFileName(LPSTR fullPath, LPWSTR fileName)

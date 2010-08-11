@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "datatype.h"
 #include "LightManager.h"
+#include "FogManager.h"
 #include "color.h"
 #include <vector>
 #include <list>
@@ -17,6 +18,7 @@ namespace zerO
 #define ELAPSEDTIME  GAMEHOST.GetElapsedTime()
 #define TIME         GAMEHOST.GetTime()
 #define LIGHTMANAGER GAMEHOST.GetLightManager()
+#define FOGMANAGER   GAMEHOST.GetFogManager()
 
 	typedef enum
 	{
@@ -28,6 +30,8 @@ namespace zerO
 		RESOURCE_MESH,
 		RESOURCE_MODEL,
 		RESOURCE_ANIMATIONCONTROLLER,
+		RESUORCE_FULLSCREENEFFECT,
+		RESOURCE_TEXTUREPRINTER,
 
 		TOTAL_RESOURCE_TYPES
 	}RESOURCETYPE;
@@ -41,6 +45,9 @@ namespace zerO
 	class CBackground;
 	class CShadow;
 	class CVertexBuffer;
+	class CTexture;
+	class CFullScreenEffect;
+	class CTexturePrinter;
 
 	///
 	// 主渲染框架类，单件模式，包含资源池，帧渲染调用，
@@ -53,6 +60,7 @@ namespace zerO
 		{
 			D3DXVECTOR4 Position;
 			D3DCOLOR    Color;
+			D3DXVECTOR2 UV;
 		}VERTEX, * LPVERTEX;
 	public:
 		typedef struct
@@ -81,14 +89,19 @@ namespace zerO
 		CBackground* GetBackground()const;
 
 		CLightManager& GetLightManager();
+		CFogManager& GetFogManager();
 
 		const DEVICESETTINGS& GetDeviceSettings()const;
+		const D3DSURFACE_DESC& GetBackBufferSurfaceDesc()const;
 
 		void SetLightEnable(bool bValue);
+		void SetFogEnable(bool bValue);
 
-		void SetShadowColor(ARPGCOLOR Color);
+		void SetShadowColor(ARGBCOLOR Color);
 
 		void SetBackground(CBackground* pBackground);
+
+		void SetFullScreenEffect(CFullScreenEffect* pFullScreenEffect);
 
 		RESOURCEHANDLE AddResource(CResource* const pResource, RESOURCETYPE Type);
 		CResource* GetResource(RESOURCEHANDLE Handle, RESOURCETYPE Type);
@@ -127,12 +140,20 @@ namespace zerO
 		CBackground* m_pBackground;
 
 		CLightManager m_LightManager;
+		CFogManager   m_FogManager;
 
 		CVertexBuffer* m_pVertexBuffer;
 
-		bool m_bLightEnable;
+		CTexture* m_pRenderTarget;
 
-		ARPGCOLOR m_ShadowColor;
+		CTexturePrinter* m_pTexturePrinter;
+
+		CFullScreenEffect* m_pFullScreenEffect;
+
+		bool m_bLightEnable;
+		bool m_bFogEnable;
+
+		ARGBCOLOR m_ShadowColor;
 	};
 
 	inline IDirect3DDevice9& CGameHost::GetDevice()
@@ -174,6 +195,11 @@ namespace zerO
 		return m_DeviceSettings;
 	}
 
+	inline const D3DSURFACE_DESC& CGameHost::GetBackBufferSurfaceDesc()const
+	{
+		return m_DeviceSurfaceDest;
+	}
+
 	inline FLOAT CGameHost::GetElapsedTime()const
 	{
 		return m_fElapsedTime;
@@ -189,9 +215,19 @@ namespace zerO
 		return m_LightManager;
 	}
 
+	inline CFogManager& CGameHost::GetFogManager()
+	{
+		return m_FogManager;
+	}
+
 	inline void CGameHost::SetBackground(CBackground* pBackground)
 	{
 		m_pBackground = pBackground;
+	}
+
+	inline void CGameHost::SetFullScreenEffect(CFullScreenEffect* pFullScreenEffect)
+	{
+		m_pFullScreenEffect = pFullScreenEffect;
 	}
 
 	inline void CGameHost::SetLightEnable(bool bValue)
@@ -199,7 +235,12 @@ namespace zerO
 		m_bLightEnable = bValue;
 	}
 
-	inline void CGameHost::SetShadowColor(ARPGCOLOR Color)
+	inline void CGameHost::SetFogEnable(bool bValue)
+	{
+		m_bFogEnable = bValue;
+	}
+
+	inline void CGameHost::SetShadowColor(ARGBCOLOR Color)
 	{
 		m_ShadowColor = Color;
 	}

@@ -20,11 +20,11 @@ namespace zerO
 		const D3DLIGHT9* GetLight(UINT uIndex)const;
 
 		void SetLight(const D3DLIGHT9& Light, UINT uIndex);
-		void SetAmbient(ARPGCOLOR Color);
+		void SetAmbient(ARGBCOLOR Color);
 
 		void Activate();
 	private:
-		ARPGCOLOR m_Ambient;
+		ARGBCOLOR m_Ambient;
 		D3DLIGHT9 m_Light[MAXINUM_LIGHTS_NUMBER];
 		UINT8     m_uFlag;
 		UINT      m_uNumLights;
@@ -50,7 +50,7 @@ namespace zerO
 		m_uNumLights ++;
 	}
 
-	inline void CLightManager::SetAmbient(ARPGCOLOR Color)
+	inline void CLightManager::SetAmbient(ARGBCOLOR Color)
 	{
 		m_Ambient = Color;
 	}

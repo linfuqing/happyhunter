@@ -14,6 +14,9 @@ namespace zerO
 #define ROUND(x) (INT)( (x) > 0.0f ? ( (x) + 0.5f ) : ( (x) < 0.0f ? (x) : 0.0f ) )
 #define FLOOR(x) (INT)( (x) > 0.0f ? (x) : ( (x) < 0.0f ? ( (x) - 0.5f ) : 0.0f ) )
 #define CLAMP(Value, Min, Max) ( (Value) > (Max) ? (Max) : ( (Value) < (Min) ? (Min) : (Value) ) )
+#define ABS(x) ( (x) < 0 ? - (x) : (x) )
+#define ABS_SUBTRACT(x, y) ( (x) < (y) ? (y) - (x) : (x) - (y) )
+#define EQUAL(Source, Target, Error) (ABS_SUBTRACT( (Source),(Target) ) < Error)
 }
 
 #endif

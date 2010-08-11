@@ -5,13 +5,16 @@
 #include "stdafx.h"
 #include "ShadowVolume.h"
 #include "basicutils.h"
+#include "Camera.h"
 
 using namespace zerO;
 
 
 CShadowVolume::CShadowVolume(void) :
 m_bIsRenderVolume(false),
-m_bIsVisible(false)
+m_bIsVisible(false),
+m_bIsCulled(false),
+m_fLength(0.0f)
 {
 	D3DXMatrixIdentity(&m_Matrix);
 }
@@ -118,17 +121,84 @@ void CShadowVolume::Update()
 	if(!m_bIsVisible)
 		return;
 
-	m_uNumEdges = 0;
+	D3DXMatrixIdentity(&m_Matrix);
+
+	m_Matrix *= m_pParent->GetWorldMatrix();
+
+	D3DXVECTOR3 Position(m_Matrix._41, m_Matrix._42, m_Matrix._43);
+
+	if(m_Matrix._44)
+		Position /= m_Matrix._44;
+
+	Position -= CAMERA.GetWorldPosition();
+
+	if( D3DXVec3Length(&Position) + m_pParent->GetWorldRectangle().GetSize() < CAMERA.GetFarPlane() )
+		m_bIsCulled = false;
+	else
+	{
+		m_bIsCulled = true;
+
+		return;
+	}
 
 	D3DXVECTOR3 LightPosition(LIGHTMANAGER.GetLight(0)->Position);
 
 	D3DXMATRIX InverseWorldMatrix;
-    D3DXMatrixInverse( &InverseWorldMatrix, NULL, &( m_Matrix * m_pParent->GetWorldMatrix() ) );
+    D3DXMatrixInverse(&InverseWorldMatrix, NULL, &m_Matrix);
 
 	D3DXVec3TransformCoord(&LightPosition, &LightPosition, &InverseWorldMatrix);
 
-	D3DXVECTOR3 v1, v2, v3, v4, Extend = LightPosition * 500;
+	D3DXVECTOR3 Extend = LightPosition * 500, Max, Min;
 
+	if(Extend.x < 0.0f)
+	{
+		Min.x = m_pParent->GetWorldRectangle().GetMinX();
+		Max.x = m_pParent->GetWorldRectangle().GetMaxX() - Extend.x;
+	}
+	else
+	{
+		Min.x = m_pParent->GetWorldRectangle().GetMinX() - Extend.x;
+		Max.x = m_pParent->GetWorldRectangle().GetMaxX();
+	}
+
+	if(Extend.y < 0.0f)
+	{
+		Min.y = m_pParent->GetWorldRectangle().GetMinY();
+		Max.y = m_pParent->GetWorldRectangle().GetMaxY() - Extend.y;
+	}
+	else
+	{
+		Min.y = m_pParent->GetWorldRectangle().GetMinY() - Extend.y;
+		Max.y = m_pParent->GetWorldRectangle().GetMaxY();
+	}
+
+	if(Extend.z < 0.0f)
+	{
+		Min.z = m_pParent->GetWorldRectangle().GetMinZ();
+		Max.z = m_pParent->GetWorldRectangle().GetMaxZ() - Extend.z;
+	}
+	else
+	{
+		Min.z = m_pParent->GetWorldRectangle().GetMinZ() - Extend.z;
+		Max.z = m_pParent->GetWorldRectangle().GetMaxZ();
+	}
+
+	CRectangle3D Rect;
+
+	Rect.Set(Min.x, Max.x, Min.y, Max.y, Min.z, Max.z);
+
+	if( CAMERA.GetFrustum().TestHit(Rect) )
+		m_bIsCulled = false;
+	else
+	{
+		m_bIsCulled = true;
+
+		return;
+	}
+
+	m_uNumEdges = 0;
+
+	D3DXVECTOR3  v1, v2, v3, v4;
     DWORD i;
 
 	m_uNumShadowVertices = 0;
@@ -136,23 +206,23 @@ void CShadowVolume::Update()
     for(i = 0; i < m_uNumTriangles; i ++)
     {
 		//如果当前面是背光面, 则将当前面的三条边"添加"到边列表
-        if( D3DXVec3Dot(&m_pTriangles[i].Normal, &LightPosition) >= 0.0f )
+        if( D3DXVec3Dot(&m_pTriangles[i].Normal, &LightPosition) < 0.0f )
         {
 			__AddEdge(m_pTriangles[i].v0, m_pTriangles[i].v1);
             __AddEdge(m_pTriangles[i].v1, m_pTriangles[i].v2);
             __AddEdge(m_pTriangles[i].v2, m_pTriangles[i].v0);
 
-			v1 = CASE(m_pVertices[m_pTriangles[i].v0], D3DXVECTOR3);
+			/*v1 = CASE(m_pVertices[m_pTriangles[i].v0], D3DXVECTOR3);
 			v2 = CASE(m_pVertices[m_pTriangles[i].v1], D3DXVECTOR3);
 			v3 = CASE(m_pVertices[m_pTriangles[i].v2], D3DXVECTOR3);
 
-			/*m_pShadowVertices[m_uNumShadowVertices ++] = v2;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v2;
 			m_pShadowVertices[m_uNumShadowVertices ++] = v1;
 			m_pShadowVertices[m_uNumShadowVertices ++] = v3;
 
-			m_pShadowVertices[m_uNumShadowVertices ++] = v1 + Extend;
-			m_pShadowVertices[m_uNumShadowVertices ++] = v2 + Extend;
-			m_pShadowVertices[m_uNumShadowVertices ++] = v3 + Extend;*/
+			m_pShadowVertices[m_uNumShadowVertices ++] = v1 - Extend;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v2 - Extend;
+			m_pShadowVertices[m_uNumShadowVertices ++] = v3 - Extend;*/
         }
     }
 
@@ -212,7 +282,7 @@ void CShadowVolume::__AddEdge(zerO::UINT v0, zerO::UINT v1 )
 //-----------------------------------------------------------------------------
 void CShadowVolume::Render()
 {
-	if(!m_bIsVisible)
+	if(!m_bIsVisible || m_bIsCulled)
 		return;
 
 	//禁用z缓冲区写操作, 并启用模板缓冲区
@@ -228,15 +298,6 @@ void CShadowVolume::Render()
 		DEVICE.SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
 		DEVICE.SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
 		DEVICE.SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
-
-		//为阴影体设置材质
-		D3DMATERIAL9 mtrl;
-		ZeroMemory( &mtrl, sizeof(D3DMATERIAL9) );
-		mtrl.Diffuse.r = mtrl.Ambient.r = 0.0f;
-		mtrl.Diffuse.g = mtrl.Ambient.g = 1.0f;
-		mtrl.Diffuse.b = mtrl.Ambient.b = 0.0f;
-		mtrl.Diffuse.a = mtrl.Ambient.a = 0.5f;
-		DEVICE.SetMaterial( &mtrl );
 	}
 	else  //只更新深度模板缓冲区
 	{
@@ -250,12 +311,12 @@ void CShadowVolume::Render()
 	
 	DEVICE.SetRenderState( D3DRS_STENCILFUNC,  D3DCMP_ALWAYS );
 
-	DEVICE.SetTransform( D3DTS_WORLD, &( m_Matrix * m_pParent->GetWorldMatrix() ) );
+	DEVICE.SetTransform( D3DTS_WORLD, &m_Matrix);
 
 	//渲染阴影体背面
 	/*DEVICE.SetRenderState( D3DRS_CULLMODE,   D3DCULL_CW );
 	DEVICE.SetRenderState( D3DRS_STENCILZFAIL, D3DSTENCILOP_INCR );
-	DEVICE.SetTransform( D3DTS_WORLD, &m_pParent->GetWorldMatrix() );
+
 	DEVICE.SetFVF( D3DFVF_XYZ );
     DEVICE.DrawPrimitiveUP( D3DPT_TRIANGLELIST, uNumFaces, m_pShadowVertices, sizeof(D3DXVECTOR3) );*/
 

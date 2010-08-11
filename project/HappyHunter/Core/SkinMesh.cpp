@@ -12,7 +12,7 @@ using namespace zerO;
 CSkinMesh::CSkinMesh() :
 m_strEffectFile(TEXT("")),
 m_bIsCreated(false),
-m_bIsVisibleShadow(true)
+m_bIsVisibleShadow(false)
 {
 }
 
