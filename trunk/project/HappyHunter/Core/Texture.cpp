@@ -6,13 +6,65 @@ using namespace zerO;
 CTexture::CTexture(void) :
 CResource(RESOURCE_TEXTURE),
 m_pTexture(NULL),
-m_pMatrix(NULL)
+m_pMatrix(NULL),
+m_pfnReset(NULL)
 {
+	__Initialization();
 }
 
 CTexture::~CTexture(void)
 {
 	Destroy();
+}
+
+bool CTexture::Disable()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		DEBUG_RELEASE(m_pTexture);
+		m_pTexture = NULL;
+	}
+
+	return true;
+}
+
+bool CTexture::Restore()
+{
+	if(m_Pool == D3DPOOL_DEFAULT)
+	{
+		/*if( TEST_FLAG(m_uUsage, D3DUSAGE_RENDERTARGET) )
+			__Initialization(
+				GAMEHOST.GetBackBufferSurfaceDesc().Width,
+				GAMEHOST.GetBackBufferSurfaceDesc().Height, 
+				m_uMipLevels,
+				D3DUSAGE_RENDERTARGET,
+				GAMEHOST.GetBackBufferSurfaceDesc().Format,
+				D3DPOOL_DEFAULT);*/
+
+		if(m_pfnReset)
+			m_pfnReset(
+				m_uWidth,
+				m_uHeight,
+				m_Format);
+
+		HRESULT	hr = D3DXCreateTexture(
+			&DEVICE,
+			m_uWidth,
+			m_uHeight,
+			m_uMipLevels,
+			m_uUsage,
+			m_Format,
+			m_Pool,
+			&m_pTexture);
+
+		if( FAILED(hr) )
+		{
+			DEBUG_WARNING(hr);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool CTexture::Create(
@@ -24,6 +76,7 @@ bool CTexture::Create(
 					  D3DPOOL    Pool)
 {
 	DEBUG_RELEASE(m_pTexture);
+	//Destroy();
 
 	HRESULT hr = D3DXCheckTextureRequirements(          					
 		&DEVICE,
@@ -36,7 +89,13 @@ bool CTexture::Create(
 
 	if( SUCCEEDED(hr) )
 	{
-		HRESULT hr = D3DXCreateTexture(
+		if(Pool == D3DPOOL_DEFAULT)
+		{
+			__Initialization(uWidth, uHeight, uMipLevels, uUsage, Format, Pool);
+			return true;
+		}
+
+		hr = D3DXCreateTexture(
 			&DEVICE,
 			uWidth,
 			uHeight,
@@ -54,7 +113,21 @@ bool CTexture::Create(
 		}
 	}
 
+	DEBUG_WARNING(hr);
+
 	return false;
+}
+
+bool CTexture::Create(RESET pfnReset, zerO::UINT32 uUsage)
+{
+	m_pfnReset = pfnReset;
+
+	UINT uWidth, uHeight;
+	D3DFORMAT Format; 
+
+	pfnReset(uWidth, uHeight, Format);
+
+	return Create(uWidth, uHeight, 1, uUsage, Format, D3DPOOL_DEFAULT);
 }
 
 bool CTexture::Destroy()
@@ -62,6 +135,7 @@ bool CTexture::Destroy()
 	DEBUG_RELEASE(m_pTexture);
 
 	m_pTexture = NULL;
+	m_pfnReset = NULL;
 
 	return true;
 }

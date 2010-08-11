@@ -5,7 +5,7 @@
 
 namespace zerO
 {
-	typedef UINT32 COLOR, ARPGCOLOR, * PCOLOR, * PARPGCOLOR;
+	typedef UINT32 COLOR, ARGBCOLOR, * PCOLOR, * PARGBCOLOR;
 };
 
 #endif COLOR_H

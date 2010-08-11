@@ -1173,7 +1173,7 @@ bool CTerrainSystem::Create(
 
 void CTerrainSystem::Update()
 {
-	m_pRenderObjects = m_QuadTree.SearchObject( CAMERA.GetWorldRectangle() );
+	m_pRenderObjects = m_QuadTree.SearchObject( CAMERA.GetWorldRectangle(), (LPFRUSTUM)&CAMERA.GetFrustum() );
 
 	CQuadTreeObject* pObject = m_pRenderObjects;
 

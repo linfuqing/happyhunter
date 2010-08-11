@@ -37,7 +37,11 @@ void FRUSTUM::ExtractFromMatrix(const D3DXMATRIX& Matrix)
 }
 
 CCamera::CCamera(void) :
-m_WorldPosition(0.0f, 0.0f, 0.0f)
+m_WorldPosition(0.0f, 0.0f, 0.0f),
+m_fFOV(0.0f),
+m_fAspect(0.0f),
+m_fNearPlane(0.0f),
+m_fFarPlane(0.0f)
 {
 	D3DXMatrixIdentity(&m_ViewMatrix);
 	D3DXMatrixIdentity(&m_ProjectionMatrix);
@@ -54,6 +58,11 @@ void CCamera::SetProjection(
 							zerO::FLOAT fNearPlane,
 							zerO::FLOAT fFarPlane)
 {
+	m_fFOV       = fFOV;
+	m_fAspect    = fAspect;
+	m_fNearPlane = fNearPlane;
+	m_fFarPlane  = fFarPlane;
+
 	D3DXMatrixPerspectiveFovLH(&m_ProjectionMatrix, fFOV, fAspect, fNearPlane, fFarPlane);
 
 	D3DXMatrixInverse(&m_InverseProjectionMatrix, NULL, &m_ProjectionMatrix);
@@ -76,10 +85,15 @@ void CCamera::SetProjection(
 	D3DXVec3TransformCoord(&m_FarPlanePoints[6], &p6, &m_InverseProjectionMatrix);
 	D3DXVec3TransformCoord(&m_FarPlanePoints[7], &p7, &m_InverseProjectionMatrix);
 
+	m_bIsTransformDirty = true;
+}
+
+void CCamera::UpdateTransform()
+{
 	m_LocalRect.Set(
-		m_WorldPosition.x, m_WorldPosition.x, 
-		m_WorldPosition.y, m_WorldPosition.y, 
-		m_WorldPosition.z, m_WorldPosition.z);
+		m_Position.x, m_Position.x, 
+		m_Position.y, m_Position.y, 
+		m_Position.z, m_Position.z);
 
 	m_LocalRect.Union(m_FarPlanePoints[0]);
 	m_LocalRect.Union(m_FarPlanePoints[1]);
@@ -90,16 +104,14 @@ void CCamera::SetProjection(
 	m_LocalRect.Union(m_FarPlanePoints[6]);
 	m_LocalRect.Union(m_FarPlanePoints[7]);
 
-	m_bIsTransformDirty = true;
-}
-
-void CCamera::UpdateTransform()
-{
 	CSprite::UpdateTransform();
 
-	m_WorldPosition.x = m_WorldMatrix._41 / m_WorldMatrix._44;
-	m_WorldPosition.y = m_WorldMatrix._42 / m_WorldMatrix._44;
-	m_WorldPosition.z = m_WorldMatrix._43 / m_WorldMatrix._44;
+	m_WorldPosition.x = m_WorldMatrix._41;
+	m_WorldPosition.y = m_WorldMatrix._42;
+	m_WorldPosition.z = m_WorldMatrix._43;
+
+	if(m_WorldMatrix._44)
+		m_WorldPosition /= m_WorldMatrix._44;
 
 	D3DXMatrixInverse(&m_ViewMatrix, NULL, &m_WorldMatrix);
 

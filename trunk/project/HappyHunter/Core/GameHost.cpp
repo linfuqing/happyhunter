@@ -6,6 +6,9 @@
 #include "Background.h"
 #include "Shadow.h"
 #include "VertexBuffer.h"
+#include "Texture.h"
+#include "FullScreenEffect.h"
+#include "TexturePrinter.h"
 
 using namespace zerO;
 
@@ -16,7 +19,9 @@ m_pDevice(NULL),
 m_pScene(NULL),
 m_pBackground(NULL),
 m_pVertexBuffer(NULL),
+m_pFullScreenEffect(NULL),
 m_bLightEnable(false),
+m_bFogEnable(false),
 m_fTime(0),
 m_ShadowColor(0x7f000000)
 {
@@ -91,11 +96,15 @@ bool CGameHost::Destroy()
 	DEBUG_DELETE(m_pCamera);
 	DEBUG_DELETE(m_pScene);
 	DEBUG_DELETE(m_pVertexBuffer);
+	DEBUG_DELETE(m_pTexturePrinter);
+	//DEBUG_DELETE(m_pFullScreenEffect);
 
-	m_pRenderQueue  = NULL;
-	m_pCamera       = NULL;
-	m_pScene        = NULL;
-	m_pVertexBuffer = NULL;
+	m_pRenderQueue              = NULL;
+	m_pCamera                   = NULL;
+	m_pScene                    = NULL;
+	m_pVertexBuffer             = NULL;
+	m_pFullScreenEffect         = NULL;
+	m_pTexturePrinter           = NULL;
 
 	for(INT i = 0; i < TOTAL_RESOURCE_TYPES; i ++)
 		m_ResourceList[i].clear();
@@ -167,8 +176,16 @@ bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSe
 	DEBUG_NEW(m_pCamera, CCamera);
 
 	DEBUG_NEW(m_pVertexBuffer, CVertexBuffer);
+	DEBUG_NEW(m_pTexturePrinter, CTexturePrinter);
+	//DEBUG_NEW(m_pFullScreenEffect, CFullScreenEffect);
 
-	m_pVertexBuffer->Create(4, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, NULL, D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+	if( !m_pVertexBuffer->Create(4, sizeof(VERTEX), D3DUSAGE_WRITEONLY, D3DPOOL_MANAGED, NULL, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1) )
+	{
+		Destroy();
+		return false;
+	}
+
+	m_pTexturePrinter->AddTexture();
 
 	return true;
 }
@@ -181,23 +198,37 @@ bool CGameHost::Update(zerO::FLOAT fElapsedTime)
 
 	m_pCamera->Update();
 
-	if(m_bLightEnable)
-		m_LightManager.Activate();
-
 	if(m_pBackground)
 		m_pBackground->Update();
 
 	return true;
 }
 
-#include"basicutils.h"
 bool CGameHost::BeginRender()
 {
+	if(m_bLightEnable)
+		m_LightManager.Activate();
+	else
+		m_pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+	if(m_bFogEnable)
+		m_FogManager.Activate();
+	else
+		m_pDevice->SetRenderState(D3DRS_FOGENABLE, FALSE);
+
+	if(m_pFullScreenEffect)
+	{
+		m_pTexturePrinter->Begin();
+		m_pTexturePrinter->Activate(0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL);
+	}
+
 	if(m_pBackground)
 	{
 		m_pDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+		m_pDevice->SetRenderState( D3DRS_FOGENABLE, m_pBackground->GetFogEnable() );
 		m_pBackground->Render();
 		m_pDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+		m_pDevice->SetRenderState(D3DRS_FOGENABLE, m_bFogEnable);
 	}
 
 	return true;
@@ -251,6 +282,13 @@ bool CGameHost::EndRender()
 
 		m_pDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+	}
+
+	if(m_pFullScreenEffect)
+	{
+		m_pTexturePrinter->End();
+
+		m_pFullScreenEffect->Render(*m_pTexturePrinter);
 	}
 
 	return true;

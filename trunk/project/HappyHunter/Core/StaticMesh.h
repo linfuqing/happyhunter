@@ -5,7 +5,7 @@
 #include "Sprite.h"
 #include "RenderMethod.h"
 #include "Mesh.h"
-//#include "ShadowVolume.h"
+#include "ShadowVolume.h"
 
 namespace zerO
 {
@@ -17,6 +17,8 @@ namespace zerO
 
 	public:
 		CMesh& GetMesh();
+
+		void SetShadowVisible(bool bValue);
 
 		bool Create(const PBASICCHAR meshFile);
 		bool Destroy();
@@ -36,9 +38,11 @@ namespace zerO
 		CRenderMethod			m_RenderMethod;		// 渲染方法
 		BASICSTRING				m_strEffectFile;	// 效果文件
 		CMesh*                  m_pMesh;
-		//CShadowVolume           m_Shadow;
+		CShadowVolume*          m_pShadow;
 
 		bool                    m_bIsCreated;
+		bool                    m_bIsVisibleShadow;
+		bool                    m_bIsCulled;
 	};
 
 	//---------------------------------------------------------------------------
@@ -67,5 +71,10 @@ namespace zerO
 	inline const CRenderMethod& CStaticMesh::GetRenderMethod() const
 	{
 		return m_RenderMethod;
+	}
+
+	inline void CStaticMesh::SetShadowVisible(bool bValue)
+	{
+		m_bIsVisibleShadow = bValue;
 	}
 }

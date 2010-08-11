@@ -30,6 +30,7 @@ namespace zerO
 		CShadowVolume(void);
 		~CShadowVolume(void);
 
+		void SetLength(FLOAT fLength);
 		void SetVisible(bool bValue);
 		void SetTransform(const D3DXMATRIX Matrix);
 
@@ -60,12 +61,20 @@ namespace zerO
 		UINT         m_uNumEdges;
 		UINT         m_uNumShadowVertices;
 
+		FLOAT        m_fLength;
+
 		D3DXMATRIX   m_Matrix;
 
 		CSceneNode*  m_pParent;
 		bool         m_bIsRenderVolume;
 		bool         m_bIsVisible;
+		bool         m_bIsCulled;
 	};
+
+	inline void CShadowVolume::SetLength(FLOAT fLength)
+	{
+		m_fLength = fLength;
+	}
 
 	inline void CShadowVolume::SetVisible(bool bValue)
 	{

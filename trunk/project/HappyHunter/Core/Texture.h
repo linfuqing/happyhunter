@@ -10,8 +10,14 @@ namespace zerO
 		public CResource
 	{
 	public:
+		typedef void (*RESET)(UINT&, UINT&, D3DFORMAT&);
+
 		CTexture(void);
 		~CTexture(void);
+
+		bool Destroy(); 
+		bool Disable(); 
+		bool Restore(); 
 
 		bool Create(
 				UINT      uWidth     = D3DX_DEFAULT, 
@@ -21,37 +27,38 @@ namespace zerO
 				D3DFORMAT Format     = D3DFMT_UNKNOWN, 
 				D3DPOOL   Pool       = D3DPOOL_MANAGED);
 
-		bool Destroy();
+		bool Create(RESET pfnReset, UINT32 uUsage);
 
 		bool Load(const PBASICCHAR pcFileName = NULL);
 
 		void SetMatrix(D3DXMATRIX* pMatrix);
 
-			LPDIRECT3DTEXTURE9 GetTexture()const;
-			D3DXMATRIX*        GetMatrix()const;
-			UINT32             GetWidth()const;
-			UINT32             GetHeight()const;
-			UINT32             GetMipLevels()const;
-			UINT32             GetUsage()const;
-			D3DFORMAT          GetFormat()const;
-			D3DPOOL            GetPool()const;
+		LPDIRECT3DTEXTURE9 GetTexture()const;
+		D3DXMATRIX*        GetMatrix()const;
+		UINT32             GetWidth()const;
+		UINT32             GetHeight()const;
+		UINT32             GetMipLevels()const;
+		UINT32             GetUsage()const;
+		D3DFORMAT          GetFormat()const;
+		D3DPOOL            GetPool()const;
 		private:
-			void __Initialization(
-				UINT      uWidth     = D3DX_DEFAULT, 
-				UINT      uHeight    = D3DX_DEFAULT, 
-				UINT      uMipLevels = D3DX_DEFAULT, 
-				UINT      uUsage     = 0, 
-				D3DFORMAT Format     = D3DFMT_UNKNOWN, 
-				D3DPOOL   Pool       = D3DPOOL_MANAGED);
+		void __Initialization(
+			UINT      uWidth     = D3DX_DEFAULT, 
+			UINT      uHeight    = D3DX_DEFAULT, 
+			UINT      uMipLevels = D3DX_DEFAULT, 
+			UINT      uUsage     = 0, 
+			D3DFORMAT Format     = D3DFMT_UNKNOWN, 
+			D3DPOOL   Pool       = D3DPOOL_MANAGED);
 
-			LPDIRECT3DTEXTURE9 m_pTexture;
-			D3DXMATRIX*        m_pMatrix;
-			UINT               m_uWidth;
-			UINT               m_uHeight;
-			UINT               m_uMipLevels;
-			UINT               m_uUsage;
-			D3DFORMAT          m_Format;
-			D3DPOOL            m_Pool;
+		LPDIRECT3DTEXTURE9 m_pTexture;
+		D3DXMATRIX*        m_pMatrix;
+		UINT               m_uWidth;
+		UINT               m_uHeight;
+		UINT               m_uMipLevels;
+		UINT               m_uUsage;
+		D3DFORMAT          m_Format;
+		D3DPOOL            m_Pool;
+		RESET              m_pfnReset;
 	};
 
 	inline void CTexture::SetMatrix(D3DXMATRIX* pMatrix)

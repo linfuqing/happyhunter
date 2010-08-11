@@ -156,6 +156,7 @@ namespace zerO
 		CRectangle3D(void);
 		~CRectangle3D(void);
 
+		FLOAT GetSize()const;
 		void GetSize(D3DXVECTOR3& Size)const;
 		void GetMin(D3DXVECTOR3& Min)const;
 		void GetMax(D3DXVECTOR3& Max)const;
@@ -178,6 +179,14 @@ namespace zerO
 		CRectangle3D& operator +=(const D3DXVECTOR3& v);
 		CRectangle3D& operator *=(const D3DXVECTOR3& v);
 	};
+
+	inline FLOAT CRectangle3D::GetSize()const
+	{
+		D3DXVECTOR3 Size;
+		GetSize(Size);
+
+		return D3DXVec3Length(&Size);
+	}
 
 	inline void CRectangle3D::GetSize(D3DXVECTOR3& Size)const
 	{

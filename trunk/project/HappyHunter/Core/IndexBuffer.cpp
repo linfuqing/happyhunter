@@ -52,48 +52,39 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 
 	m_Type         = Type;
 
-	HRESULT hr;
-
-	hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer, NULL);
-
-	if( FAILED(hr) )
-	{
-		m_pBuffer = NULL;
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
 	if(Pool == D3DPOOL_DEFAULT)
+	{
+		DEBUG_DELETE(m_puData);
 		DEBUG_NEW(m_puData, UINT8[m_uByteSize]);
 
-
-	if(pData)
+		if(pData)
+			memcpy(m_puData, pData, m_uByteSize);
+		else
+			memset(m_puData, 0, m_uByteSize);
+	}
+	else
 	{
-		void* pIndices;
-
-		/*hr = m_pBuffer->Lock(0, m_uByteSize, &pIndices, 0);
+		HRESULT hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer, NULL);
 
 		if( FAILED(hr) )
 		{
+			m_pBuffer = NULL;
 			DEBUG_WARNING(hr);
 			return false;
-		}*/
+		}
 
-		if( !Lock(0, &pIndices) )
-			return false;
-
-		memcpy(pIndices, pData, m_uByteSize);
-
-		/*hr = m_pBuffer->Unlock();
-
-		if( FAILED(hr) )
+		if(pData)
 		{
-			DEBUG_WARNING(hr);
-			return false;
-		}*/
+			void* pIndices;
 
-		if( !Unlock() )
-			return false;
+			if( !Lock(0, &pIndices) )
+				return false;
+
+			memcpy(pIndices, pData, m_uByteSize);
+
+			if( !Unlock() )
+				return false;
+		}
 	}
 
 	return true;

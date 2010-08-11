@@ -7,7 +7,6 @@
 #include "resource.h"
 #include "core.h"
 
-
 #include "SDKmisc.h"
 
 #define TERRAIN//PARTICLESYSTEM
@@ -18,7 +17,7 @@ ID3DXSprite*               g_pTextSprite = NULL;    //ID3DXSprite文本精灵对象
 
 zerO::CGameHost g_Game;
 
-#define HEIGHT_MAP_FILE TEXT("spring1_height.jpg")
+#define HEIGHT_MAP_FILE TEXT("summer6.jpg")
 
 zerO::CQuadTree g_QuadTree;
 zerO::CTexture  g_HeightMap;
@@ -27,10 +26,10 @@ zerO::CTexture  g_Detail;
 zerO::CSurface  g_TerrainSurface;
 zerO::CTerrain g_Terrain;
 
-//zerO::CStaticMesh g_Mesh;
-//zerO::CStaticMesh g_Copy;
-zerO::CSkinMesh   g_SkinMesh;
-zerO::CSkinMesh   g_CopyMesh;
+zerO::CStaticMesh g_Mesh;
+zerO::CStaticMesh g_Copy;
+//zerO::CSkinMesh   g_SkinMesh;
+//zerO::CSkinMesh   g_CopyMesh;
 
 zerO::CTerrainSystem g_TerrainSystem;
 
@@ -103,29 +102,32 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 
 	CAMERA.SetProjection(D3DX_PI / 4.0f, (zerO::FLOAT)DeviceSettings.pp.BackBufferWidth / DeviceSettings.pp.BackBufferHeight, 0.5f, 3000.0f);
 
-	g_SkinMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
+	/*g_SkinMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
 	if ( !g_SkinMesh.Create(TEXT("Aardvark.X")) )
 		return S_FALSE;
 
 	g_CopyMesh.SetEffectFile( TEXT("HLSLSkinSoftware.fx") );
 	if ( !g_CopyMesh.Create( TEXT("机关枪.x") ) )
-		return S_FALSE;
+		return S_FALSE;*/
 
-	//float start = 50.0f;
-	//float end   = 200.0f;
+	//float start = 1000.0f;
+	//float end   = 2000.0f;
 	//pd3dDevice->SetRenderState(D3DRS_FOGENABLE, TRUE);
-	//pd3dDevice->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_EXP2);
+	//pd3dDevice->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
 	////pd3dDevice->SetRenderState(D3DRS_FOGDENSITY, *(DWORD*)&start);
 	//pd3dDevice->SetRenderState(D3DRS_FOGSTART, CASE(start, DWORD));
 	//pd3dDevice->SetRenderState(D3DRS_FOGEND,  CASE(end, DWORD));
-	//pd3dDevice->SetRenderState(D3DRS_FOGCOLOR, 0xff00ff00);
+	//pd3dDevice->SetRenderState(D3DRS_FOGCOLOR, 0x7f00ff00);
 	//g_SkinMesh.Clone(g_CopyMesh);
 
-	/*g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
+	FOGMANAGER.SetLinearFog(100.0f, 1500.0f);
+	GAMEHOST.SetFogEnable(true);
+
+	g_Mesh.SetEffectFile( TEXT("ItemEffect.fx") );
 
 	g_Mesh.Create( TEXT("Brown bear.x") );
 
-	g_Mesh.Clone(g_Copy);*/
+	g_Mesh.Clone(g_Copy);
 
 	//创建阴影体
 	/*g_pShadowVolume = new zerO::CShadowVolume();
@@ -153,7 +155,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_HeightMap.Load(HEIGHT_MAP_FILE);
 
 	zerO::CRectangle3D Rect;
-	Rect.Set(- 2560.0f, 2560.0f, 0.0f, 128.0f, - 2560.0f, 2560.0f);
+	Rect.Set(- 2560.0f, 2560.0f, 0.0f, 640.0f, - 2560.0f, 2560.0f);
 
 	g_TerrainSystem.Create(&g_HeightMap, Rect, 6, 4/*, zerO::CTerrainSystem::ROAM*/);
 	/*g_QuadTree.Create(Rect, 4);
@@ -163,7 +165,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Terrain.GetRenderMethod().LoadEffect( TEXT("Test.fx") );*/
 
 
-	g_Texture.Load( TEXT("spring_TX.dds") );
+	g_Texture.Load( TEXT("summer6_TX.dds") );
 
 	g_Detail.Load( TEXT("dirt_grass.jpg") );
 
@@ -173,7 +175,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_TerrainSystem.GetTerrain()->GetRenderMethod().SetSurface(&g_TerrainSurface);
 	g_TerrainSystem.GetTerrain()->GetRenderMethod().LoadEffect( TEXT("Test.fx") );
 
-	/*( (zerO::CRoamTerrain*)g_TerrainSystem.GetTerrain() )->SetTessellationParameters(10.33f, 0.3f);*/
+	//( (zerO::CRoamTerrain*)g_TerrainSystem.GetTerrain() )->SetTessellationParameters(10.33f, 0.3f);
 
 	//g_SkyDome.Create(5.0f, 5.0f, 10.0f);
 
@@ -310,10 +312,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//light.Direction.y =  -1.0f;
 	//light.Direction.z = 1.0f;
 
+	static float h = 10000;
 	float lx,ly,lz;           //光源位置
-	lx = 10*sinf(timeGetTime()/360.0f);
-	ly = 500;
-	lz = 10*cosf(timeGetTime()/360.0f);
+	lx = 1000.0f * sinf(timeGetTime()/360.0f);
+	ly = 10000.0f;
+	lz = 1000.0f * cosf(timeGetTime()/360.0f);
 	light.Position= D3DXVECTOR3(lx,ly,lz);
 	light.Direction = D3DXVECTOR3(lx, 1000, lz);
 
@@ -330,13 +333,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	//根据光源位置更新阴影体
 	//g_pShadowVolume->Update();
 
-	/*g_Mesh.Update();
-	g_Copy.Update();*/
-	g_SkinMesh.Update();
-	g_CopyMesh.Update();
+	g_Mesh.Update();
+	g_Copy.Update();
+	/*g_SkinMesh.Update();
+	g_CopyMesh.Update();*/
 
 	//g_SkinMesh.SetDirection(D3DXVECTOR3(0, 0, -1.0f));
-	g_CopyMesh.SetSceneDirection(D3DXVECTOR3(-0.588091, -0.030936, 0.808203));
+	//g_CopyMesh.SetSceneDirection(D3DXVECTOR3(-0.588091, -0.030936, 0.808203));
 
 	/*void* pVertices, *pIndices;
 	g_CopyMesh.GetMesh()->LockVertexBuffer( 0L, (LPVOID*)&pVertices );
@@ -363,7 +366,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.SetTransform(Matrix);*/
 
-	/*g_Mesh.SetPosition( 
+	g_Mesh.SetPosition( 
 		D3DXVECTOR3(
 		g_Mesh.GetPosition().x, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_Mesh.GetPosition().x, g_Mesh.GetPosition().z) + 100.0f, 
@@ -373,9 +376,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		D3DXVECTOR3(
 		100, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_Mesh.GetPosition().x, g_Mesh.GetPosition().z) + 100.0f, 
-		g_Mesh.GetPosition().z)  );*/
+		g_Mesh.GetPosition().z)  );
 
-	g_SkinMesh.SetPosition( 
+	/*g_SkinMesh.SetPosition( 
 		D3DXVECTOR3(
 		g_SkinMesh.GetPosition().x, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z), 
@@ -385,7 +388,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 		D3DXVECTOR3(
 		100, 
 		g_TerrainSystem.GetTerrain()->GetHeight(g_SkinMesh.GetPosition().x, g_SkinMesh.GetPosition().z), 
-		g_SkinMesh.GetPosition().z)  );
+		g_SkinMesh.GetPosition().z)  );*/
 
 	CAMERA.SetRotation( 
 		D3DXVECTOR3(RotationX / 180 * D3DX_PI, RotationY / 180 * D3DX_PI, 0.0f) );
@@ -487,10 +490,10 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 
 		g_TerrainSystem.Render();
 
-		/*g_Mesh.ApplyForRender();
-		g_Copy.ApplyForRender();*/
-		g_SkinMesh.ApplyForRender();
-		g_CopyMesh.ApplyForRender();
+		g_Mesh.ApplyForRender();
+		g_Copy.ApplyForRender();
+		/*g_SkinMesh.ApplyForRender();
+		g_CopyMesh.ApplyForRender();*/
 
 		//结束渲染
 		g_Game.EndRender();

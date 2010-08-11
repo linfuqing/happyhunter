@@ -4,22 +4,22 @@
 using namespace zerO;
 
 void zerO::UpdateSkinnedMesh(
-							 const D3DXMATRIX *pBoneTransforms,
-							 zerO::UINT uNumBones,
-							 const void* pVerticesSrc,
-							 void* pVerticesDst,
-							 zerO::UINT uNumTotalVertices,
-							 zerO::UINT uStride,
-							 zerO::PUINT puNumBoneInfluences,
-							 LPDWORD* ppdwVerticesIndices,
-							 zerO::PFLOAT* ppfWeights,
-							 const D3DXVECTOR3* pTangentSrc,
-							 D3DXVECTOR3* pTangentDst
-							 )
+                  const D3DXMATRIX *pBoneTransforms,
+				  zerO::UINT uNumBones,
+                  const void* pVerticesSrc,
+                  void* pVerticesDst,
+				  zerO::UINT uNumTotalVertices,
+                  zerO::UINT uStride,
+				  zerO::PUINT puNumBoneInfluences,
+				  LPDWORD* ppdwVerticesIndices,
+				  zerO::PFLOAT* ppfWeights,
+				  const D3DXVECTOR3* pTangentSrc,
+				  D3DXVECTOR3* pTangentDst
+                  )
 
 {
 	UINT i, uNumVertices, uOffsetByte, uNormalByte, uIndex, VectorSize = sizeof(D3DXVECTOR3);
-
+	
 	FLOAT fWeight;
 
 	UINT8 *pDest = (zerO::PUINT8)pVerticesDst;
@@ -32,33 +32,33 @@ void zerO::UpdateSkinnedMesh(
 
 	for(i = 0; i < uNumBones; i++)
 	{
-		uNumVertices = puNumBoneInfluences[i];
+	   uNumVertices = puNumBoneInfluences[i];
 
-		if(uNumVertices <= 0)
-			continue;
+	   if(uNumVertices <= 0)
+		   continue;
 
-		while(uNumVertices --)
-		{
-			uIndex = ppdwVerticesIndices[i][uNumVertices];
+	   while(uNumVertices --)
+	   {
+		   uIndex = ppdwVerticesIndices[i][uNumVertices];
 
-			fWeight = ppfWeights[i][uNumVertices];
+		   fWeight = ppfWeights[i][uNumVertices];
 
-			uOffsetByte = uIndex * uStride;
+		   uOffsetByte = uIndex * uStride;
 
-			uNormalByte = uOffsetByte + VectorSize;
+		   uNormalByte = uOffsetByte + VectorSize;
 
-			Src = (D3DXVECTOR3 *)(pSrc + uOffsetByte);
+		   Src = (D3DXVECTOR3 *)(pSrc + uOffsetByte);
 
-			D3DXVec3TransformCoord(&Temp, Src, &pBoneTransforms[i]);
+		   D3DXVec3TransformCoord(&Temp, Src, &pBoneTransforms[i]);
 
-			*( (D3DXVECTOR3 *)(pDest + uOffsetByte) ) += (Temp - *Src) * fWeight;
+		   *( (D3DXVECTOR3 *)(pDest + uOffsetByte) ) += (Temp - *Src) * fWeight;
 
-			Src = (D3DXVECTOR3 *)(pSrc + uNormalByte);  //法线
+		   Src = (D3DXVECTOR3 *)(pSrc + uNormalByte);  //法线
 
-			D3DXVec3TransformNormal(&Temp, Src, &pBoneTransforms[i]);
+		   D3DXVec3TransformNormal(&Temp, Src, &pBoneTransforms[i]);
 
-			*( (D3DXVECTOR3 *)(pDest + uNormalByte) ) += (Temp - *Src) * fWeight;
-		}
+		   *( (D3DXVECTOR3 *)(pDest + uNormalByte) ) += (Temp - *Src) * fWeight;
+	   }
 	}
 
 	if(pTangentSrc && pTangentDst)
@@ -67,27 +67,27 @@ void zerO::UpdateSkinnedMesh(
 
 		for(i = 0; i < uNumBones; i++)
 		{
-			uNumVertices = puNumBoneInfluences[i];
+		   uNumVertices = puNumBoneInfluences[i];
 
-			if(uNumVertices <= 0)
-				continue;
+		   if(uNumVertices <= 0)
+			   continue;
 
-			while(uNumVertices --)
-			{
+		   while(uNumVertices --)
+		   {
 
-				uIndex = ppdwVerticesIndices[i][uNumVertices];
+			   uIndex = ppdwVerticesIndices[i][uNumVertices];
 
-				fWeight = ppfWeights[i][uNumVertices];
+			   fWeight = ppfWeights[i][uNumVertices];
 
-				D3DXVec3TransformNormal(&Temp, &pTangentSrc[uIndex], &pBoneTransforms[i]);
+			   D3DXVec3TransformNormal(&Temp, &pTangentSrc[uIndex], &pBoneTransforms[i]);
 
-				pTangentDst[uIndex] += (Temp - pTangentSrc[uIndex]) * fWeight;
-			}
+			   pTangentDst[uIndex] += (Temp - pTangentSrc[uIndex]) * fWeight;
+		   }
 		}
 	}
 }
 
-void zerO::DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3& Direction)
+void zerO::DirectionToRotation(FLOAT& x, FLOAT& y, const D3DXVECTOR3 Direction)
 {
 	if( Direction.x == 0 && Direction.z == 0 && Direction.y == 0 )
 	{

@@ -207,7 +207,7 @@ void CQuadTreeNode::AddMemberToSearchList(
 			zerO::UINT32 uMaskY,
 			const LPFRUSTUM pFrustum)
 {
-	static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
+	//static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
 
 	CQuadTreeObject* pObject;
 	if( TEST_ANY(m_uLocalMaskY, uMaskY) )
@@ -215,7 +215,7 @@ void CQuadTreeNode::AddMemberToSearchList(
 		for(pObject = m_pMembers; pObject; pObject = pObject->m_pTreeForward)
 		{
 			if( TEST_ANY(pObject->m_uMaskY, uMaskY) 
-				&& ( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(), s_uTESTFLAG) ) )
+				&& ( !pFrustum || pFrustum->TestHit(pObject->GetWorldRectangle()/*, s_uTESTFLAG*/) ) )
 			{
 				if(*ppListTail)
 				{
@@ -243,7 +243,7 @@ void CQuadTreeNode::AddMemberToSearchList(
 	const CRectangle3D& WorldRect,
 	const LPFRUSTUM pFrustum)
 {
-	const static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
+	//const static UINT32 s_uTESTFLAG = CRectangle3D::PLANE_FRONT | CRectangle3D::PLANE_INTERSECT;
 
 	CQuadTreeObject* pObject;
 	if( TEST_ANY(m_uLocalMaskY, uMaskY) )
@@ -252,7 +252,7 @@ void CQuadTreeNode::AddMemberToSearchList(
 		{
 			if( TEST_ANY(pObject->m_uMaskY, uMaskY) 
 				&& WorldRect.TestHit( pObject->GetWorldRectangle() ) 
-				&&( !pFrustum || pFrustum->Test(pObject->GetWorldRectangle(),s_uTESTFLAG) ) )
+				&&( !pFrustum || pFrustum->TestHit(pObject->GetWorldRectangle()/*,s_uTESTFLAG*/) ) )
 			{
 				if(*ppListTail)
 				{

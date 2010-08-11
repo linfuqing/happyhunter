@@ -30,15 +30,10 @@ CVertexBuffer::~CVertexBuffer(void)
 
 bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage, D3DPOOL Pool, void* pData, DWORD dwFVF)//(UINT uCount, UINT uStride, UINT16 uFlag, void* pData)
 {
-	DEBUG_ASSERT(m_pBuffer == NULL, "Buffer already allocated");
-	/*DEBUG_ASSERT(m_puBackupCopy == NULL, "Backup buffer already allocated");*/
-
-	/*m_uUsageFlags  = 0;*/
+	Destroy();
 
 	m_uStride      = uStride;
 	m_uMemberCount = uCount;
-	/*m_uTypeFlags   = uFlag;
-	m_uStateFlags  = 0;*/
 	m_uByteSize    = uStride * uCount;
 
 	m_dwUsage      = dwUsage;
@@ -46,49 +41,40 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 
 	m_Pool         = Pool;
 
-	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, dwFVF, Pool, &m_pBuffer, NULL);
-
-	if( FAILED(hr) )
-	{
-		m_pBuffer = NULL;
-		DEBUG_WARNING(hr);
-		return false;
-	}
-
 	if(Pool == D3DPOOL_DEFAULT)
 	{
+		DEBUG_DELETE(m_puData);
+
 		DEBUG_NEW(m_puData, UINT8[m_uByteSize]);
 
-		memset(m_puData, 0, m_uByteSize);
+		if(pData)
+			memcpy(m_puData, pData, m_uByteSize);
+		else
+			memset(m_puData, 0, m_uByteSize);
 	}
-
-	if(pData)
+	else
 	{
-		void* pVertices;
-
-		/*hr = m_pBuffer->Lock(0, m_uByteSize, &pVertices, 0);
+		HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, dwFVF, Pool, &m_pBuffer, NULL);
 
 		if( FAILED(hr) )
 		{
+			m_pBuffer = NULL;
 			DEBUG_WARNING(hr);
 			return false;
-		}*/
+		}
 
-		if( !Lock(0, &pVertices) )
-			return false;
-
-		memcpy(pVertices, pData, m_uByteSize);
-
-		if( !Unlock() )
-			return false;
-
-		/*hr = m_pBuffer->Unlock();
-
-		if( FAILED(hr) )
+		if(pData)
 		{
-			DEBUG_WARNING(hr);
-			return false;
-		}*/
+			void* pVertices;
+
+			if( !Lock(0, &pVertices) )
+				return false;
+
+			memcpy(pVertices, pData, m_uByteSize);
+
+			if( !Unlock() )
+				return false;
+		}
 	}
 
 	return true;
