@@ -12,6 +12,7 @@ namespace zerO
 {
 
 #define GAMEHOST     zerO::CGameHost::GetInstance()
+#define DIRECT       GAMEHOST.GetDirect()
 #define DEVICE       GAMEHOST.GetDevice()
 #define CAMERA       GAMEHOST.GetCamera()
 #define RENDERQUEUE  GAMEHOST.GetRenderQueue()
@@ -75,6 +76,7 @@ namespace zerO
 		CGameHost(void);
 		~CGameHost(void);
 
+		IDirect3D9& GetDirect();
 		IDirect3DDevice9& GetDevice();
 		CRenderQueue& GetRenderQueue();
 		static CGameHost& GetInstance();
@@ -114,12 +116,12 @@ namespace zerO
 		virtual bool Disable(); 
 		virtual bool Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc); 
 
-		virtual bool Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
+		virtual bool Create(LPDIRECT3D9 pDirect, LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, UINT uMaxQueue);
 		virtual bool Update(FLOAT fElapsedTime);
 		virtual bool BeginRender();
 		virtual bool EndRender();
 	private:
-		//LPDIRECT3D9 m_pDirect;
+		LPDIRECT3D9 m_pDirect;
 		LPDIRECT3DDEVICE9 m_pDevice;
 		DEVICESETTINGS m_DeviceSettings;
 		D3DSURFACE_DESC m_DeviceSurfaceDest;
@@ -155,6 +157,13 @@ namespace zerO
 
 		ARGBCOLOR m_ShadowColor;
 	};
+
+	inline IDirect3D9& CGameHost::GetDirect()
+	{
+		DEBUG_ASSERT(m_pDirect, "The game host has not yet been created.");
+
+		return *m_pDirect;
+	}
 
 	inline IDirect3DDevice9& CGameHost::GetDevice()
 	{

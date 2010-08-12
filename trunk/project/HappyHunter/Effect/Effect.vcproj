@@ -155,6 +155,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HDREffect.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -186,6 +190,10 @@
 			>
 			<File
 				RelativePath=".\Bullet.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HDREffect.h"
 				>
 			</File>
 			<File

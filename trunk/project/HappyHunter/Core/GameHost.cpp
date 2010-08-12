@@ -163,12 +163,13 @@ bool CGameHost::Restore(const D3DSURFACE_DESC& BackBufferSurfaceDesc)
 	return true;
 }
 
-bool CGameHost::Create(LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, zerO::UINT uMaxQueue)
+bool CGameHost::Create(LPDIRECT3D9 pDirect, LPDIRECT3DDEVICE9 pDevice, const DEVICESETTINGS& DeviceSettings, zerO::UINT uMaxQueue)
 {
-	if(pDevice == NULL || uMaxQueue == 0)
+	if(pDirect == NULL || pDevice == NULL || uMaxQueue == 0)
 		return false;
 
 	m_pDevice = pDevice;
+	m_pDirect = pDirect;
 
 	memcpy( &m_DeviceSettings, &DeviceSettings, sizeof(DeviceSettings) );
 	DEBUG_NEW( m_pRenderQueue, CRenderQueue(uMaxQueue) );

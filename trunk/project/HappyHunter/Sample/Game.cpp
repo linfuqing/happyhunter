@@ -65,7 +65,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	zerO::CGameHost::DEVICESETTINGS DeviceSettings;
 	memcpy( &DeviceSettings, &DXUTGetDeviceSettings(), sizeof(zerO::CGameHost::DEVICESETTINGS) );
 
-	if( !g_Game.Create(pd3dDevice, DeviceSettings, 0xff) )
+	if( !g_Game.Create(DXUTGetD3D9Object(), pd3dDevice, DeviceSettings, 0xff) )
 		return S_FALSE;
 
 	CAMERA.SetProjection(D3DX_PI / 4.0f, 1.0f, 0.5f, 3000.0f);
@@ -82,9 +82,11 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
      Matrial.Diffuse.a = Matrial.Ambient.a = 1.0f;
 
 	 g_Surface.SetMaterial(Matrial);
-	 g_Surface.LoadTexture(TEXT("heightmap.jpg"), 0);
+	 g_Surface.LoadTexture(TEXT("上班族（完色）.png"), 0);
 	 g_Billboard.GetRenderMethod().SetSurface(&g_Surface);
 	 g_Billboard.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
+	 g_Billboard.SetupAnimation(16, 1);
+	 g_Billboard.Play(0);
 	 /*g_CrossPlane.GetRenderMethod().SetSurface(&g_Surface);
 	 g_CrossPlane.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 
@@ -217,7 +219,7 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 		g_Game.BeginRender();
 
 		g_Billboard.ApplyForRender();
-		g_Copyboard.ApplyForRender();
+		//g_Copyboard.ApplyForRender();
 		/*g_CrossPlane.ApplyForRender();
 		g_CopyPlane.ApplyForRender();*/
 
