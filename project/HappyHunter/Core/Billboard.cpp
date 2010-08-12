@@ -7,7 +7,9 @@ using namespace zerO;
 CBillboard::CBillboard(void) :
 m_bIsPlay(false),
 m_bIsCreated(false),
-m_LockType(UNLOCK)
+m_LockType(UNLOCK),
+m_fSecondPerFrame(1.0f / 24),
+m_fTime(0.0f)
 {
 }
 
@@ -156,47 +158,53 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 
 			if(m_bIsPlay)
 			{
-
-				if(m_CurrentUV.GetMaxX() > m_MaxUV.GetMaxX() - m_fOffsetU)
+				if(m_fTime >= m_fSecondPerFrame)
 				{
-					m_CurrentUV.GetMinX() = m_MaxUV.GetMinX();
-					m_CurrentUV.GetMaxX() = m_MaxUV.GetMinX() + m_fOffsetU;
+					m_fTime = 0.0f;
+
+					if(m_CurrentUV.GetMaxX() > m_MaxUV.GetMaxX() - m_fOffsetU)
+					{
+						m_CurrentUV.GetMinX() = m_MaxUV.GetMinX();
+						m_CurrentUV.GetMaxX() = m_MaxUV.GetMinX() + m_fOffsetU;
+					}
+					else
+					{
+						m_CurrentUV.GetMinX() += m_fOffsetU;
+						m_CurrentUV.GetMaxX() += m_fOffsetU;
+					}
+
+					if(m_CurrentUV.GetMaxY() > m_MaxUV.GetMaxY() - m_fOffsetV)
+					{
+						m_CurrentUV.GetMinY() = m_MaxUV.GetMinY();
+						m_CurrentUV.GetMaxY() = m_MaxUV.GetMinY() + m_fOffsetV;
+					}
+					else
+					{
+						m_CurrentUV.GetMinY() += m_fOffsetV;
+						m_CurrentUV.GetMaxY() += m_fOffsetV;
+					}
+
+					m_RenderData[1].UV.x = m_CurrentUV.GetMinX();
+					m_RenderData[1].UV.y = m_CurrentUV.GetMinY();
+
+					m_RenderData[0].UV.x = m_CurrentUV.GetMinX();
+					m_RenderData[0].UV.y = m_CurrentUV.GetMaxY();
+
+					m_RenderData[3].UV.x = m_CurrentUV.GetMaxX();
+					m_RenderData[3].UV.y = m_CurrentUV.GetMinY();
+
+					m_RenderData[2].UV.x = m_CurrentUV.GetMaxX();
+					m_RenderData[2].UV.y = m_CurrentUV.GetMaxY();
+
+					void* pVertices;
+					m_pVertexBuffer->Lock(0, &pVertices);
+
+					memcpy( pVertices, m_RenderData, sizeof(m_RenderData) );
+
+					m_pVertexBuffer->Unlock();
 				}
 				else
-				{
-					m_CurrentUV.GetMinX() += m_fOffsetU;
-					m_CurrentUV.GetMaxX() += m_fOffsetU;
-				}
-
-				if(m_CurrentUV.GetMaxY() > m_MaxUV.GetMaxY() - m_fOffsetV)
-				{
-					m_CurrentUV.GetMinY() = m_MaxUV.GetMinY();
-					m_CurrentUV.GetMaxY() = m_MaxUV.GetMinY() + m_fOffsetV;
-				}
-				else
-				{
-					m_CurrentUV.GetMinY() += m_fOffsetV;
-					m_CurrentUV.GetMaxY() += m_fOffsetV;
-				}
-
-				m_RenderData[1].UV.x = m_CurrentUV.GetMinX();
-				m_RenderData[1].UV.y = m_CurrentUV.GetMinY();
-
-				m_RenderData[0].UV.x = m_CurrentUV.GetMinX();
-				m_RenderData[0].UV.y = m_CurrentUV.GetMaxY();
-
-				m_RenderData[3].UV.x = m_CurrentUV.GetMaxX();
-				m_RenderData[3].UV.y = m_CurrentUV.GetMinY();
-
-				m_RenderData[2].UV.x = m_CurrentUV.GetMaxX();
-				m_RenderData[2].UV.y = m_CurrentUV.GetMaxY();
-
-				void* pVertices;
-				m_pVertexBuffer->Lock(0, &pVertices);
-
-				memcpy( pVertices, m_RenderData, sizeof(m_RenderData) );
-
-				m_pVertexBuffer->Unlock();
+					m_fTime += ELAPSEDTIME;
 			}
 		}
 

@@ -28,7 +28,7 @@ namespace zerO
 
 		CRenderMethod& GetRenderMethod();
 
-		void SetupAnimation(UINT uFramesPerAnimation, UINT uLength);
+		void SetupAnimation(UINT uFramesPerAnimation, UINT uLength, FLOAT fFPS = 24.0f);
 
 		void Play(UINT uIndex = 0);
 		void Stop();
@@ -51,6 +51,9 @@ namespace zerO
 		FLOAT          m_fHeight;
 		FLOAT          m_fOffsetU;
 		FLOAT          m_fOffsetV;
+
+		FLOAT          m_fTime;
+		FLOAT          m_fSecondPerFrame;
 
 		CRectangle2D   m_CurrentUV;
 		CRectangle2D   m_MaxUV;
@@ -75,10 +78,13 @@ namespace zerO
 		return m_RenderMethod;
 	}
 
-	inline void CBillboard::SetupAnimation(zerO::UINT uFramesPerAnimation, zerO::UINT uLength)
+	inline void CBillboard::SetupAnimation(UINT uFramesPerAnimation, UINT uLength, FLOAT fFPS)
 	{
-		m_fOffsetU = 1.0f / uFramesPerAnimation;
-		m_fOffsetV = 1.0f / uLength;
+		m_fSecondPerFrame = 1.0f / fFPS;
+		m_fTime           = m_fSecondPerFrame;
+
+		m_fOffsetU        = 1.0f / uFramesPerAnimation;
+		m_fOffsetV        = 1.0f / uLength;
 
 		m_MaxUV.Set(0.0f, 1.0f, 0.0f, m_fOffsetV);
 	}
