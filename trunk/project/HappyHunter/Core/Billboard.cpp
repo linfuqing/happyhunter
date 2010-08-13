@@ -9,7 +9,9 @@ m_bIsPlay(false),
 m_bIsCreated(false),
 m_LockType(UNLOCK),
 m_fSecondPerFrame(1.0f / 24),
-m_fTime(0.0f)
+m_fTime(0.0f),
+m_uTimesU(0),
+m_uTimesV(0)
 {
 }
 
@@ -166,6 +168,10 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 					{
 						m_CurrentUV.GetMinX() = m_MaxUV.GetMinX();
 						m_CurrentUV.GetMaxX() = m_MaxUV.GetMinX() + m_fOffsetU;
+
+						if(m_uTimesU)
+							if( !(-- m_uTimesU) )
+								m_bIsPlay = false;
 					}
 					else
 					{
@@ -177,6 +183,10 @@ void CBillboard::Render(zerO::CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 u
 					{
 						m_CurrentUV.GetMinY() = m_MaxUV.GetMinY();
 						m_CurrentUV.GetMaxY() = m_MaxUV.GetMinY() + m_fOffsetV;
+
+						if(m_uTimesV)
+							if( !(-- m_uTimesV) )
+								m_bIsPlay = false;
 					}
 					else
 					{

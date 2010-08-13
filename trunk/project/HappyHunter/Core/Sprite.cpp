@@ -5,6 +5,10 @@
 using namespace zerO;
 
 CSprite::CSprite(void) :
+m_WorldRight(1.0f, 0.0f, 0.0f),
+m_WorldUp(0.0f, 1.0f, 0.0f),
+m_WorldForward(0.0f, 0.0f, 1.0f),
+
 m_Position(0.0f, 0.0f, 0.0f),
 m_Rotation(0.0f, 0.0f, 0.0f),
 m_Scale(0.0f, 0.0f, 0.0f),
@@ -75,6 +79,27 @@ void CSprite::Update()
 	}
 
 	CSceneNode::Update();
+
+	m_WorldRight.x   = m_WorldMatrix._11;
+	m_WorldRight.y   = m_WorldMatrix._12;
+	m_WorldRight.z   = m_WorldMatrix._13;
+
+	if(m_WorldMatrix._14)
+		m_WorldRight /= m_WorldMatrix._14;
+
+	m_WorldUp.x      = m_WorldMatrix._21;
+	m_WorldUp.y      = m_WorldMatrix._22;
+	m_WorldUp.z      = m_WorldMatrix._23;
+
+	if(m_WorldMatrix._24)
+		m_WorldUp /= m_WorldMatrix._24;
+
+	m_WorldForward.x = m_WorldMatrix._31;
+	m_WorldForward.y = m_WorldMatrix._32;
+	m_WorldForward.z = m_WorldMatrix._33;
+
+	if(m_WorldMatrix._34)
+		m_WorldForward /= m_WorldMatrix._34;
 }
 
 void CSprite::Right(zerO::FLOAT fNumSteps)

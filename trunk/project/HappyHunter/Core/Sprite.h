@@ -28,9 +28,13 @@ namespace zerO
 		void SetDirection(const D3DXVECTOR3& Direction);
 		void SetSceneDirection(const D3DXVECTOR3& Direction);
 
-		const D3DXVECTOR3 GetPosition()const;
-		const D3DXVECTOR3 GetScale()const;
-		const D3DXVECTOR3 GetRotation()const;
+		const D3DXVECTOR3& GetWorldRight()const;
+		const D3DXVECTOR3& GetWorldUp()const;
+		const D3DXVECTOR3& GetWorldForward()const;
+
+		const D3DXVECTOR3& GetPosition()const;
+		const D3DXVECTOR3& GetScale()const;
+		const D3DXVECTOR3& GetRotation()const;
 
 		void Clone(CSprite& Sprite)const;
 
@@ -41,6 +45,11 @@ namespace zerO
 		void Update();
 
 	protected:
+		D3DXVECTOR3 m_WorldRight;
+		D3DXVECTOR3 m_WorldUp;
+		D3DXVECTOR3 m_WorldForward;
+		//D3DXVECTOR3 m_WorldPosition;
+
 		D3DXVECTOR3 m_Position;
 		D3DXVECTOR3 m_Rotation;
 		D3DXVECTOR3 m_Scale;
@@ -107,17 +116,32 @@ namespace zerO
 		SET_BIT(m_uDirtyFlag, ROTATION);
 	}
 
-	inline const D3DXVECTOR3 CSprite::GetPosition()const
+	inline const D3DXVECTOR3& CSprite::GetWorldRight()const
+	{
+		return m_WorldRight;
+	}
+
+	inline const D3DXVECTOR3& CSprite::GetWorldUp()const
+	{
+		return m_WorldUp;
+	}
+
+	inline const D3DXVECTOR3& CSprite::GetWorldForward()const
+	{
+		return m_WorldForward;
+	}
+
+	inline const D3DXVECTOR3& CSprite::GetPosition()const
 	{
 		return m_Position;
 	}
 
-	inline const D3DXVECTOR3 CSprite::GetScale()const
+	inline const D3DXVECTOR3& CSprite::GetScale()const
 	{
 		return m_Scale;
 	}
 
-	inline const D3DXVECTOR3 CSprite::GetRotation()const
+	inline const D3DXVECTOR3& CSprite::GetRotation()const
 	{
 		return m_Rotation;
 	}

@@ -88,55 +88,77 @@ namespace zerO
 
 	inline bool CVertexBuffer::Lock(UINT uLockStart, UINT uLockCount, DWORD dwFlags, void **ppData)
 	{
+		if(!m_pBuffer && !m_puData)
+			return false;
+
 		m_uLockOffset = uLockStart * m_uStride;
 		m_uLockSize   = uLockCount * m_uStride;
 
-		HRESULT hr = m_pBuffer->Lock(m_uLockOffset, m_uLockSize, ppData, dwFlags);
-
-		if( FAILED(hr) )
+		if(m_pBuffer)
 		{
-			DEBUG_WARNING(hr);
+			HRESULT hr = m_pBuffer->Lock(m_uLockOffset, m_uLockSize, ppData, dwFlags);
 
-			return false;
+			if( FAILED(hr) )
+			{
+				DEBUG_WARNING(hr);
+
+				return false;
+			}
 		}
+		else
+			*ppData = m_puData + m_uLockOffset;
 
-		m_pLockData   = *ppData;
+		m_pLockData = *ppData;
 
 		return true;
 	}
 
 	inline bool CVertexBuffer::Lock(DWORD dwFlags, void** ppData)
 	{
-		HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
-
-		if( FAILED(hr) )
-		{
-			DEBUG_WARNING(hr);
-
+		if(!m_pBuffer && !m_puData)
 			return false;
-		}
 
 		m_uLockOffset = 0;
 		m_uLockSize   = m_uByteSize;
 
-		m_pLockData   = *ppData;
+		if(m_pBuffer)
+		{
+			HRESULT hr = m_pBuffer->Lock(0, m_uByteSize, ppData, dwFlags);
+
+			if( FAILED(hr) )
+			{
+				DEBUG_WARNING(hr);
+
+				return false;
+			}
+		}
+		else
+			*ppData = m_puData + m_uLockOffset;
+
+		m_pLockData = *ppData;
 
 		return true;
 	}
 
 	inline bool CVertexBuffer::Unlock()
 	{
-		HRESULT hr = m_pBuffer->Unlock();
-
-		if( FAILED(hr) )
-		{
-			DEBUG_WARNING(hr);
-
+		if(!m_pBuffer && !m_puData)
 			return false;
-		}
 
-		if(m_puData && m_Pool == D3DPOOL_DEFAULT)
-			memcpy(m_puData + m_uLockOffset, m_pLockData, m_uLockSize);
+		if(m_pBuffer)
+		{
+			HRESULT hr = m_pBuffer->Unlock();
+
+			if( FAILED(hr) )
+			{
+				DEBUG_WARNING(hr);
+
+				return false;
+			}
+
+			if(m_puData && m_Pool == D3DPOOL_DEFAULT)
+				memcpy(m_puData + m_uLockOffset, m_pLockData, m_uLockSize);
+		}
 
 		m_uLockOffset = 0;
 		m_uLockSize   = 0;

@@ -130,7 +130,7 @@ namespace zerO
 		D3DXVECTOR3 m_Source;
 		D3DXVECTOR3 m_Direction;
 
-		bool bIsAccelerationDirty;
+		bool m_bIsAccelerationDirty;
 	};
 
 	inline FLOAT CBullet::GetSpeed()const
@@ -192,7 +192,7 @@ namespace zerO
 	{
 		m_fSpeed = fSpeed;
 
-		bIsAccelerationDirty = true;
+		m_bIsAccelerationDirty = true;
 	}
 
 	inline void CBullet::SetGravity(FLOAT fGravity)
@@ -239,7 +239,7 @@ namespace zerO
 	{
 		m_Direction = Direction;
 
-		bIsAccelerationDirty = true;
+		m_bIsAccelerationDirty = true;
 	}
 
 	inline void CBullet::Shoot()
