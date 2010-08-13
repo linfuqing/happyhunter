@@ -62,29 +62,27 @@ bool CIndexBuffer::Create(D3DPRIMITIVETYPE Type, zerO::UINT uCount, DWORD dwUsag
 		else
 			memset(m_puData, 0, m_uByteSize);
 	}
-	else
+
+	HRESULT hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer, NULL);
+
+	if( FAILED(hr) )
 	{
-		HRESULT hr = DEVICE.CreateIndexBuffer(m_uByteSize, dwUsage, m_Format, Pool, &m_pBuffer, NULL);
+		m_pBuffer = NULL;
+		DEBUG_WARNING(hr);
+		return false;
+	}
 
-		if( FAILED(hr) )
-		{
-			m_pBuffer = NULL;
-			DEBUG_WARNING(hr);
+	if(pData)
+	{
+		void* pIndices;
+
+		if( !Lock(0, &pIndices) )
 			return false;
-		}
 
-		if(pData)
-		{
-			void* pIndices;
+		memcpy(pIndices, pData, m_uByteSize);
 
-			if( !Lock(0, &pIndices) )
-				return false;
-
-			memcpy(pIndices, pData, m_uByteSize);
-
-			if( !Unlock() )
-				return false;
-		}
+		if( !Unlock() )
+			return false;
 	}
 
 	return true;
@@ -116,6 +114,8 @@ bool CIndexBuffer::Restore()
 {
 	if(m_Pool == D3DPOOL_DEFAULT)
 	{
+		DEBUG_RELEASE(m_pBuffer);
+
 		HRESULT hr = DEVICE.CreateIndexBuffer(m_uByteSize, m_dwUsage, m_Format, m_Pool, &m_pBuffer, NULL);
 
 		if( FAILED(hr) )

@@ -32,14 +32,7 @@ bool CTexture::Restore()
 {
 	if(m_Pool == D3DPOOL_DEFAULT)
 	{
-		/*if( TEST_FLAG(m_uUsage, D3DUSAGE_RENDERTARGET) )
-			__Initialization(
-				GAMEHOST.GetBackBufferSurfaceDesc().Width,
-				GAMEHOST.GetBackBufferSurfaceDesc().Height, 
-				m_uMipLevels,
-				D3DUSAGE_RENDERTARGET,
-				GAMEHOST.GetBackBufferSurfaceDesc().Format,
-				D3DPOOL_DEFAULT);*/
+		DEBUG_RELEASE(m_pTexture);
 
 		if(m_pfnReset)
 			m_pfnReset(

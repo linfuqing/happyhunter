@@ -52,29 +52,27 @@ bool CVertexBuffer::Create(zerO::UINT uCount, zerO::UINT uStride, DWORD dwUsage,
 		else
 			memset(m_puData, 0, m_uByteSize);
 	}
-	else
+
+	HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, dwFVF, Pool, &m_pBuffer, NULL);
+
+	if( FAILED(hr) )
 	{
-		HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, dwUsage, dwFVF, Pool, &m_pBuffer, NULL);
+		m_pBuffer = NULL;
+		DEBUG_WARNING(hr);
+		return false;
+	}
 
-		if( FAILED(hr) )
-		{
-			m_pBuffer = NULL;
-			DEBUG_WARNING(hr);
+	if(pData)
+	{
+		void* pVertices;
+
+		if( !Lock(0, &pVertices) )
 			return false;
-		}
 
-		if(pData)
-		{
-			void* pVertices;
+		memcpy(pVertices, pData, m_uByteSize);
 
-			if( !Lock(0, &pVertices) )
-				return false;
-
-			memcpy(pVertices, pData, m_uByteSize);
-
-			if( !Unlock() )
-				return false;
-		}
+		if( !Unlock() )
+			return false;
 	}
 
 	return true;
@@ -161,6 +159,8 @@ bool CVertexBuffer::Restore()
 {
 	if(m_Pool == D3DPOOL_DEFAULT)
 	{
+		DEBUG_RELEASE(m_pBuffer);
+
 		HRESULT hr = DEVICE.CreateVertexBuffer(m_uByteSize, m_dwUsage, m_dwFVF, m_Pool, &m_pBuffer, NULL);
 
 		if( FAILED(hr) )
