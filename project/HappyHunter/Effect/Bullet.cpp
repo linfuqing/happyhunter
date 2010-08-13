@@ -8,14 +8,14 @@ m_fSpeed(0.0f),
 m_fGravity(0.0f),
 m_fOffsetRadius(0),
 
-m_uStep(0),
+m_uStep(1),
 m_uLength(0),
 
 m_Acceleration(0.0f, 0.0f, 0.0f),
 m_Source(0.0f, 0.0f, 0.0f),
 m_Direction(0.0f, 0.0f, 1.0f),
 
-bIsAccelerationDirty(false)
+m_bIsAccelerationDirty(false)
 {
 }
 
@@ -105,6 +105,11 @@ bool IsParticleDestroy(CParticleSystem<BULLETPARAMETERS>::LPPARTICLE pParticle)
 //D3DXVECTOR3 g_Velocity;
 
 zerO::INT g_nIndex;
+zerO::UINT g_uLength;
+
+D3DXVECTOR3 g_CurrentOffset;
+D3DXVECTOR3 g_OffsetPerStep;
+
 ///
 // 粒子渲染前行为
 // 返回:单个粒子渲染次数
@@ -118,7 +123,9 @@ zerO::UINT GetParticleRenderSteps(const CParticleSystem<BULLETPARAMETERS>::PARTI
 
 	g_nIndex = Particle.Parameter.uOldDataIndex;
 
-	return Particle.Parameter.uOldDataLength;/*pParent->GetStep();*/
+	g_uLength = 0;
+
+	return Particle.Parameter.uOldDataLength * (pParent->GetLength() + 1);/*pParent->GetStep();*/
 }
 
 ///
@@ -126,12 +133,32 @@ zerO::UINT GetParticleRenderSteps(const CParticleSystem<BULLETPARAMETERS>::PARTI
 ///
 bool SetParticleRenderData(const CParticleSystem<BULLETPARAMETERS>::PARTICLE& Particle, CParticleSystem<BULLETPARAMETERS>::PARTICLEVERTEX& Vertex)
 {
-	g_nIndex = g_nIndex < 0 ? (Particle.Parameter.uOldDataLength - 1) : g_nIndex;
+	CBullet* pParent = (CBullet*)Particle.pPARENT;
 
-	Vertex.Position = Particle.Parameter.pOldData[g_nIndex --];//g_Position;
+	if(g_uLength == 0)
+	{
+		g_CurrentOffset = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		g_OffsetPerStep = 
+			(Particle.Parameter.pOldData[(g_nIndex - 1 < 0) ? (Particle.Parameter.uOldDataLength - 1) : (g_nIndex - 1)]
+		- Particle.Parameter.pOldData[g_nIndex]) / (pParent->GetLength() + 1.0f);
+	}
+
+	Vertex.Position = Particle.Parameter.pOldData[g_nIndex] + g_CurrentOffset;
 	Vertex.Color    = Particle.Vertex.Color;
 
-	/*g_Position     -= g_Velocity;*/
+	if( g_uLength < pParent->GetLength() )
+	{
+		g_CurrentOffset += g_OffsetPerStep;
+
+		g_uLength ++;
+	}
+	else
+	{
+		g_uLength = 0;
+
+		g_nIndex --;
+		g_nIndex = g_nIndex < 0 ? (Particle.Parameter.uOldDataLength - 1) : g_nIndex;
+	}
 
 	return true;
 }
@@ -196,11 +223,11 @@ bool CBullet::Create(zerO::UINT uMaxNum, zerO::UINT uFlush, zerO::UINT uDiscard,
 
 void CBullet::Update()
 {
-	if(bIsAccelerationDirty)
+	if(m_bIsAccelerationDirty)
 	{
 		__BuildAcceleration();
 
-		bIsAccelerationDirty = false;
+		m_bIsAccelerationDirty = false;
 	}
 
 	CParticleSystem<BULLETPARAMETERS>::Update();
@@ -210,13 +237,18 @@ void CBullet::Update()
 
 void CBullet::Render(CRenderQueue::LPRENDERENTRY pEntry, zerO::UINT32 uFlag)
 {
-	DEVICE.SetRenderState(D3DRS_ZWRITEENABLE, false            );
+	/*DEVICE.SetRenderState(D3DRS_ZWRITEENABLE, false            );
 	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, true         );
 	DEVICE.SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA   );
-	DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	DEVICE.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);*/
+	DEVICE.SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+	DEVICE.SetRenderState(D3DRS_ALPHAREF, 0x0000000);
+	DEVICE.SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
 
 	CParticleSystem::Render(pEntry, uFlag);
 
-	DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, false        );
-	DEVICE.SetRenderState(D3DRS_ZWRITEENABLE    , true         );
+	/*DEVICE.SetRenderState(D3DRS_ALPHABLENDENABLE, false        );
+	DEVICE.SetRenderState(D3DRS_ZWRITEENABLE    , true         );*/
+
+	DEVICE.SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
 }

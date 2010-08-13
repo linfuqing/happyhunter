@@ -86,7 +86,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	 g_Billboard.GetRenderMethod().SetSurface(&g_Surface);
 	 g_Billboard.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 	 g_Billboard.SetupAnimation(16, 1);
-	 g_Billboard.Play(0);
+	 g_Billboard.Play(0, 10);
 	 /*g_CrossPlane.GetRenderMethod().SetSurface(&g_Surface);
 	 g_CrossPlane.GetRenderMethod().LoadEffect( TEXT("EffectTexture.fx") );
 

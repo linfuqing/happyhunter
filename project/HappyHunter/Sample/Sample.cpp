@@ -6,6 +6,7 @@
 #include "DXUT.h"
 #include "resource.h"
 #include "core.h"
+#include "Bullet.h"
 
 #include "SDKmisc.h"
 
@@ -25,6 +26,8 @@ zerO::CTexture  g_Texture;
 zerO::CTexture  g_Detail;
 zerO::CSurface  g_TerrainSurface;
 zerO::CTerrain g_Terrain;
+
+zerO::CBullet g_Bullet;
 
 zerO::CStaticMesh g_Mesh;
 zerO::CStaticMesh g_Copy;
@@ -128,6 +131,13 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
 	g_Mesh.Create( TEXT("Brown bear.x") );
 
 	g_Mesh.Clone(g_Copy);
+
+	g_Bullet.Create(100, 500, 2000, 10.0f);
+
+	g_Bullet.SetSpeed(10.0f);
+	g_Bullet.SetStep(10);
+	g_Bullet.SetLength(10);
+	g_Bullet.GetSurface().LoadTexture(TEXT("DRUIDC03.tga"), 0);
 
 	//创建阴影体
 	/*g_pShadowVolume = new zerO::CShadowVolume();
@@ -366,6 +376,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	CAMERA.SetTransform(Matrix);*/
 
+	g_Bullet.Update();
+
+	g_Bullet.SetDirection( CAMERA.GetWorldForward() );
+
+	g_Bullet.SetSource( D3DXVECTOR3(0.0f, 0.0f, 1.0f) + CAMERA.GetWorldPosition() );
+
 	g_Mesh.SetPosition( 
 		D3DXVECTOR3(
 		g_Mesh.GetPosition().x, 
@@ -492,6 +508,9 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 
 		g_Mesh.ApplyForRender();
 		g_Copy.ApplyForRender();
+
+		g_Bullet.ApplyForRender();
+
 		/*g_SkinMesh.ApplyForRender();
 		g_CopyMesh.ApplyForRender();*/
 
@@ -527,6 +546,13 @@ void CALLBACK OnD3D9FrameRender( IDirect3DDevice9* pd3dDevice, double fTime, flo
 LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
                           bool* pbNoFurtherProcessing, void* pUserContext )
 {
+	switch(uMsg)
+	{
+	case WM_LBUTTONUP:
+		g_Bullet.Shoot();
+		break;
+	}
+
     return 0;
 }
 

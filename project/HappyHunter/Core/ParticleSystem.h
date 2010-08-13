@@ -246,8 +246,28 @@ namespace zerO
 			//É¾³ýËÀÍöÁ£×Ó
 			if( m_pfnIsDestroy(&pParticle->Particle) )
 			{
+				if(pParticle->pRear)
+					pParticle->pRear->pNext = pParticle->pNext;
+
+				if(pParticle->pNext)
+					pParticle->pNext->pRear = pParticle->pRear;
+
+				if(pParticle == m_pParticles)
+					m_pParticles = pParticle->pNext;
+
+				if(pParticle == m_pTail)
+					m_pTail = pParticle->pRear;
+
+				if(pParticle == m_pTail)
+					m_pTail = pParticle->pRear;
+
 				*ppParticle = pParticle->pNext;
 				pParticle->pNext = m_pParticlesFree;
+				pParticle->pRear = NULL;
+
+				if(m_pParticlesFree)
+					m_pParticlesFree->pRear = pParticle;
+
 				m_pParticlesFree = pParticle;
 				m_uNumParticles--;
 			}
@@ -261,11 +281,14 @@ namespace zerO
 		{
 			if( m_pParticlesFree )
 			{
-				pParticle = m_pParticlesFree;
+				pParticle        = m_pParticlesFree;
 				m_pParticlesFree = pParticle->pNext;
+				pParticle->pNext = NULL;
 			}
 			else
+			{
 				DEBUG_NEW( pParticle, PARTICLENODE(this) );
+			}
 
 			if(!m_pParticles)
 				m_pParticles = pParticle;
