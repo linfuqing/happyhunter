@@ -155,10 +155,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HDREffect.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -178,10 +174,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\UnderWaterEffect.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -193,19 +185,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HDREffect.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>
 			<File
 				RelativePath=".\targetver.h"
-				>
-			</File>
-			<File
-				RelativePath=".\UnderWaterEffect.h"
 				>
 			</File>
 		</Filter>

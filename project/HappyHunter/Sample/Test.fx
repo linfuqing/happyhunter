@@ -3,7 +3,7 @@ float4x4 mViewProj: VIEWPROJECTION;
 
 float4 posOffset : POSITIONOFFSET = {1.0, 1.0, 0.0f, 0.0f};
 float4 texOffset : UVOFFSET = {1.0, 1.0, 0.0f, 0.0f};
-float4 ambient_light = {1.0f,1.0f,1.0f,0.0f};
+float4 ambient_light : LIGHTAMBIENT = {1.0f,1.0f,1.0f,0.0f};
 float4 sun_vec: sunlight_vec = {0.578f,0.578f,0.578f,0.0f};
 
 texture tex0 : TEXTURE0; // blend

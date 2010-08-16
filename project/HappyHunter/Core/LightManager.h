@@ -18,6 +18,8 @@ namespace zerO
 		~CLightManager(void);
 
 		const D3DLIGHT9* GetLight(UINT uIndex)const;
+		ARGBCOLOR GetAmbient()const;
+		void GetAmbientRGBA(D3DXVECTOR4& Color)const;
 
 		void SetLight(const D3DLIGHT9& Light, UINT uIndex);
 		void SetAmbient(ARGBCOLOR Color);
@@ -38,6 +40,19 @@ namespace zerO
 			return &m_Light[uIndex];
 
 		return NULL;
+	}
+
+	inline ARGBCOLOR CLightManager::GetAmbient()const
+	{
+		return m_Ambient;
+	}
+
+	inline void CLightManager::GetAmbientRGBA(D3DXVECTOR4& Color)const
+	{
+		Color.x = ( (m_Ambient >> 16) & 0xff ) / 255.0f;
+		Color.y = ( (m_Ambient >>  8) & 0xff ) / 255.0f;
+		Color.z = ( (m_Ambient      ) & 0xff ) / 255.0f;
+		Color.w = ( (m_Ambient >> 24) & 0xff ) / 255.0f;
 	}
 
 	inline void CLightManager::SetLight(const D3DLIGHT9& Light, UINT uIndex)

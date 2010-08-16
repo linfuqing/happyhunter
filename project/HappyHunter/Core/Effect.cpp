@@ -197,6 +197,8 @@ void CEffect::__ParseParameters()
 					m_ParameterHandles[EMISSIVE_MATERIAL_COLOR] = hParameter;
 				else if(STRCMP(ParameterDesc.Semantic, "MATERIALSPECULAR") == 0)
 					m_ParameterHandles[SPECULAR_MATERIAL_COLOR] = hParameter;
+				else if(STRCMP(ParameterDesc.Semantic, "LIGHTAMBIENT") == 0)
+					m_ParameterHandles[AMBIENT_LIGHT_COLOR] = hParameter;
 				else if(STRCMP(ParameterDesc.Semantic, "POSITIONOFFSET") == 0)
 					m_ParameterHandles[POSITION_OFFSET] = hParameter;
 				else if(STRCMP(ParameterDesc.Semantic, "UVOFFSET") == 0)
@@ -290,6 +292,10 @@ bool CEffect::Begin()
 	SetMatrix(PROJECTION, CAMERA.GetProjectionMatrix() );
 	SetMatrix(VIEW_PROJECTION, CAMERA.GetViewProjectionMatrix() );
 
+	D3DXVECTOR4 RGBA;
+	LIGHTMANAGER.GetAmbientRGBA(RGBA);
+
+	SetParameter(AMBIENT_LIGHT_COLOR, &RGBA);
 	SetParameter( EYE_POSITION, &CAMERA.GetWorldPosition() );
 
 	m_bIsBegin = true;
