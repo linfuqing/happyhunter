@@ -250,7 +250,7 @@ HRESULT CALLBACK OnD3D9CreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURF
   //   light.Range       = 1000.0f;
 
 	 //LIGHTMANAGER.SetLight(light, 0);
-	 LIGHTMANAGER.SetAmbient(0xffffffff);
+	 LIGHTMANAGER.SetAmbient(0xffffff00);
 
 	GAMEHOST.SetLightEnable(true);
 
