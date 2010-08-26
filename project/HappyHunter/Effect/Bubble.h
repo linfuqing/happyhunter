@@ -50,8 +50,8 @@ namespace zerO
 		// 气泡的速度
 		FLOAT GetSpeed() const;
 
-		// 气泡受到的重力
-		FLOAT Getflotage() const;
+		// 气泡受到的浮力
+		FLOAT GetFlotage() const;
 
 		// 偏移半径
 		FLOAT GetOffsetRadius() const;
@@ -84,7 +84,7 @@ namespace zerO
 		const D3DXVECTOR3& GetDirection() const;
 
 		void SetSpeed(FLOAT fSpeed);
-		void Setflotage(FLOAT fflotage);
+		void SetFlotage(FLOAT fFlotage);
 		void SetOffsetRadius(FLOAT fOffsetRadius);
 		void SetSize(FLOAT fSize);
 		void SetHight(FLOAT fHight);
@@ -126,7 +126,7 @@ namespace zerO
 		void __BuildAcceleration();
 
 		FLOAT m_fSpeed;
-		FLOAT m_fflotage;
+		FLOAT m_fFlotage;
 		FLOAT m_fOffsetRadius;
 		FLOAT m_fHight;
 		UINT  m_fOffsetHight;
@@ -147,9 +147,9 @@ namespace zerO
 		return m_fSpeed;
 	}
 
-	inline FLOAT CBubble::Getflotage() const
+	inline FLOAT CBubble::GetFlotage() const
 	{
-		return m_fflotage;
+		return m_fFlotage;
 	}
 
 	inline FLOAT CBubble::GetOffsetRadius() const
@@ -207,9 +207,9 @@ namespace zerO
 		m_fSpeed = fSpeed;
 	}
 
-	inline void CBubble::Setflotage(FLOAT fflotage)
+	inline void CBubble::SetFlotage(FLOAT fFlotage)
 	{
-		m_fflotage = fflotage;
+		m_fFlotage = fFlotage;
 	}
 
 	inline void CBubble::SetOffsetRadius(FLOAT fOffsetRadius)
@@ -259,7 +259,7 @@ namespace zerO
 
 	inline void CBubble::Bubble()
 	{
-		m_uNumEmitedPerFrame = 20;
+		m_uNumEmitedPerFrame = 1;
 	}
 
 	inline void CBubble::__BuildAcceleration()
