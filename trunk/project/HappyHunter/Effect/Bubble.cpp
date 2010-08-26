@@ -7,7 +7,7 @@ CBubble::CBubble(void) :
 m_fSpeed(0.0f),
 m_fHight(0.0f),
 m_fOffsetHight(0),
-m_fflotage(0.06f),
+m_fFlotage(0.06f),
 m_fOffsetRadius(0),
 m_uStep(0),
 m_Acceleration(0.0f, 0.0f, 0.0f),
@@ -48,7 +48,7 @@ void InitParicleBubble(CParticleSystem<BUBBLEPARAMETERS>::LPPARTICLE pParticle)
 		{
 		case CBubble::RANDOM_CUBE :
 			pParticle->Vertex.Position.x += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
-			pParticle->Vertex.Position.y += ( rand() % fOffsetHight) + fHight;
+			pParticle->Vertex.Position.y  = 0;
 			pParticle->Vertex.Position.z += ( (zerO::FLOAT)rand() ) / RAND_MAX * fOffsetRadius - fOffsetRadius * 0.5f;
 			break;
 
@@ -69,7 +69,11 @@ void UpdateParticleBubble(CParticleSystem<BUBBLEPARAMETERS>::LPPARTICLE pParticl
 {
 	CBubble* pParent = (CBubble*)pParticle->pPARENT;
 
-	pParticle->Parameter.Velocity.y += pParent->Getflotage();
+	pParticle->Parameter.Velocity.y += pParent->GetFlotage();
+
+	//pParticle->Parameter.Velocity.x += (zerO::FLOAT)(rand()  % 20 - 10 ) / 100; 
+
+	//pParticle->Parameter.Velocity.z += (zerO::FLOAT)(rand()  % 20 - 10 ) / 100; 
 
 	pParticle->Vertex.Position      += pParticle->Parameter.Velocity;
 }
@@ -79,7 +83,7 @@ void UpdateParticleBubble(CParticleSystem<BUBBLEPARAMETERS>::LPPARTICLE pParticl
 ///
 bool IsParticleDestroyBubble(CParticleSystem<BUBBLEPARAMETERS>::LPPARTICLE pParticle)
 {
-	return pParticle->Vertex.Position.y < 0 || pParticle->Parameter.bIsFree;
+	return pParticle->Vertex.Position.y > 2000 || pParticle->Parameter.bIsFree;
 }
 
 zerO::INT g_nBubbleIndex;
